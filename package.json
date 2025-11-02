@@ -1,0 +1,49 @@
+{
+  "name": "ui-theme",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cross-framework UI theme package monorepo",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "turbo typecheck",
+    "clean": "turbo clean && rm -rf node_modules",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "pnpm build && changeset publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tonyedgal/ui-theme.git"
+  },
+  "keywords": [
+    "theme",
+    "ui",
+    "react",
+    "vue",
+    "angular",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@changesets/cli": "^2.27.9",
+    "@types/node": "^22.8.6",
+    "eslint": "^9.13.0",
+    "prettier": "^3.3.3",
+    "tsup": "^8.3.5",
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.0.0",
+    "@vitest/ui": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.12.3"
+}
