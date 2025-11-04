@@ -1,0 +1,10 @@
+src
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+tsup.config.ts
+tsconfig.json
+vitest.config.ts
+.turbo
