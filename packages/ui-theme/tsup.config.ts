@@ -4,9 +4,10 @@ export default defineConfig({
   entry: {
     'core/index': 'src/core/index.ts',
     'react/index': 'src/react/index.ts',
-    'vue/index': 'src/vue/index.ts',
-    'angular/index': 'src/angular/index.ts',
-    'svelte/index': 'src/svelte/index.ts',
+    // Future framework implementations:
+    // 'vue/index': 'src/vue/index.ts',
+    // 'angular/index': 'src/angular/index.ts',
+    // 'svelte/index': 'src/svelte/index.ts',
   },
   format: ['cjs', 'esm'],
   dts: true,
@@ -18,9 +19,10 @@ export default defineConfig({
   external: [
     'react',
     'react-dom',
-    'vue',
-    '@angular/core',
-    '@angular/common',
-    'svelte',
+    // Future framework externals:
+    // 'vue',
+    // '@angular/core',
+    // '@angular/common',
+    // 'svelte',
   ],
 });
