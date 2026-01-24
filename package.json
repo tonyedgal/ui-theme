@@ -1,7 +1,6 @@
 {
   "name": "ui-theme",
   "version": "0.0.0",
-  "private": true,
   "description": "Cross-framework UI theme package monorepo",
   "scripts": {
     "build": "turbo build",
@@ -13,6 +12,9 @@
     "typecheck": "turbo typecheck",
     "clean": "turbo clean && rm -rf node_modules",
     "changeset": "changeset",
+    "changeset:patch": "changeset add --type patch",
+    "changeset:feature": "changeset add --type minor",
+    "changeset:breaking": "changeset add --type major",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm build && changeset publish"
   },
