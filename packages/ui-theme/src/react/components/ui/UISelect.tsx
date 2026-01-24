@@ -48,15 +48,21 @@ const CheckIcon = () => (
   </svg>
 );
 
-function UISelect({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
+function UISelect({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Root>) {
   return <SelectPrimitive.Root data-slot="ui-select" {...props} />;
 }
 
-function UISelectGroup({ ...props }: React.ComponentProps<typeof SelectPrimitive.Group>) {
+function UISelectGroup({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Group>) {
   return <SelectPrimitive.Group data-slot="ui-select-group" {...props} />;
 }
 
-function UISelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
+function UISelectValue({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Value>) {
   return <SelectPrimitive.Value data-slot="ui-select-value" {...props} />;
 }
 

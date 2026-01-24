@@ -69,7 +69,9 @@ export const createBlurCircleMask = (blur: number): string => {
  */
 export const getSystemTheme = (): 'light' | 'dark' => {
   if (!isBrowser) return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
 };
 
 /**
@@ -97,7 +99,9 @@ export const supportsViewTransitions = (): boolean => {
  * @returns true if user prefers reduced motion
  */
 export const prefersReducedMotion = (): boolean => {
-  return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return (
+    isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 };
 
 /**
@@ -145,7 +149,10 @@ export const createCircleAnimation = (config: AnimationConfig): void => {
 
   document.documentElement.animate(
     {
-      clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxRadius}px at ${x}px ${y}px)`],
+      clipPath: [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${maxRadius}px at ${x}px ${y}px)`,
+      ],
     },
     {
       duration,
@@ -160,7 +167,14 @@ export const createCircleAnimation = (config: AnimationConfig): void => {
  * @param config - Animation configuration
  */
 export const createSlideAnimation = (config: AnimationConfig): void => {
-  const { a = -100, b = 0, x = 0, y = 0, duration, styleId = DEFAULT_STYLE_ID } = config;
+  const {
+    a = -100,
+    b = 0,
+    x = 0,
+    y = 0,
+    duration,
+    styleId = DEFAULT_STYLE_ID,
+  } = config;
 
   const styleElement = document.createElement('style');
   styleElement.id = styleId;
@@ -200,7 +214,14 @@ export const createSlideAnimation = (config: AnimationConfig): void => {
  * @param config - Animation configuration
  */
 export const createBlurCircleAnimation = (config: AnimationConfig): void => {
-  const { x, y, duration, easing, blurAmount, styleId = DEFAULT_STYLE_ID } = config;
+  const {
+    x,
+    y,
+    duration,
+    easing,
+    blurAmount,
+    styleId = DEFAULT_STYLE_ID,
+  } = config;
 
   const existingStyle = document.getElementById(styleId);
   if (existingStyle) {

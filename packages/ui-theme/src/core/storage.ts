@@ -26,7 +26,10 @@ export const getStoredTheme = (
  * @param theme - Theme to store
  * @param key - Storage key for the theme
  */
-export const setStoredTheme = (theme: Theme, key: string = STORAGE_KEY): void => {
+export const setStoredTheme = (
+  theme: Theme,
+  key: string = STORAGE_KEY
+): void => {
   if (!isBrowser) return;
   localStorage.setItem(key, theme);
 };
@@ -54,7 +57,10 @@ export const getStoredColorTheme = (
  * @param colorTheme - Color theme to store
  * @param key - Storage key for the color theme
  */
-export const setStoredColorTheme = (colorTheme: ColorTheme, key: string = COLOR_STORAGE_KEY): void => {
+export const setStoredColorTheme = (
+  colorTheme: ColorTheme,
+  key: string = COLOR_STORAGE_KEY
+): void => {
   if (!isBrowser) return;
   localStorage.setItem(key, colorTheme);
 };
