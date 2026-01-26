@@ -1,15 +1,15 @@
 # TanStack Start Setup Guide
 
-Complete setup guide for using ui-theme in TanStack Start applications with isomorphic rendering support.
+Complete setup guide for using @ui-theme/web in TanStack Start applications with isomorphic rendering support.
 
 ## Installation
 
 ```bash
-npm install ui-theme
+npm install @ui-theme/web
 # or
-pnpm add ui-theme
+pnpm add @ui-theme/web
 # or
-yarn add ui-theme
+yarn add @ui-theme/web
 ```
 
 ## Quick Start
@@ -21,7 +21,7 @@ Create a client component in [app/components/theme-provider.tsx](app/components/
 ```tsx
 'use client';
 
-import { TanStackUIThemeProvider } from 'ui-theme/react';
+import { TanStackUIThemeProvider } from '@ui-theme/web/react';
 import { ReactNode } from 'react';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -80,7 +80,7 @@ Create [app/components/theme-toggle.tsx](app/components/theme-toggle.tsx):
 ```tsx
 'use client';
 
-import { useTanStackUITheme } from 'ui-theme/react';
+import { useTanStackUITheme } from '@ui-theme/web/react';
 
 export function ThemeToggle() {
   const { theme, resolvedTheme, toggleTheme, ref } = useTanStackUITheme();
@@ -126,7 +126,7 @@ TanStack Start uses `useHydrated()` for hydration-safe rendering. The TanStackUI
 ```tsx
 'use client';
 
-import { useTanStackUITheme } from 'ui-theme/react';
+import { useTanStackUITheme } from '@ui-theme/web/react';
 import { useHydrated } from '@tanstack/react-router';
 
 export function ThemeStatus() {
@@ -227,7 +227,7 @@ await switchTheme('dark', true);
 Choose from three animation types:
 
 ```tsx
-import { ThemeAnimationType } from 'ui-theme/core';
+import { ThemeAnimationType } from '@ui-theme/web/core';
 
 <TanStackUIThemeProvider
   animationType={ThemeAnimationType.CIRCLE} // Default
@@ -293,7 +293,7 @@ TanStackUIThemeProvider automatically handles SSR:
 ```tsx
 'use client';
 
-import { useTanStackUITheme } from 'ui-theme/react';
+import { useTanStackUITheme } from '@ui-theme/web/react';
 
 const colorThemes = [
   { name: 'Default', value: 'default' },
@@ -330,7 +330,7 @@ export function ColorThemeSelector() {
 ```tsx
 'use client';
 
-import { useTanStackUITheme } from 'ui-theme/react';
+import { useTanStackUITheme } from '@ui-theme/web/react';
 
 export function BlueThemeButton() {
   const { createColorThemeToggle } = useTanStackUITheme();
@@ -393,7 +393,7 @@ export function Header() {
 ### Memoize Theme Callbacks
 
 ```tsx
-import { useTanStackUITheme } from 'ui-theme/react';
+import { useTanStackUITheme } from '@ui-theme/web/react';
 import { useCallback } from 'react';
 
 export function ThemeControls() {

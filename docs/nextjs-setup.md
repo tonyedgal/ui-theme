@@ -1,15 +1,15 @@
 # Next.js Setup Guide
 
-Complete setup guide for using ui-theme in Next.js applications with App Router and Pages Router support.
+Complete setup guide for using @ui-theme/web in Next.js applications with App Router and Pages Router support.
 
 ## Installation
 
 ```bash
-npm install ui-theme
+npm install @ui-theme/web
 # or
-pnpm add ui-theme
+pnpm add @ui-theme/web
 # or
-yarn add ui-theme
+yarn add @ui-theme/web
 ```
 
 ## App Router Setup
@@ -21,7 +21,7 @@ Create a client component wrapper in [app/providers.tsx](app/providers.tsx):
 ```tsx
 'use client';
 
-import { NextUIThemeProvider } from 'ui-theme/react';
+import { NextUIThemeProvider } from '@ui-theme/web/react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -77,7 +77,7 @@ Create [components/theme-toggle.tsx](components/theme-toggle.tsx):
 ```tsx
 'use client';
 
-import { useNextUITheme } from 'ui-theme/react';
+import { useNextUITheme } from '@ui-theme/web/react';
 
 export function ThemeToggle() {
   const { theme, resolvedTheme, toggleTheme, ref } = useNextUITheme();
@@ -117,7 +117,7 @@ Create [pages/\_app.tsx](pages/_app.tsx):
 
 ```tsx
 import type { AppProps } from 'next/app';
-import { NextUIThemeProvider } from 'ui-theme/react';
+import { NextUIThemeProvider } from '@ui-theme/web/react';
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -157,7 +157,7 @@ export default function Document() {
 ### 3. Use Theme Hook
 
 ```tsx
-import { useNextUITheme } from 'ui-theme/react';
+import { useNextUITheme } from '@ui-theme/web/react';
 
 export default function HomePage() {
   const { theme, toggleTheme, ref } = useNextUITheme();
@@ -286,7 +286,7 @@ await switchTheme('dark', true);
 Choose from three animation types:
 
 ```tsx
-import { ThemeAnimationType } from 'ui-theme/core';
+import { ThemeAnimationType } from '@ui-theme/web/core';
 
 <NextUIThemeProvider
   animationType={ThemeAnimationType.CIRCLE} // Default
@@ -345,7 +345,7 @@ Create a color theme selector:
 ```tsx
 'use client';
 
-import { useNextUITheme } from 'ui-theme/react';
+import { useNextUITheme } from '@ui-theme/web/react';
 
 const colorThemes = [
   { name: 'Default', value: 'default' },
