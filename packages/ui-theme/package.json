@@ -1,6 +1,6 @@
 {
-  "name": "ui-theme",
-  "version": "1.0.0",
+  "name": "@ui-theme/web",
+  "version": "0.1.0",
   "description": "Cross-framework UI theme switching library",
   "type": "module",
   "keywords": [
