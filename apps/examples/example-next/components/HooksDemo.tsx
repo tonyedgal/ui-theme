@@ -9,7 +9,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
-import { SlideDirection } from 'ui-theme/react';
+import { SlideDirection } from '@ui-theme/web/react';
 import { useState } from 'react';
 
 export function HooksDemo() {

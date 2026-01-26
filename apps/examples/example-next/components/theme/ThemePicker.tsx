@@ -1,6 +1,6 @@
 'use client';
 
-import { useNextUITheme } from 'ui-theme/react';
+import { useNextUITheme } from '@ui-theme/web/react';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { MarqueeWrapper } from '@/components/ui/marquee';

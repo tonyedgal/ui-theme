@@ -1,6 +1,6 @@
 'use client';
 
-import { NextUIThemeProvider } from 'ui-theme/react';
+import { NextUIThemeProvider } from '@ui-theme/web/react';
 
 const COLOR_THEMES = [
   'default',
