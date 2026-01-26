@@ -126,6 +126,8 @@ footer
 - **refactor**: Refactoring production code
 - **test**: Adding tests, refactoring tests (no production code change)
 - **chore**: Updating build tasks, package configs, etc (no production code change)
+- **ci**: all changes regarding the configuration of continuous integration (i.e.
+  github actions, etc)
 
 ### Guidelines
 
