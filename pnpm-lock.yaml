@@ -165,6 +165,9 @@ importers:
       react-dom:
         specifier: ^19.2.3
         version: 19.2.3(react@19.2.3)
+      react-use-measure:
+        specifier: ^2.1.7
+        version: 2.1.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       shadcn:
         specifier: ^3.7.0
         version: 3.7.0(@types/node@25.0.10)(hono@4.11.7)(typescript@5.9.3)
@@ -4815,6 +4818,15 @@ packages:
     peerDependencies:
       react: '>=16.6.0'
       react-dom: '>=16.6.0'
+
+  react-use-measure@2.1.7:
+    resolution: {integrity: sha512-KrvcAo13I/60HpwGO5jpW7E9DfusKyLPLvuHlUyP5zqnmAPhNc6qTRjUQrdTADl0lpPpDVU2/Gg51UlOGHXbdg==}
+    peerDependencies:
+      react: '>=16.13'
+      react-dom: '>=16.13'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
 
   react@19.2.3:
     resolution: {integrity: sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==}
@@ -10800,6 +10812,12 @@ snapshots:
       loose-envify: 1.4.0
       prop-types: 15.8.1
       react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+
+  react-use-measure@2.1.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+    dependencies:
+      react: 19.2.3
+    optionalDependencies:
       react-dom: 19.2.3(react@19.2.3)
 
   react@19.2.3: {}
