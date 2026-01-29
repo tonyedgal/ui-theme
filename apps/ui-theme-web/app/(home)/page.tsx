@@ -62,7 +62,6 @@ export default function HomePage() {
             </Reveal>
           </section>
 
-          {/* CTA Buttons */}
           <Reveal slideDirection="top-blur" delay={0.5}>
             <section className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
               <Button variant="outline" size="default" asChild>
@@ -90,7 +89,6 @@ export default function HomePage() {
             </section>
           </Reveal>
 
-          {/* Install Snippet */}
           <Reveal
             width="100%"
             slideDirection="bottom-blur"
