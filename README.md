@@ -2,6 +2,21 @@
 
 https://github.com/user-attachments/assets/2819cf70-c474-478e-b821-6b26457c8d4a
 
+<p align="center">
+  <a>
+    <img alt="npm" src="https://img.shields.io/npm/v/@ui-theme/web/latest"/>
+  </a>
+  <a href="https://github.com/tonyedgal/ui-theme/stargazers">
+    <img src="https://badgen.net/github/stars/tonyedgal/ui-theme" alt="GitHub Stars"/>
+  </a>
+  <a href="https://github.com/tonyedgal/ui-theme/blob/stable/LICENSE.md">
+    <img
+      src="https://badgen.net/badge/license/MIT/blue"
+      alt="MIT license"
+    />
+  </a>
+</p>
+
 Web framework agnostic UI theme switching library with smooth view transition animations, multi-theme support, and synchronized state management. Currently supporting React with additional framework adapters planned.
 
 ## Live Demo
