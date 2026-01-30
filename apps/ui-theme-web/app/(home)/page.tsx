@@ -8,6 +8,7 @@ import {
   Doc01Icon,
   GithubIcon,
   NpmIcon,
+  CircleArrowRightDoubleIcon,
 } from '@hugeicons/core-free-icons';
 import Link from 'next/link';
 
@@ -49,15 +50,15 @@ export default function HomePage() {
             <div className="border-b">
               <Reveal slideDirection="top-blur" width="100%">
                 <h1 className="text-balance pb-2 text-3xl font-semibold leading-tight tracking-tighter sm:pb-3 sm:text-4xl md:text-5xl lg:text-6xl">
-                  UI Theme
+                  Theme the Web
                 </h1>
               </Reveal>
             </div>
             <Reveal slideDirection="top-blur" delay={0.25}>
               <p className="text-pretty font-light mx-auto max-w-xs text-sm text-muted-foreground sm:max-w-md sm:text-base md:max-w-2xl md:text-lg">
-                A powerful React library for building stunning, multi-themed
-                applications with ease and animated transitions with the View
-                Transition API.
+                UI Framework agnostic theming library with built-in support for
+                multiple-themes and animated transitions with the View
+                Transitions API.
               </p>
             </Reveal>
           </section>
@@ -66,7 +67,7 @@ export default function HomePage() {
             <section className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
               <Button variant="outline" size="default" asChild>
                 <a
-                  href="https://github.com/tonyedgal/spaceman-react-theme-animation"
+                  href="https://github.com/tonyedgal/ui-theme"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="min-w-40 sm:min-w-0"
@@ -77,7 +78,7 @@ export default function HomePage() {
               </Button>
               <Button variant="outline" size="default" asChild>
                 <a
-                  href="https://www.npmjs.com/package/@space-man/react-theme-animation"
+                  href="https://www.npmjs.com/package/@ui-theme/web"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="min-w-40 sm:min-w-0"
@@ -96,6 +97,43 @@ export default function HomePage() {
             className="w-full px-2 sm:px-0"
           >
             <InstallSnippet />
+          </Reveal>
+          <Reveal
+            width="100%"
+            slideDirection="bottom-blur"
+            delay={0.75}
+            className="w-full px-2 sm:px-0"
+          >
+            <div className="mt-10 flex flex-wrap justify-center items-center gap-6">
+              <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                <HugeiconsIcon
+                  icon={CircleArrowRightDoubleIcon}
+                  aria-hidden="true"
+                />
+                <span>Light-Dark mode</span>
+              </div>
+              <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                <HugeiconsIcon
+                  icon={CircleArrowRightDoubleIcon}
+                  aria-hidden="true"
+                />
+                <span>UI Colours</span>
+              </div>
+              <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                <HugeiconsIcon
+                  icon={CircleArrowRightDoubleIcon}
+                  aria-hidden="true"
+                />
+                <span>Multiple Fonts</span>
+              </div>
+              <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                <HugeiconsIcon
+                  icon={CircleArrowRightDoubleIcon}
+                  aria-hidden="true"
+                />
+                <span>Animated transitions</span>
+              </div>
+            </div>
           </Reveal>
         </section>
       </div>
