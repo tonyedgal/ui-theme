@@ -1,0 +1,203 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "needs-discussion"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please help us understand your use case and how it fits with the project's goals.
+        
+        **Note:** This project is a framework-agnostic library. Features should work across different frameworks and environments.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: |
+        Describe the problem from your perspective, NOT the solution.
+        Focus on WHAT you're trying to accomplish and WHY, not HOW.
+      placeholder: |
+        I'm building an application that needs to... but I can't because...
+        
+        Currently I have to... which is problematic because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-workaround
+    attributes:
+      label: What workaround are you currently using (if any)?
+      description: How are you solving this problem today?
+      placeholder: |
+        Right now I'm doing X by manually...
+        Or: There's no workaround - this is currently impossible
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Describe your proposed solution
+      description: |
+        What would you like to see added to the library?
+        Focus on the API or functionality, not implementation details.
+      placeholder: |
+        I'd like a function/feature that allows me to...
+        
+        Example usage:
+        ```typescript
+        import { newFeature } from '@your-org/core';
+        
+        const result = newFeature({ ... });
+        ```
+      render: typescript
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: What other approaches or solutions have you thought about?
+      placeholder: |
+        - Using a different library (but it doesn't work because...)
+        - Building it myself (but this seems like common functionality...)
+        - Alternative API design...
+
+  - type: dropdown
+    id: framework-agnostic
+    attributes:
+      label: Is this feature framework-agnostic?
+      description: |
+        This library is designed to work across frameworks (React, Vue, Svelte, vanilla JS, etc.).
+        Would your feature work in all JavaScript environments?
+      options:
+        - "Yes - works in any JavaScript environment"
+        - "No - specific to a framework (explain why it should still be included)"
+        - "Unsure - needs discussion"
+    validations:
+      required: true
+
+  - type: textarea
+    id: framework-rationale
+    attributes:
+      label: Framework-specific rationale (if applicable)
+      description: If this feature is framework-specific, explain why it belongs in this library
+      placeholder: |
+        This feature is React-specific because... and it should be included because...
+        Or: Leave blank if feature is framework-agnostic
+
+  - type: dropdown
+    id: breaking-change
+    attributes:
+      label: Is this a breaking change?
+      description: Would this feature require breaking changes to existing APIs?
+      options:
+        - "No - purely additive"
+        - "Yes - requires breaking changes (explain below)"
+        - "Unsure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: breaking-details
+    attributes:
+      label: Breaking change details (if applicable)
+      description: If this would require breaking changes, explain what would break and why it's worth it
+      placeholder: |
+        This would require changing the signature of X function because...
+        The benefit outweighs the cost because...
+        Migration path would be...
+
+  - type: dropdown
+    id: backwards-compat
+    attributes:
+      label: Backwards compatibility concern
+      description: How important is it to maintain backwards compatibility?
+      options:
+        - "Critical - many users depend on current behavior"
+        - "Important - but migration is feasible"
+        - "Not a concern - this is new functionality"
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Real-world use cases
+      description: |
+        Describe 2-3 real scenarios where this feature would be valuable.
+        Concrete examples help us understand the scope and priority.
+      placeholder: |
+        1. In e-commerce apps, developers need to... because...
+        2. When building dashboards, teams struggle with... and this would solve it by...
+        3. For accessibility requirements, this feature would enable...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ecosystem-fit
+    attributes:
+      label: Does this fit the project scope?
+      description: |
+        This project focuses on [core functionality]. 
+        Does your feature align with this mission or expand it?
+      options:
+        - "Yes - core to the project's mission"
+        - "Yes - natural extension of existing functionality"
+        - "Maybe - expands scope but provides significant value"
+        - "No - better suited for a separate package/plugin"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope-rationale
+    attributes:
+      label: Scope rationale
+      description: Explain why this feature belongs in this library specifically
+      placeholder: |
+        This fits because it builds on the existing X feature...
+        Or: While this expands scope, it's justified because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation-ideas
+    attributes:
+      label: Implementation ideas (optional)
+      description: |
+        If you have thoughts on how this could be implemented, share them here.
+        This is optional - focus on the problem first.
+      placeholder: |
+        This could potentially be implemented by...
+        Or: I'm not sure how to implement this, but I know the problem needs solving.
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Are you willing to contribute?
+      description: Would you be interested in implementing this feature?
+      options:
+        - label: Yes, I'm willing to submit a PR for this feature
+        - label: I can help with testing and feedback
+        - label: I need someone else to implement it
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues and discussions to avoid duplicates
+          required: true
+        - label: I have described the problem, not just the solution
+          required: true
+        - label: I have explained why this belongs in this library
+          required: true
+        - label: I have considered backwards compatibility
+          required: true
+        - label: I understand this request may be declined if it doesn't fit the project scope
+          required: true
