@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/2819cf70-c474-478e-b821-6b26457c8d4a
   </a>
 </p>
 
-Web framework agnostic UI theme switching library with smooth view transition animations, multi-theme support, and synchronized state management. Currently supporting React with additional framework adapters planned.
+Web framework agnostic UI theme switching library with smooth view transition animations, multi-theme support, and synchronized state management. Currently supporting React with additional framework adapters planned .
 
 ## Live Demo
 
