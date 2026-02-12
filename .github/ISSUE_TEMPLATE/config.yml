@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/tonyedgal/ui-theme/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 📖 Documentation
+    url: https://ui-theme.dev
+    about: Read the official documentation and guides
+  - name: 🐛 Bug Report
+    url: https://github.com/tonyedgal/ui-theme/issues/new?template=bug_report.yml
+    about: Report a bug or issue with ui-theme
+  - name: ✨ Feature Request
+    url: https://github.com/tonyedgal/ui-theme/issues/new?template=feature_request.yml
+    about: Suggest a new feature or enhancement
