@@ -1,0 +1,91 @@
+name: 'Feature request'
+description: Create a feature request for ui-theme
+title: '[feat]: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Thanks for taking the time to create a feature request! Please search open/closed issues before submitting, as the issue may have already been reported/addressed.
+
+  - type: markdown
+    attributes:
+      value: |
+        #### If you aren't sure this is a feature request or want to discuss it first, please open a discussion instead:
+        - [Discussions](https://github.com/tonyedgal/ui-theme/discussions/new?category=ideas)
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature description
+      description: Tell us about your feature request. What problem does it solve? How would it improve ui-theme?
+      placeholder: 'I think this feature would be great because...'
+      value: 'Describe your feature request...'
+    validations:
+      required: true
+
+  - type: input
+    id: components-affected
+    attributes:
+      label: Affected component/components
+      description: Is this feature request relevant to any of the already existing components or hooks?
+      placeholder: ex. ThemeProvider, useTheme, new component...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: Feature type
+      description: What type of feature is this?
+      options:
+        - New component
+        - New hook
+        - Enhancement to existing feature
+        - Framework support (new framework adapter)
+        - Documentation improvement
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: How would you like to see this feature implemented? Include API examples if applicable.
+      placeholder: |
+        Example usage:
+        ```tsx
+        <ThemeProvider ...>
+        ```
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: I've tried using... but it doesn't work because...
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context about the feature here.
+      placeholder: ex. screenshots, links to similar implementations, use cases, etc.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Before submitting
+      description: By submitting this issue, you agree to follow our [Contributing Guidelines](https://github.com/tonyedgal/ui-theme/blob/main/CONTRIBUTING.md).
+      options:
+        - label: I've made research efforts and searched the documentation
+          required: true
+        - label: I've searched for existing issues and PRs
+          required: true
