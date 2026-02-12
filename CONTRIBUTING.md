@@ -16,6 +16,10 @@ This repository is a monorepo using:
 
 ```
 ui-theme/
+├── apps/
+│   ├── examples/
+│   │   └── example-next/  # Next.js example app
+│   └── ui-theme-web/      # Documentation website
 ├── packages/
 │   └── ui-theme/          # Main package
 │       ├── src/
@@ -27,10 +31,12 @@ ui-theme/
 └── turbo.json            # Turborepo configuration
 ```
 
-| Path                          | Description                            |
-| ----------------------------- | -------------------------------------- |
-| `packages/ui-theme/src/core`  | Framework-agnostic theme core logic    |
-| `packages/ui-theme/src/react` | React providers, hooks, and components |
+| Path                          | Description                                      |
+| ----------------------------- | ------------------------------------------------ |
+| `apps/examples/example-next`  | Next.js example implementation                   |
+| `apps/ui-theme-web`           | Documentation website [uitheme.dev](uitheme.dev) |
+| `packages/ui-theme/src/core`  | Framework-agnostic theme core logic              |
+| `packages/ui-theme/src/react` | React providers, hooks, and components           |
 
 ## Development Workflow
 
