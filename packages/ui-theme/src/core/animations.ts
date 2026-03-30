@@ -87,6 +87,19 @@ export const resolveTheme = (theme: string): 'light' | 'dark' => {
 };
 
 /**
+ * Resolves a stored theme to the server-side class to apply on <html>.
+ * CSS mode uses the 'system' class so media queries can respond before hydration.
+ */
+export const resolveThemeForServer = (
+  theme: string
+): 'light' | 'dark' | 'system' => {
+  if (theme === 'system') {
+    return 'system';
+  }
+  return theme === 'dark' ? 'dark' : 'light';
+};
+
+/**
  * Checks if the browser supports View Transitions API
  * @returns true if view transitions are supported
  */

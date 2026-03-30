@@ -1,6 +1,6 @@
 # TanStack Start Setup Guide
 
-Complete setup guide for using @ui-theme/web in TanStack Start applications with isomorphic rendering support.
+Complete setup guide for using @ui-theme/web in TanStack Start applications with **flash-free dark mode**.
 
 ## Installation
 
@@ -12,70 +12,131 @@ pnpm add @ui-theme/web
 yarn add @ui-theme/web
 ```
 
-## Quick Start
+## Choose Your Approach
 
-### 1. Create Theme Provider
+@ui-theme/web offers **two approaches** for preventing theme flash in TanStack Start:
 
-Create a client component in [app/components/theme-provider.tsx](app/components/theme-provider.tsx):
+| Approach                          | Flash Prevention | System Theme | Setup Complexity | Requires Server Functions |
+| --------------------------------- | ---------------- | ------------ | ---------------- | ------------------------- |
+| **A: Cookie-based** (recommended) | Zero flash       | CSS or JS    | Moderate         | Yes                       |
+| **B: Pre-hydration script**       | Near-zero flash  | CSS or JS    | Simple           | No                        |
+
+Both approaches support two `systemThemeMode` options:
+
+- **`'css'`**: Applies a `'system'` class on `<html>`. Dark mode is handled purely by CSS `@media (prefers-color-scheme: dark)` — zero flash, instant system-preference matching. **Requires CSS changes.**
+- **`'js'`**: Resolves system theme via `matchMedia` in JavaScript. Works with existing CSS unchanged.
+
+---
+
+## Option A: Cookie-Based (Recommended)
+
+This approach stores the theme in a cookie, reads it server-side in `beforeLoad`, and renders the correct `<html>` class during SSR. **Zero flash.**
+
+### 1. Create Server Theme Functions
+
+Create `src/lib/theme.ts`:
+
+```ts
+import { createThemeServerFns } from '@ui-theme/web/tanstack';
+
+export const { getThemeServerFn, setThemeServerFn, setColorThemeServerFn } =
+  createThemeServerFns({
+    // Optional: customize cookie keys
+    // storageKey: 'theme',
+    // colorStorageKey: 'color-theme',
+    // defaultTheme: 'system',
+    // defaultColorTheme: 'default',
+  });
+```
+
+### 2. Update Root Route
+
+In `src/routes/__root.tsx`:
 
 ```tsx
-'use client';
-
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+} from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { TanStackUIThemeProvider } from '@ui-theme/web/react';
-import { ReactNode } from 'react';
+import {
+  getThemeServerFn,
+  setThemeServerFn,
+  setColorThemeServerFn,
+} from '@/lib/theme';
+import appCss from '../globals.css?url';
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export const Route = createRootRoute({
+  head: () => ({
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'My App' },
+    ],
+    links: [{ rel: 'stylesheet', href: appCss }],
+  }),
+
+  // Read theme from cookie on the server
+  beforeLoad: async () => {
+    const themeData = await getThemeServerFn();
+    return { themeData };
+  },
+
+  shellComponent: RootDocument,
+  component: RootComponent,
+});
+
+function RootDocument({ children }: { children: React.ReactNode }) {
+  const { themeData } = Route.useRouteContext();
+
+  // Build the className for <html>: the theme class + color theme class
+  const htmlClass = [
+    themeData.theme, // 'light', 'dark', or 'system'
+    themeData.colorTheme !== 'default' ? `theme-${themeData.colorTheme}` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <html lang="en" className={htmlClass} suppressHydrationWarning>
+      <head>
+        <HeadContent />
+      </head>
+      <body className="font-sans antialiased">
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+function RootComponent() {
+  const { themeData } = Route.useRouteContext();
+
   return (
     <TanStackUIThemeProvider
       defaultTheme="system"
       defaultColorTheme="default"
       themes={['light', 'dark', 'system']}
-      colorThemes={['default', 'blue', 'green']}
-      animationType="circle"
-      duration={500}
+      colorThemes={['default', 'supabase', 'mono']}
+      serverTheme={themeData.theme}
+      serverColorTheme={themeData.colorTheme}
+      systemThemeMode="css"
+      onServerThemeChange={(theme) => setThemeServerFn({ data: theme })}
+      onServerColorThemeChange={(colorTheme) =>
+        setColorThemeServerFn({ data: colorTheme })
+      }
     >
-      {children}
+      <Outlet />
     </TanStackUIThemeProvider>
   );
 }
 ```
 
-### 2. Update Root Layout
-
-Wrap your app in [app/routes/\_\_root.tsx](app/routes/__root.tsx):
-
-```tsx
-import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { ThemeProvider } from '@/components/theme-provider';
-import '@/styles/globals.css';
-
-export const Route = createRootRoute({
-  component: RootComponent,
-});
-
-function RootComponent() {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>My TanStack App</title>
-      </head>
-      <body>
-        <ThemeProvider>
-          <Outlet />
-        </ThemeProvider>
-      </body>
-    </html>
-  );
-}
-```
-
-**Important:** Add `suppressHydrationWarning` to prevent hydration warnings when theme classes are applied.
-
-### 3. Create Theme Toggle Component
-
-Create [app/components/theme-toggle.tsx](app/components/theme-toggle.tsx):
+### 3. Create Theme Toggle
 
 ```tsx
 'use client';
@@ -83,7 +144,8 @@ Create [app/components/theme-toggle.tsx](app/components/theme-toggle.tsx):
 import { useTanStackUITheme } from '@ui-theme/web/react';
 
 export function ThemeToggle() {
-  const { theme, resolvedTheme, toggleTheme, ref } = useTanStackUITheme();
+  const { theme, resolvedTheme, toggleTheme, switchTheme, ref } =
+    useTanStackUITheme();
 
   return (
     <button
@@ -97,113 +159,243 @@ export function ThemeToggle() {
 }
 ```
 
-### 4. Use in Routes
+---
+
+## Option B: Pre-Hydration Script
+
+This approach injects a blocking `<script>` that reads `localStorage` before React hydrates. Simpler setup, no server functions needed.
+
+### 1. Update Root Route
+
+In `src/routes/__root.tsx`:
 
 ```tsx
-import { createFileRoute } from '@tanstack/react-router';
-import { ThemeToggle } from '@/components/theme-toggle';
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRoute,
+} from '@tanstack/react-router';
+import {
+  TanStackUIThemeProvider,
+  TanStackStartThemeScript,
+} from '@ui-theme/web/react';
+import appCss from '../globals.css?url';
 
-export const Route = createFileRoute('/')({
-  component: HomePage,
+export const Route = createRootRoute({
+  head: () => ({
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'My App' },
+    ],
+    links: [{ rel: 'stylesheet', href: appCss }],
+  }),
+
+  shellComponent: RootDocument,
+  component: RootComponent,
 });
 
-function HomePage() {
+function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen p-8">
-      <h1>My TanStack Start App</h1>
-      <ThemeToggle />
-    </div>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Blocking script: reads localStorage and applies theme before paint */}
+        <TanStackStartThemeScript
+          defaultTheme="system"
+          defaultColorTheme="default"
+          systemThemeMode="js" // or 'css' if you have the CSS setup
+        />
+        <HeadContent />
+      </head>
+      <body className="font-sans antialiased">
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
+function RootComponent() {
+  return (
+    <TanStackUIThemeProvider
+      defaultTheme="system"
+      defaultColorTheme="default"
+      themes={['light', 'dark', 'system']}
+      colorThemes={['default']}
+      systemThemeMode="js" // match what you set in the script
+    >
+      <Outlet />
+    </TanStackUIThemeProvider>
   );
 }
 ```
 
-## Hydration-Safe Patterns
+### 2. Create Theme Toggle
 
-TanStack Start uses `useHydrated()` for hydration-safe rendering. The TanStackUIThemeProvider automatically handles this internally.
+Same as Option A — use `useTanStackUITheme()`.
 
-### Conditional Rendering Based on Hydration
+---
 
-```tsx
-'use client';
+## CSS Setup
 
-import { useTanStackUITheme } from '@ui-theme/web/react';
-import { useHydrated } from '@tanstack/react-router';
+### Standard CSS (works with both `systemThemeMode: 'js'` and `'css'`)
 
-export function ThemeStatus() {
-  const { theme, resolvedTheme, systemTheme } = useTanStackUITheme();
-  const isHydrated = useHydrated();
-
-  if (!isHydrated) {
-    return <div>Loading theme...</div>;
-  }
-
-  return (
-    <div>
-      <p>Theme: {theme}</p>
-      <p>Resolved: {resolvedTheme}</p>
-      <p>System: {systemTheme}</p>
-    </div>
-  );
-}
-```
-
-## CSS Variables Setup
-
-Define your theme variables in [app/styles/globals.css](app/styles/globals.css):
+Your `globals.css` needs `:root` (light) and `.dark` (dark) variable blocks. This is the standard shadcn/ui pattern:
 
 ```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --secondary: 210 40% 96.1%;
-    --accent: 210 40% 96.1%;
-    --muted: 210 40% 96.1%;
-    --border: 214.3 31.8% 91.4%;
-  }
+@custom-variant dark (&:is(.dark *));
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --secondary: 217.2 32.6% 17.5%;
-    --accent: 217.2 32.6% 17.5%;
-    --muted: 217.2 32.6% 17.5%;
-    --border: 217.2 32.6% 17.5%;
-  }
-
-  /* Color Theme Variants */
-  .theme-blue {
-    --primary: 221.2 83.2% 53.3%;
-    --accent: 221.2 83.2% 53.3%;
-  }
-
-  .theme-blue.dark {
-    --primary: 217.2 91.2% 59.8%;
-    --accent: 217.2 91.2% 59.8%;
-  }
-
-  .theme-green {
-    --primary: 142.1 76.2% 36.3%;
-    --accent: 142.1 76.2% 36.3%;
-  }
-
-  .theme-green.dark {
-    --primary: 142.1 70.6% 45.3%;
-    --accent: 142.1 70.6% 45.3%;
-  }
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  /* ... all your light theme variables */
 }
 
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  /* ... all your dark theme variables */
 }
 ```
+
+### CSS for `systemThemeMode: 'css'` (recommended for zero flash)
+
+When using `systemThemeMode: 'css'`, you need to make two changes:
+
+#### 1. Update `@custom-variant dark`
+
+Change from:
+
+```css
+@custom-variant dark (&:is(.dark *));
+```
+
+To:
+
+```css
+@custom-variant dark {
+  &:is(.dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:is(.system *) {
+      @slot;
+    }
+  }
+}
+```
+
+This tells Tailwind's `dark:` utilities to activate for both:
+
+- Elements inside `.dark` (explicit dark mode)
+- Elements inside `.system` when the OS prefers dark (system theme)
+
+#### 2. Add `.system` variable block
+
+Duplicate your `.dark` variables inside a `@media (prefers-color-scheme: dark)` block with the `.system` selector:
+
+```css
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  /* ... your dark variables */
+}
+
+@media (prefers-color-scheme: dark) {
+  .system {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    /* ... same dark variables as above */
+  }
+}
+```
+
+This ensures that when `<html class="system">`, the CSS variables switch to dark values purely based on the OS preference — no JavaScript needed.
+
+#### Complete example
+
+```css
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark {
+  &:is(.dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:is(.system *) {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* ... rest of your @theme inline block */
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  /* ... light variables */
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  /* ... dark variables */
+}
+
+@media (prefers-color-scheme: dark) {
+  .system {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    /* ... same dark variables */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+```
+
+### Color Theme CSS
+
+Color themes use the `.theme-*` class pattern. Apply overrides for both light and dark:
+
+```css
+/* Light mode overrides for supabase theme */
+.theme-supabase {
+  --primary: oklch(0.65 0.15 150.3);
+  --primary-foreground: oklch(1 0 0);
+}
+
+/* Dark mode overrides for supabase theme */
+.theme-supabase.dark {
+  --primary: oklch(0.65 0.15 150.3);
+  --primary-foreground: oklch(1 0 0);
+}
+
+/* System theme dark mode overrides for supabase */
+@media (prefers-color-scheme: dark) {
+  .theme-supabase.system {
+    --primary: oklch(0.65 0.15 150.3);
+    --primary-foreground: oklch(1 0 0);
+  }
+}
+```
+
+---
 
 ## Advanced Configuration
 
@@ -239,182 +431,107 @@ import { ThemeAnimationType } from '@ui-theme/web/core';
 </TanStackUIThemeProvider>;
 ```
 
-### Server-Side Rendering Considerations
-
-TanStackUIThemeProvider automatically handles SSR:
-
-- Prevents flash of unstyled content
-- Synchronizes theme state across client/server
-- Uses localStorage for theme persistence
-- Falls back gracefully when browser APIs unavailable
+---
 
 ## API Reference
 
 ### TanStackUIThemeProvider Props
 
-| Prop               | Type                 | Default                     | Description                       |
-| ------------------ | -------------------- | --------------------------- | --------------------------------- |
-| defaultTheme       | Theme                | 'system'                    | Initial theme                     |
-| defaultColorTheme  | ColorTheme           | 'default'                   | Initial color theme               |
-| themes             | Theme[]              | ['light', 'dark', 'system'] | Available themes                  |
-| colorThemes        | ColorTheme[]         | ['default']                 | Available color themes            |
-| animationType      | ThemeAnimationType   | 'circle'                    | Animation type                    |
-| duration           | number               | 500                         | Animation duration (ms)           |
-| storageKey         | string               | 'ui-theme'                  | LocalStorage key for theme        |
-| colorStorageKey    | string               | 'ui-color-theme'            | LocalStorage key for color theme  |
-| onThemeChange      | (theme) => void      | -                           | Callback when theme changes       |
-| onColorThemeChange | (colorTheme) => void | -                           | Callback when color theme changes |
+| Prop                     | Type                            | Default                       | Description                               |
+| ------------------------ | ------------------------------- | ----------------------------- | ----------------------------------------- |
+| defaultTheme             | Theme                           | `'system'`                    | Initial theme                             |
+| defaultColorTheme        | ColorTheme                      | `'default'`                   | Initial color theme                       |
+| themes                   | Theme[]                         | `['light', 'dark', 'system']` | Available themes                          |
+| colorThemes              | ColorTheme[]                    | `['default']`                 | Available color themes                    |
+| animationType            | ThemeAnimationType              | `'circle'`                    | Animation type                            |
+| duration                 | number                          | `750`                         | Animation duration (ms)                   |
+| storageKey               | string                          | `'theme'`                     | localStorage key for theme                |
+| colorStorageKey          | string                          | `'color-theme'`               | localStorage key for color theme          |
+| globalClassName          | string                          | `'dark'`                      | Class name for dark theme                 |
+| colorThemePrefix         | string                          | `'theme-'`                    | Prefix for color theme classes            |
+| serverTheme              | `'light' \| 'dark' \| 'system'` | -                             | Server-resolved theme from cookie         |
+| serverColorTheme         | string                          | -                             | Server-resolved color theme from cookie   |
+| systemThemeMode          | `'css' \| 'js'`                 | `'css'`                       | How to handle system theme                |
+| onServerThemeChange      | `(theme: Theme) => void`        | -                             | Callback to persist theme to cookie       |
+| onServerColorThemeChange | `(colorTheme: string) => void`  | -                             | Callback to persist color theme to cookie |
+
+### TanStackStartThemeScript Props
+
+| Prop              | Type            | Default         | Description                      |
+| ----------------- | --------------- | --------------- | -------------------------------- |
+| storageKey        | string          | `'theme'`       | localStorage key for theme       |
+| colorStorageKey   | string          | `'color-theme'` | localStorage key for color theme |
+| defaultTheme      | Theme           | `'system'`      | Default theme                    |
+| defaultColorTheme | ColorTheme      | `'default'`     | Default color theme              |
+| globalClassName   | string          | `'dark'`        | Class name for dark theme        |
+| colorThemePrefix  | string          | `'theme-'`      | Prefix for color theme classes   |
+| nonce             | string          | -               | CSP nonce for inline script      |
+| systemThemeMode   | `'css' \| 'js'` | `'js'`          | How to handle system theme       |
 
 ### useTanStackUITheme Hook
 
-| Return Value           | Type                                                    | Description                       |
-| ---------------------- | ------------------------------------------------------- | --------------------------------- |
-| theme                  | Theme                                                   | Current theme                     |
-| colorTheme             | ColorTheme                                              | Current color theme               |
-| resolvedTheme          | 'light' \| 'dark'                                       | Resolved theme                    |
-| systemTheme            | 'light' \| 'dark'                                       | OS theme preference               |
-| ref                    | RefObject<HTMLElement>                                  | Ref for animation origin          |
-| setTheme               | (theme: Theme) => void                                  | Set theme instantly               |
-| setColorTheme          | (colorTheme: ColorTheme) => void                        | Set color theme                   |
-| switchTheme            | (theme: Theme, animationOff?: boolean) => Promise<void> | Switch with animation             |
-| switchColorTheme       | (colorTheme: string) => void                            | Switch color theme with animation |
-| toggleTheme            | (animationOff?: boolean) => Promise<void>               | Toggle light/dark                 |
-| toggleLightTheme       | (animationOff?: boolean) => Promise<void>               | Switch to light theme             |
-| toggleDarkTheme        | (animationOff?: boolean) => Promise<void>               | Switch to dark theme              |
-| toggleColorTheme       | () => void                                              | Toggle between color themes       |
-| createColorThemeToggle | (colorTheme: string) => () => void                      | Create color theme toggle         |
-| isColorThemeActive     | (colorTheme: string) => boolean                         | Check if color theme active       |
-| switchThemeFromElement | (theme: Theme, element: HTMLElement) => Promise<void>   | Switch from specific element      |
+| Return Value           | Type                                                      | Description                      |
+| ---------------------- | --------------------------------------------------------- | -------------------------------- |
+| theme                  | Theme                                                     | Current theme preference         |
+| colorTheme             | ColorTheme                                                | Current color theme              |
+| resolvedTheme          | `'light' \| 'dark'`                                       | Resolved theme                   |
+| systemTheme            | `'light' \| 'dark'`                                       | OS theme preference              |
+| isHydrated             | boolean                                                   | Whether component is hydrated    |
+| ref                    | RefObject\<HTMLButtonElement\>                            | Ref for animation origin         |
+| setTheme               | `(theme: Theme) => void`                                  | Set theme instantly              |
+| setColorTheme          | `(colorTheme: ColorTheme) => void`                        | Set color theme                  |
+| switchTheme            | `(theme: Theme, animationOff?: boolean) => Promise<void>` | Switch with animation            |
+| switchColorTheme       | `(colorTheme: string) => void`                            | Switch color theme               |
+| toggleTheme            | `(animationOff?: boolean) => Promise<void>`               | Toggle light/dark                |
+| toggleLightTheme       | `(animationOff?: boolean) => Promise<void>`               | Switch to light                  |
+| toggleDarkTheme        | `(animationOff?: boolean) => Promise<void>`               | Switch to dark                   |
+| toggleColorTheme       | `() => void`                                              | Cycle color themes               |
+| createColorThemeToggle | `(colorTheme: string) => () => void`                      | Create toggle for specific color |
+| isColorThemeActive     | `(colorTheme: string) => boolean`                         | Check if color theme active      |
+| switchThemeFromElement | `(theme: Theme, el: HTMLButtonElement) => Promise<void>`  | Switch from element              |
 
-## Color Theme Management
+### createThemeServerFns (from `@ui-theme/web/tanstack`)
 
-### Color Theme Selector
+```ts
+import { createThemeServerFns } from '@ui-theme/web/tanstack';
 
-```tsx
-'use client';
-
-import { useTanStackUITheme } from '@ui-theme/web/react';
-
-const colorThemes = [
-  { name: 'Default', value: 'default' },
-  { name: 'Blue', value: 'blue' },
-  { name: 'Green', value: 'green' },
-];
-
-export function ColorThemeSelector() {
-  const { colorTheme, switchColorTheme, isColorThemeActive } =
-    useTanStackUITheme();
-
-  return (
-    <div className="flex gap-2">
-      {colorThemes.map((theme) => (
-        <button
-          key={theme.value}
-          onClick={() => switchColorTheme(theme.value)}
-          className={`px-3 py-1 rounded ${
-            isColorThemeActive(theme.value)
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-secondary'
-          }`}
-        >
-          {theme.name}
-        </button>
-      ))}
-    </div>
-  );
-}
+const { getThemeServerFn, setThemeServerFn, setColorThemeServerFn } =
+  createThemeServerFns({
+    storageKey?: string;       // Cookie key, default 'theme'
+    colorStorageKey?: string;  // Cookie key, default 'color-theme'
+    defaultTheme?: Theme;      // Default 'system'
+    defaultColorTheme?: string; // Default 'default'
+  });
 ```
 
-### Create Custom Color Theme Toggle
+- **`getThemeServerFn()`** — Returns `{ theme, themePreference, colorTheme }` from cookies
+- **`setThemeServerFn({ data })`** — Sets theme cookie
+- **`setColorThemeServerFn({ data })`** — Sets color theme cookie
 
-```tsx
-'use client';
-
-import { useTanStackUITheme } from '@ui-theme/web/react';
-
-export function BlueThemeButton() {
-  const { createColorThemeToggle } = useTanStackUITheme();
-  const toggleBlue = createColorThemeToggle('blue');
-
-  return (
-    <button onClick={toggleBlue} className="px-4 py-2 rounded bg-blue-500">
-      Blue Theme
-    </button>
-  );
-}
-```
+---
 
 ## Troubleshooting
 
+### Theme Still Flashing
+
+**Cookie approach:** Ensure `beforeLoad` is in `__root.tsx` and `serverTheme` is passed to the provider. Check that `<html className={htmlClass}>` includes the theme class in `shellComponent`.
+
+**Script approach:** Ensure `<TanStackStartThemeScript>` is in `<head>` before `<HeadContent>`. Verify `systemThemeMode` matches between the script and provider.
+
 ### Hydration Mismatch
 
-If you see hydration errors:
+Add `suppressHydrationWarning` to the `<html>` tag. This is expected because the pre-hydration script or server may set classes that differ from React's initial render.
 
-1. Add `suppressHydrationWarning` to `<html>` tag
-2. Use `useHydrated()` for conditional rendering
-3. Ensure theme provider wraps all routes
+### System Theme Not Working with CSS Mode
 
-### Theme Not Persisting
+Ensure your `globals.css` has:
 
-Check that:
-
-1. LocalStorage is available
-2. Storage keys don't conflict with other apps
-3. Browser allows localStorage access
+1. The updated `@custom-variant dark` block with the `.system *` media query rule
+2. The `.system` variable block inside `@media (prefers-color-scheme: dark)`
 
 ### Animations Not Working
 
-View Transitions API requires:
-
-- Chrome/Edge 111+
-- HTTPS or localhost
-- Check `document.startViewTransition` availability
-
-The library automatically falls back to CSS transitions in unsupported browsers.
-
-## Performance Optimization
-
-### Lazy Load Theme Components
-
-```tsx
-import { lazy, Suspense } from 'react';
-
-const ThemeToggle = lazy(() => import('@/components/theme-toggle'));
-
-export function Header() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <ThemeToggle />
-    </Suspense>
-  );
-}
-```
-
-### Memoize Theme Callbacks
-
-```tsx
-import { useTanStackUITheme } from '@ui-theme/web/react';
-import { useCallback } from 'react';
-
-export function ThemeControls() {
-  const { toggleTheme, switchTheme } = useTanStackUITheme();
-
-  const handleToggle = useCallback(async () => {
-    await toggleTheme();
-  }, [toggleTheme]);
-
-  const handleDark = useCallback(async () => {
-    await switchTheme('dark');
-  }, [switchTheme]);
-
-  return (
-    <div>
-      <button onClick={handleToggle}>Toggle</button>
-      <button onClick={handleDark}>Dark</button>
-    </div>
-  );
-}
-```
+View Transitions API requires Chrome/Edge 111+. The library automatically falls back to instant switching in unsupported browsers.
 
 ## Examples
 

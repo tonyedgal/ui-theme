@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     'core/index': 'src/core/index.ts',
     'react/index': 'src/react/index.ts',
+    'tanstack/index': 'src/tanstack/index.ts',
     // Future framework implementations:
     // 'vue/index': 'src/vue/index.ts',
     // 'angular/index': 'src/angular/index.ts',
@@ -19,6 +20,7 @@ export default defineConfig({
   external: [
     'react',
     'react-dom',
+
     // Future framework externals:
     // 'vue',
     // '@angular/core',
