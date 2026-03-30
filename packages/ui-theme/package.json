@@ -20,6 +20,10 @@
     "type": "git",
     "url": "https://github.com/tonyedgal/ui-theme.git"
   },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "sideEffects": false,
   "exports": {
     "./core": {
