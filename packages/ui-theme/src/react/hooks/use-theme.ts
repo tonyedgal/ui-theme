@@ -67,6 +67,10 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
     slideFromY,
     slideToX = 0,
     slideToY = 0,
+
+    initialTheme,
+    initialColorTheme,
+    systemThemeMode = 'js',
   } = props;
 
   const isHighResolution =
@@ -83,10 +87,12 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
   }, []);
 
   const [internalTheme, setInternalTheme] = useState<Theme>(() => {
+    if (initialTheme !== undefined) return initialTheme;
     return getStoredTheme(storageKey, themes, defaultTheme);
   });
 
   const [internalColorTheme, setInternalColorTheme] = useState(() => {
+    if (initialColorTheme !== undefined) return initialColorTheme;
     return getStoredColorTheme(colorStorageKey, colorThemes, defaultColorTheme);
   });
 
@@ -109,25 +115,40 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
   useEffect(() => {
     if (!isBrowser || !mounted) return;
 
-    if (resolvedTheme === 'dark') {
-      document.documentElement.classList.add(globalClassName);
+    const el = document.documentElement;
+
+    if (systemThemeMode === 'css' && currentTheme === 'system') {
+      // CSS mode: use 'system' class, let CSS @media handle dark/light
+      el.classList.remove(globalClassName);
+      el.classList.remove('auto');
+      el.classList.remove('system');
+      el.classList.add('system');
+      el.style.colorScheme = '';
     } else {
-      document.documentElement.classList.remove(globalClassName);
+      // JS mode or explicit light/dark: resolve and apply
+      el.classList.remove('system');
+      el.classList.remove('auto');
+      if (resolvedTheme === 'dark') {
+        el.classList.add(globalClassName);
+      } else {
+        el.classList.remove(globalClassName);
+      }
+      el.style.colorScheme = resolvedTheme;
     }
 
     colorThemes.forEach((theme) => {
-      document.documentElement.classList.remove(`${colorThemePrefix}${theme}`);
+      el.classList.remove(`${colorThemePrefix}${theme}`);
     });
-    document.documentElement.classList.add(
-      `${colorThemePrefix}${currentColorTheme}`
-    );
+    el.classList.add(`${colorThemePrefix}${currentColorTheme}`);
   }, [
     resolvedTheme,
+    currentTheme,
     currentColorTheme,
     globalClassName,
     colorThemePrefix,
     colorThemes,
     mounted,
+    systemThemeMode,
   ]);
 
   const ref = useRef<HTMLButtonElement>(null);

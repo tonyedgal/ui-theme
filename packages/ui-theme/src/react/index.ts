@@ -13,6 +13,7 @@ export {
   injectBaseStyles,
   getSystemTheme,
   resolveTheme,
+  resolveThemeForServer,
   supportsViewTransitions,
   prefersReducedMotion,
 } from '../core/animations';
@@ -42,9 +43,11 @@ export {
 // React providers - TanStack Start
 export {
   TanStackUIThemeProvider,
+  TanStackStartThemeScript,
   useTanStackUITheme,
   type TanStackUIThemeProviderProps,
   type TanStackUIThemeContextType,
+  type TanStackStartThemeScriptProps,
 } from './components/TanStackUIThemeProvider';
 
 // React providers - Vite
@@ -87,4 +90,5 @@ export type {
   UseThemeReturn,
   UIThemeSwitcherProps,
   UIThemeSelectorProps,
+  SystemThemeMode,
 } from './types';

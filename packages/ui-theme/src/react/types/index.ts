@@ -6,6 +6,9 @@ import {
   SlideDirection,
 } from '../../core/types';
 
+/** System theme resolution mode */
+export type SystemThemeMode = 'css' | 'js';
+
 /**
  * Props for the useTheme hook
  */
@@ -60,6 +63,24 @@ export interface UseThemeProps {
   slideToX?: number;
   /** Y end position for slide */
   slideToY?: number;
+
+  /**
+   * Server-provided initial theme (from cookie).
+   * When set, used as the initial useState value instead of reading localStorage.
+   */
+  initialTheme?: Theme;
+  /**
+   * Server-provided initial color theme (from cookie).
+   * When set, used as the initial useState value instead of reading localStorage.
+   */
+  initialColorTheme?: ColorTheme;
+  /**
+   * How to handle 'system' theme resolution.
+   * - 'css': Apply 'system' class on <html>, let CSS @media queries handle dark mode
+   * - 'js': Resolve via matchMedia in JS (current behavior)
+   * @default 'js'
+   */
+  systemThemeMode?: SystemThemeMode;
 }
 
 /**
