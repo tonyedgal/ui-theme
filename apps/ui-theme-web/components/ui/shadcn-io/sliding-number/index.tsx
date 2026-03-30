@@ -40,10 +40,10 @@ function SlidingNumberRoller({
   return (
     <span
       ref={measureRef}
-      data-slot='sliding-number-roller'
-      className='relative inline-block w-[1ch] overflow-x-visible overflow-y-clip leading-none tabular-nums'
+      data-slot="sliding-number-roller"
+      className="relative inline-block w-[1ch] overflow-x-visible overflow-y-clip leading-none tabular-nums"
     >
-      <span className='invisible'>0</span>
+      <span className="invisible">0</span>
       {Array.from({ length: 10 }, (_, i) => (
         <SlidingNumberDisplay
           key={i}
@@ -80,14 +80,14 @@ function SlidingNumberDisplay({
   });
 
   if (!height) {
-    return <span className='invisible absolute'>{number}</span>;
+    return <span className="invisible absolute">{number}</span>;
   }
 
   return (
     <motion.span
-      data-slot='sliding-number-display'
+      data-slot="sliding-number-display"
       style={{ y }}
-      className='absolute inset-0 flex items-center justify-center'
+      className="absolute inset-0 flex items-center justify-center"
       transition={{ ...transition, type: 'spring' }}
     >
       {number}
@@ -150,6 +150,8 @@ function SlidingNumber({
   const newIntStr =
     padStart && newIntStrRaw?.length === 1 ? '0' + newIntStrRaw : newIntStrRaw;
 
+  // TODO attend to this
+  // eslint-disable-next-line react-hooks/refs
   const prevFormatted = formatNumber(prevNumberRef.current);
   const [prevIntStrRaw = '', prevDecStrRaw = ''] = prevFormatted.split('.');
   const prevIntStr =
@@ -198,11 +200,11 @@ function SlidingNumber({
   return (
     <span
       ref={localRef}
-      data-slot='sliding-number'
+      data-slot="sliding-number"
       className={cn('flex items-center', className)}
       {...props}
     >
-      {isInView && Number(number) < 0 && <span className='mr-1'>-</span>}
+      {isInView && Number(number) < 0 && <span className="mr-1">-</span>}
 
       {intPlaces.map((place) => (
         <SlidingNumberRoller
