@@ -17,7 +17,12 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <NextUIThemeProvider colorThemes={COLOR_THEMES}>
+    <NextUIThemeProvider
+      defaultTheme="system"
+      defaultColorTheme="default"
+      themes={['light', 'dark', 'system']}
+      colorThemes={COLOR_THEMES}
+    >
       {children as React.ReactNode}
     </NextUIThemeProvider>
   );
