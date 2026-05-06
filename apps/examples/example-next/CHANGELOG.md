@@ -1,5 +1,12 @@
 # example-next
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [570eac9]
+  - @ui-theme/web@1.0.1
+
 ## 0.1.2
 
 ### Patch Changes
