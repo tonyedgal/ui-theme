@@ -12,6 +12,21 @@ pnpm add @ui-theme/web
 yarn add @ui-theme/web
 ```
 
+## Tailwind Setup For Prebuilt Components
+
+`UIThemeSwitcher`, `UIThemeSelector`, and the shared select primitives are styled with Tailwind utility classes from `@ui-theme/web`. The package does not ship a compiled stylesheet, so your app must let Tailwind scan the installed package when you use those prebuilt components.
+
+For Tailwind v4, add an `@source` directive to the stylesheet where you import Tailwind:
+
+```css
+@import 'tailwindcss';
+@source '../node_modules/@ui-theme/web/dist';
+```
+
+Adjust the relative path so it points at your app's installed `@ui-theme/web` package.
+
+If you skip this step, the theme switcher and selector will render, but Tailwind will not generate the utility classes used inside the package, so the controls will appear mostly unstyled.
+
 ## Choose Your Approach
 
 @ui-theme/web offers **two approaches** for preventing theme flash in TanStack Start:
@@ -26,6 +41,11 @@ Both approaches support two `systemThemeMode` options:
 - **`'css'`**: Applies a `'system'` class on `<html>`. Dark mode is handled purely by CSS `@media (prefers-color-scheme: dark)` — zero flash, instant system-preference matching. **Requires CSS changes.**
 - **`'js'`**: Resolves system theme via `matchMedia` in JavaScript. Works with existing CSS unchanged.
 
+## Reference Apps
+
+- `apps/examples/example-tanstack`: pre-hydration script + `TanStackUIThemeProvider`
+- `apps/examples/example-tanstack-ssr`: cookie-based SSR + `createThemeServerFns`
+
 ---
 
 ## Option A: Cookie-Based (Recommended)
@@ -37,17 +57,38 @@ This approach stores the theme in a cookie, reads it server-side in `beforeLoad`
 Create `src/lib/theme.ts`:
 
 ```ts
-import { createThemeServerFns } from '@ui-theme/web/tanstack';
+import { createServerFn } from '@tanstack/react-start';
+import { getCookie, setCookie } from '@tanstack/react-start/server';
+import { z } from 'zod';
+import {
+  buildServerThemeData,
+  STORAGE_KEY,
+  COLOR_STORAGE_KEY,
+  type ServerThemeData,
+} from '@ui-theme/web/tanstack';
 
-export const { getThemeServerFn, setThemeServerFn, setColorThemeServerFn } =
-  createThemeServerFns({
-    // Optional: customize cookie keys
-    // storageKey: 'theme',
-    // colorStorageKey: 'color-theme',
-    // defaultTheme: 'system',
-    // defaultColorTheme: 'default',
+export const getThemeServerFn = createServerFn().handler(
+  (): ServerThemeData =>
+    buildServerThemeData(getCookie(STORAGE_KEY), getCookie(COLOR_STORAGE_KEY))
+);
+
+export const setThemeServerFn = createServerFn()
+  .inputValidator(z.string())
+  .handler(({ data }) => {
+    setCookie(STORAGE_KEY, data);
+  });
+
+export const setColorThemeServerFn = createServerFn()
+  .inputValidator(z.string())
+  .handler(({ data }) => {
+    setCookie(COLOR_STORAGE_KEY, data);
   });
 ```
+
+> **Why not a factory?** `createServerFn()` calls must live in your application
+> source code — TanStack Start's Vite plugin transforms them at build time into
+> server handlers + client stubs. Calls inside pre-built libraries won't be
+> transformed.
 
 ### 2. Update Root Route
 
@@ -490,23 +531,23 @@ import { ThemeAnimationType } from '@ui-theme/web/core';
 | isColorThemeActive     | `(colorTheme: string) => boolean`                         | Check if color theme active      |
 | switchThemeFromElement | `(theme: Theme, el: HTMLButtonElement) => Promise<void>`  | Switch from element              |
 
-### createThemeServerFns (from `@ui-theme/web/tanstack`)
+### buildServerThemeData (from `@ui-theme/web/tanstack`)
 
 ```ts
-import { createThemeServerFns } from '@ui-theme/web/tanstack';
+import { buildServerThemeData, STORAGE_KEY, COLOR_STORAGE_KEY } from '@ui-theme/web/tanstack';
 
-const { getThemeServerFn, setThemeServerFn, setColorThemeServerFn } =
-  createThemeServerFns({
-    storageKey?: string;       // Cookie key, default 'theme'
-    colorStorageKey?: string;  // Cookie key, default 'color-theme'
-    defaultTheme?: Theme;      // Default 'system'
+const themeData = buildServerThemeData(
+  getCookie(STORAGE_KEY),      // theme cookie value
+  getCookie(COLOR_STORAGE_KEY), // color-theme cookie value
+  {
+    defaultTheme?: Theme;       // Default 'system'
     defaultColorTheme?: string; // Default 'default'
-  });
+  }
+);
+// Returns: { theme, themePreference, colorTheme }
 ```
 
-- **`getThemeServerFn()`** — Returns `{ theme, themePreference, colorTheme }` from cookies
-- **`setThemeServerFn({ data })`** — Sets theme cookie
-- **`setColorThemeServerFn({ data })`** — Sets color theme cookie
+Also re-exports: `STORAGE_KEY`, `COLOR_STORAGE_KEY`, `resolveThemeForServer`, `Theme`, `ColorTheme`, `ServerThemeData`, `ServerResolvedTheme`.
 
 ---
 
