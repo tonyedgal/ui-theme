@@ -20,6 +20,21 @@ pnpm add @ui-theme/web
 yarn add @ui-theme/web
 ```
 
+## Tailwind Setup For Prebuilt Components
+
+`UIThemeSwitcher`, `UIThemeSelector`, and the bundled select primitives use Tailwind utility classes. `@ui-theme/web` does not ship a compiled CSS file for those components, so the consuming app must include the package in Tailwind's source scan.
+
+For Tailwind v4, add an `@source` directive next to your Tailwind import:
+
+```css
+@import 'tailwindcss';
+@source '../node_modules/@ui-theme/web/dist';
+```
+
+Adjust the relative path to match your app structure.
+
+If you are using the prebuilt components without this setup, the controls will mount but the expected borders, spacing, typography, hover states, and dropdown styling will be missing because Tailwind never sees the classes inside the installed package.
+
 ## Provider Selection
 
 Choose the right provider for your framework:
