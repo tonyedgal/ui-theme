@@ -1,5 +1,13 @@
 # ui-theme
 
+## 1.0.1
+
+### Patch Changes
+
+- 570eac9: - Add support for Tanstack SSR in `@ui-theme/web`.
+  - Add example apps for Tanstack starter and Next.js.
+  - Update documentation to reflect the new SSR support and example apps and enable tailwind for pre-built components.
+
 ## 1.0.0
 
 ### Major Changes
