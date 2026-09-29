@@ -87,9 +87,6 @@
     },
     "react-dom": {
       "optional": true
-    },
-    "@radix-ui/react-select": {
-      "optional": true
     }
   },
   "devDependencies": {
