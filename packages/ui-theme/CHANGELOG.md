@@ -1,5 +1,11 @@
 # ui-theme
 
+## 1.0.2
+
+### Patch Changes
+
+- df1d176: Add a deprecation notice to the README and point users to `uitheme-web`.
+
 ## 1.0.1
 
 ### Patch Changes
