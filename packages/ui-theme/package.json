@@ -67,8 +67,11 @@
     "README.md",
     "LICENSE"
   ],
+  "bin": {
+    "uitheme-web": "./dist/cli/index.js"
+  },
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
@@ -95,6 +98,7 @@
     "@radix-ui/react-select": "^2.1.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "kleur": "^4.1.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "svelte": "^5.0.0",
