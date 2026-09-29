@@ -1,5 +1,16 @@
 # uitheme-web
 
+## 1.0.1
+
+### Patch Changes
+
+- 822f02a: Require `@radix-ui/react-select` so the react entry loads for a new user
+  instead of failing with `ERR_MODULE_NOT_FOUND`.
+
+  Also drop the peer dependencies for the frameworks the package does not
+  build, stop publishing sourcemaps, and document the Tailwind `@source`
+  setup in the Next.js and Vite guides.
+
 ## 1.0.0
 
 ### Major Changes
