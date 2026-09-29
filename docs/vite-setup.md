@@ -12,6 +12,21 @@ pnpm add uitheme-web
 yarn add uitheme-web
 ```
 
+## Tailwind Setup For Prebuilt Components
+
+`UIThemeSwitcher`, `UIThemeSelector`, and the shared select primitives are styled with Tailwind utility classes from `uitheme-web`. The package does not ship a compiled stylesheet, so your app must let Tailwind scan the installed package when you use those prebuilt components.
+
+For Tailwind v4, add an `@source` directive to the stylesheet where you import Tailwind:
+
+```css
+@import 'tailwindcss';
+@source '../node_modules/uitheme-web/dist';
+```
+
+Adjust the relative path so it points at your app's installed `uitheme-web` package.
+
+If you skip this step, the theme switcher and selector will render, but Tailwind will not generate the utility classes used inside the package, so the controls will appear mostly unstyled.
+
 ## Quick Start
 
 ### 1. Wrap App with Theme Provider
