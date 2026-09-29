@@ -1,23 +1,5 @@
 # uitheme-web
 
-> [!WARNING]
-> This package is deprecated. It was renamed to `uitheme-web`.
->
-> Install the new package:
->
-> ```bash
-> npm install uitheme-web
-> ```
->
-> Then update your imports:
->
-> ```diff
-> - import { UIThemeProvider } from '@ui-theme/web/react';
-> + import { UIThemeProvider } from 'uitheme-web/react';
-> ```
->
-> Every entry point keeps its name: `uitheme-web/core`, `uitheme-web/react` and `uitheme-web/tanstack`.
-
 Web framework agnostic UI theme switching library. Built with a framework-agnostic core and React adapter. Additional framework support planned for future releases.
 
 ## UI-Theme version 1 release
