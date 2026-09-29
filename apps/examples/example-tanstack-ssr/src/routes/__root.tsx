@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { TanStackDevtools } from '@tanstack/react-devtools';
-import { TanStackUIThemeProvider } from '@ui-theme/web/react';
+import { TanStackUIThemeProvider } from 'uitheme-web/react';
 import { COLOR_THEMES } from '../components/theme/theme-data';
 import {
   getThemeServerFn,

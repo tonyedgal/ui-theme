@@ -1,4 +1,4 @@
-import type { SlideDirection } from "@ui-theme/web/react"
+import type { SlideDirection } from "uitheme-web/react"
 
 export const COLOR_THEMES = [
   "default",

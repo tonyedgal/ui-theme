@@ -5,7 +5,7 @@ import {
   type SlideDirection,
   useTanStackUITheme,
   useTheme,
-} from "@ui-theme/web/react"
+} from "uitheme-web/react"
 
 import { Button } from "#/components/ui/button"
 import {

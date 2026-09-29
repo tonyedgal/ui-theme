@@ -9,7 +9,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools';
 import {
   TanStackStartThemeScript,
   TanStackUIThemeProvider,
-} from '@ui-theme/web/react';
+} from 'uitheme-web/react';
 import { COLOR_THEMES } from '../components/theme/theme-data';
 
 import appCss from '../styles.css?url';

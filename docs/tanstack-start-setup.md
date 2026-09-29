@@ -1,35 +1,35 @@
 # TanStack Start Setup Guide
 
-Complete setup guide for using @ui-theme/web in TanStack Start applications with **flash-free dark mode**.
+Complete setup guide for using uitheme-web in TanStack Start applications with **flash-free dark mode**.
 
 ## Installation
 
 ```bash
-npm install @ui-theme/web
+npm install uitheme-web
 # or
-pnpm add @ui-theme/web
+pnpm add uitheme-web
 # or
-yarn add @ui-theme/web
+yarn add uitheme-web
 ```
 
 ## Tailwind Setup For Prebuilt Components
 
-`UIThemeSwitcher`, `UIThemeSelector`, and the shared select primitives are styled with Tailwind utility classes from `@ui-theme/web`. The package does not ship a compiled stylesheet, so your app must let Tailwind scan the installed package when you use those prebuilt components.
+`UIThemeSwitcher`, `UIThemeSelector`, and the shared select primitives are styled with Tailwind utility classes from `uitheme-web`. The package does not ship a compiled stylesheet, so your app must let Tailwind scan the installed package when you use those prebuilt components.
 
 For Tailwind v4, add an `@source` directive to the stylesheet where you import Tailwind:
 
 ```css
 @import 'tailwindcss';
-@source '../node_modules/@ui-theme/web/dist';
+@source '../node_modules/uitheme-web/dist';
 ```
 
-Adjust the relative path so it points at your app's installed `@ui-theme/web` package.
+Adjust the relative path so it points at your app's installed `uitheme-web` package.
 
 If you skip this step, the theme switcher and selector will render, but Tailwind will not generate the utility classes used inside the package, so the controls will appear mostly unstyled.
 
 ## Choose Your Approach
 
-@ui-theme/web offers **two approaches** for preventing theme flash in TanStack Start:
+uitheme-web offers **two approaches** for preventing theme flash in TanStack Start:
 
 | Approach                          | Flash Prevention | System Theme | Setup Complexity | Requires Server Functions |
 | --------------------------------- | ---------------- | ------------ | ---------------- | ------------------------- |
@@ -65,7 +65,7 @@ import {
   STORAGE_KEY,
   COLOR_STORAGE_KEY,
   type ServerThemeData,
-} from '@ui-theme/web/tanstack';
+} from 'uitheme-web/tanstack';
 
 export const getThemeServerFn = createServerFn().handler(
   (): ServerThemeData =>
@@ -102,7 +102,7 @@ import {
   createRootRoute,
 } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { TanStackUIThemeProvider } from '@ui-theme/web/react';
+import { TanStackUIThemeProvider } from 'uitheme-web/react';
 import {
   getThemeServerFn,
   setThemeServerFn,
@@ -182,7 +182,7 @@ function RootComponent() {
 ```tsx
 'use client';
 
-import { useTanStackUITheme } from '@ui-theme/web/react';
+import { useTanStackUITheme } from 'uitheme-web/react';
 
 export function ThemeToggle() {
   const { theme, resolvedTheme, toggleTheme, switchTheme, ref } =
@@ -220,7 +220,7 @@ import {
 import {
   TanStackUIThemeProvider,
   TanStackStartThemeScript,
-} from '@ui-theme/web/react';
+} from 'uitheme-web/react';
 import appCss from '../globals.css?url';
 
 export const Route = createRootRoute({
@@ -460,7 +460,7 @@ await switchTheme('dark', true);
 Choose from three animation types:
 
 ```tsx
-import { ThemeAnimationType } from '@ui-theme/web/core';
+import { ThemeAnimationType } from 'uitheme-web/core';
 
 <TanStackUIThemeProvider
   animationType={ThemeAnimationType.CIRCLE} // Default
@@ -531,10 +531,10 @@ import { ThemeAnimationType } from '@ui-theme/web/core';
 | isColorThemeActive     | `(colorTheme: string) => boolean`                         | Check if color theme active      |
 | switchThemeFromElement | `(theme: Theme, el: HTMLButtonElement) => Promise<void>`  | Switch from element              |
 
-### buildServerThemeData (from `@ui-theme/web/tanstack`)
+### buildServerThemeData (from `uitheme-web/tanstack`)
 
 ```ts
-import { buildServerThemeData, STORAGE_KEY, COLOR_STORAGE_KEY } from '@ui-theme/web/tanstack';
+import { buildServerThemeData, STORAGE_KEY, COLOR_STORAGE_KEY } from 'uitheme-web/tanstack';
 
 const themeData = buildServerThemeData(
   getCookie(STORAGE_KEY),      // theme cookie value

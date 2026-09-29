@@ -1,4 +1,4 @@
-import { useTanStackUITheme } from "@ui-theme/web/react"
+import { useTanStackUITheme } from "uitheme-web/react"
 
 import { Button } from "#/components/ui/button"
 

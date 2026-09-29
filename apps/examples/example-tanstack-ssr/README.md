@@ -1,4 +1,4 @@
-TanStack Start example using `@ui-theme/web` with the cookie-based SSR approach.
+TanStack Start example using `uitheme-web` with the cookie-based SSR approach.
 
 This app keeps the full TanStack Start demo routes and content, but adds:
 

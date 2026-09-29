@@ -78,7 +78,7 @@ export default function HomePage() {
               </Button>
               <Button variant="outline" size="default" asChild>
                 <a
-                  href="https://www.npmjs.com/package/@ui-theme/web"
+                  href="https://www.npmjs.com/package/uitheme-web"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="min-w-40 sm:min-w-0"

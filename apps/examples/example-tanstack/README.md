@@ -1,4 +1,4 @@
-TanStack Start example using `@ui-theme/web` with the pre-hydration script approach.
+TanStack Start example using `uitheme-web` with the pre-hydration script approach.
 
 This example keeps the full TanStack Start demo routes and content, but swaps the hand-rolled theme logic for:
 
