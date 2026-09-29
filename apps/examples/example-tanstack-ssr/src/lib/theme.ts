@@ -6,7 +6,7 @@ import {
   STORAGE_KEY,
   COLOR_STORAGE_KEY,
   type ServerThemeData,
-} from '@ui-theme/web/tanstack';
+} from 'uitheme-web/tanstack';
 
 export const getThemeServerFn = createServerFn().handler(
   (): ServerThemeData =>

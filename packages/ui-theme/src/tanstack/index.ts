@@ -32,7 +32,7 @@ export interface ServerThemeData {
  * ```ts
  * import { createServerFn } from '@tanstack/react-start';
  * import { getCookie, setCookie } from '@tanstack/react-start/server';
- * import { buildServerThemeData, STORAGE_KEY, COLOR_STORAGE_KEY } from '@ui-theme/web/tanstack';
+ * import { buildServerThemeData, STORAGE_KEY, COLOR_STORAGE_KEY } from 'uitheme-web/tanstack';
  *
  * export const getThemeServerFn = createServerFn().handler(() =>
  *   buildServerThemeData(getCookie(STORAGE_KEY), getCookie(COLOR_STORAGE_KEY))

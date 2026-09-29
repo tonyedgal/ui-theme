@@ -6,7 +6,7 @@ import {
   useTheme,
   ThemeAnimationType,
   type SlideDirection,
-} from '@ui-theme/web/react';
+} from 'uitheme-web/react';
 
 interface SlideThemeToggleProps {
   slideDirection?: SlideDirection;

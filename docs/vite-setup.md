@@ -1,15 +1,15 @@
 # Vite React SPA Setup Guide
 
-Complete setup guide for using @ui-theme/web in Vite React single-page applications.
+Complete setup guide for using uitheme-web in Vite React single-page applications.
 
 ## Installation
 
 ```bash
-npm install @ui-theme/web
+npm install uitheme-web
 # or
-pnpm add @ui-theme/web
+pnpm add uitheme-web
 # or
-yarn add @ui-theme/web
+yarn add uitheme-web
 ```
 
 ## Quick Start
@@ -21,7 +21,7 @@ Update [src/main.tsx](src/main.tsx):
 ```tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { ViteUIThemeProvider } from '@ui-theme/web/react';
+import { ViteUIThemeProvider } from 'uitheme-web/react';
 import App from './App';
 import './index.css';
 
@@ -46,7 +46,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 Create [src/components/theme-toggle.tsx](src/components/theme-toggle.tsx):
 
 ```tsx
-import { useViteUITheme } from '@ui-theme/web/react';
+import { useViteUITheme } from 'uitheme-web/react';
 
 export function ThemeToggle() {
   const { theme, resolvedTheme, toggleTheme, ref } = useViteUITheme();
@@ -204,7 +204,7 @@ Update [src/main.tsx](src/main.tsx):
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ViteUIThemeProvider } from '@ui-theme/web/react';
+import { ViteUIThemeProvider } from 'uitheme-web/react';
 import App from './App';
 import './index.css';
 
@@ -251,7 +251,7 @@ await switchTheme('dark', true);
 Choose from three animation types:
 
 ```tsx
-import { ThemeAnimationType } from '@ui-theme/web/core';
+import { ThemeAnimationType } from 'uitheme-web/core';
 
 <ViteUIThemeProvider
   animationType={ThemeAnimationType.CIRCLE} // Default
@@ -268,7 +268,7 @@ import { ThemeAnimationType } from '@ui-theme/web/core';
 Control where animations originate from:
 
 ```tsx
-import { useViteUITheme } from '@ui-theme/web/react';
+import { useViteUITheme } from 'uitheme-web/react';
 
 export function CustomToggle() {
   const { switchTheme, ref } = useViteUITheme();
@@ -328,7 +328,7 @@ export function CustomToggle() {
 ### Color Theme Selector
 
 ```tsx
-import { useViteUITheme } from '@ui-theme/web/react';
+import { useViteUITheme } from 'uitheme-web/react';
 
 const colorThemes = [
   { name: 'Default', value: 'default' },
@@ -362,7 +362,7 @@ export function ColorThemeSelector() {
 ### Theme Callbacks
 
 ```tsx
-import { useViteUITheme } from '@ui-theme/web/react';
+import { useViteUITheme } from 'uitheme-web/react';
 import { useEffect } from 'react';
 
 export function ThemeLogger() {
@@ -402,8 +402,8 @@ Or use provider callbacks:
 The library is fully typed. Import types as needed:
 
 ```tsx
-import type { Theme, ColorTheme, ThemeAnimationType } from '@ui-theme/web/core';
-import type { UseThemeReturn } from '@ui-theme/web/react';
+import type { Theme, ColorTheme, ThemeAnimationType } from 'uitheme-web/core';
+import type { UseThemeReturn } from 'uitheme-web/react';
 
 interface ThemeToggleProps {
   variant?: 'icon' | 'text';
@@ -474,7 +474,7 @@ function App() {
 ### Memoize Callbacks
 
 ```tsx
-import { useViteUITheme } from '@ui-theme/web/react';
+import { useViteUITheme } from 'uitheme-web/react';
 import { useCallback } from 'react';
 
 export function ThemeControls() {
@@ -502,7 +502,7 @@ export function ThemeControls() {
 ### Complete Example with Multiple Features
 
 ```tsx
-import { useViteUITheme } from '@ui-theme/web/react';
+import { useViteUITheme } from 'uitheme-web/react';
 
 export function ThemeControl() {
   const {

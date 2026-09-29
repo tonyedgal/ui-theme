@@ -15,17 +15,17 @@ const commands = [
   {
     label: 'pnpm',
     icon: BoxIcon,
-    code: 'pnpm install @ui-theme/web',
+    code: 'pnpm install uitheme-web',
   },
   {
     label: 'npm',
     icon: BoxIcon,
-    code: 'npm install @ui-theme/web',
+    code: 'npm install uitheme-web',
   },
   {
     label: 'yarn',
     icon: BoxIcon,
-    code: 'yarn add @ui-theme/web',
+    code: 'yarn add uitheme-web',
   },
 ];
 

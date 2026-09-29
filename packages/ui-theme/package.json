@@ -1,6 +1,6 @@
 {
-  "name": "@ui-theme/web",
-  "version": "1.0.2",
+  "name": "uitheme-web",
+  "version": "1.0.0",
   "description": "Cross-framework UI theme switching library",
   "type": "module",
   "keywords": [
@@ -14,11 +14,12 @@
     "ui",
     "typescript"
   ],
-  "author": "",
+  "author": "Tony Edgal (https://github.com/tonyedgal)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tonyedgal/ui-theme.git"
+    "url": "git+https://github.com/tonyedgal/ui-theme.git",
+    "directory": "packages/ui-theme"
   },
   "publishConfig": {
     "access": "public",
@@ -56,36 +57,6 @@
         "default": "./dist/tanstack/index.cjs"
       }
     },
-    "./vue": {
-      "import": {
-        "types": "./dist/vue/index.d.ts",
-        "default": "./dist/vue/index.js"
-      },
-      "require": {
-        "types": "./dist/vue/index.d.cts",
-        "default": "./dist/vue/index.cjs"
-      }
-    },
-    "./angular": {
-      "import": {
-        "types": "./dist/angular/index.d.ts",
-        "default": "./dist/angular/index.js"
-      },
-      "require": {
-        "types": "./dist/angular/index.d.cts",
-        "default": "./dist/angular/index.cjs"
-      }
-    },
-    "./svelte": {
-      "import": {
-        "types": "./dist/svelte/index.d.ts",
-        "default": "./dist/svelte/index.js"
-      },
-      "require": {
-        "types": "./dist/svelte/index.d.cts",
-        "default": "./dist/svelte/index.cjs"
-      }
-    },
     "./package.json": "./package.json"
   },
   "main": "./dist/core/index.cjs",
@@ -102,7 +73,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
     "@angular/common": ">=18.0.0",

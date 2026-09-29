@@ -4,7 +4,7 @@ import {
   UIThemeSwitcher,
   UIThemeSelector,
   useNextUITheme,
-} from '@ui-theme/web/react';
+} from 'uitheme-web/react';
 
 const COLOR_THEMES = [
   'default',

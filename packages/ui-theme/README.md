@@ -1,4 +1,4 @@
-# @ui-theme/web
+# uitheme-web
 
 > [!WARNING]
 > This package is deprecated. It was renamed to `uitheme-web`.
@@ -22,31 +22,31 @@ Web framework agnostic UI theme switching library. Built with a framework-agnost
 
 ## UI-Theme version 1 release
 
-Introducing version 1 of `@ui-theme/web`, a comprehensive solution for managing UI themes across web applications. This release marks a significant milestone in our journey to provide developers with a robust, flexible, and easy-to-use theming library, that supports all web javascript UI frameworks.
+Introducing version 1 of `uitheme-web`, a comprehensive solution for managing UI themes across web applications. This release marks a significant milestone in our journey to provide developers with a robust, flexible, and easy-to-use theming library, that supports all web javascript UI frameworks.
 
 ## Installation
 
 ```bash
-npm install @ui-theme/web
+npm install uitheme-web
 ```
 
 ```bash
-pnpm add @ui-theme/web
+pnpm add uitheme-web
 ```
 
 ```bash
-yarn add @ui-theme/web
+yarn add uitheme-web
 ```
 
 ## Tailwind Setup For Prebuilt Components
 
-`UIThemeSwitcher`, `UIThemeSelector`, and the bundled select primitives use Tailwind utility classes. `@ui-theme/web` does not ship a compiled CSS file for those components, so the consuming app must include the package in Tailwind's source scan.
+`UIThemeSwitcher`, `UIThemeSelector`, and the bundled select primitives use Tailwind utility classes. `uitheme-web` does not ship a compiled CSS file for those components, so the consuming app must include the package in Tailwind's source scan.
 
 For Tailwind v4, add an `@source` directive next to your Tailwind import:
 
 ```css
 @import 'tailwindcss';
-@source '../node_modules/@ui-theme/web/dist';
+@source '../node_modules/uitheme-web/dist';
 ```
 
 Adjust the relative path to match your app structure.
@@ -71,7 +71,7 @@ Choose the right provider for your framework:
 Basic pattern that works across all providers:
 
 ```tsx
-import { UIThemeProvider, useUITheme } from '@ui-theme/web/react';
+import { UIThemeProvider, useUITheme } from 'uitheme-web/react';
 
 function App() {
   return (
@@ -217,7 +217,7 @@ await toggleTheme(true);
 ### Custom Hook Usage
 
 ```tsx
-import { useTheme } from '@ui-theme/web/react';
+import { useTheme } from 'uitheme-web/react';
 
 const { theme, toggleTheme, ref } = useTheme({
   animationType: ThemeAnimationType.BLUR_CIRCLE,

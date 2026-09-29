@@ -2,7 +2,7 @@ import {
   UIThemeSelector,
   UIThemeSwitcher,
   useTanStackUITheme,
-} from '@ui-theme/web/react';
+} from 'uitheme-web/react';
 
 const ThemeSection = () => {
   const {
