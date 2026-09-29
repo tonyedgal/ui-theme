@@ -20,6 +20,24 @@ pnpm add uitheme-web
 yarn add uitheme-web
 ```
 
+## Migrating from `@ui-theme/web`
+
+This package was published under the name `@ui-theme/web` before the rename. That name is deprecated. Run the migration command to move a project across:
+
+```bash
+npx uitheme-web migrate
+```
+
+The command lists the files it will change and asks for confirmation. It then rewrites the import specifiers, the Tailwind `@source` path, and the dependency in `package.json`. The entry point names stay the same, so `/core`, `/react` and `/tanstack` are unchanged.
+
+| Option        | Effect                                  |
+| ------------- | --------------------------------------- |
+| `--yes`       | Rewrite without asking for confirmation |
+| `--cwd <dir>` | Work on a project in another directory  |
+| `--help`      | Show the help                           |
+
+The command skips `node_modules`, `dist`, `.next` and other build output. It does not change prose in your markdown files.
+
 ## Tailwind Setup For Prebuilt Components
 
 `UIThemeSwitcher`, `UIThemeSelector`, and the bundled select primitives use Tailwind utility classes. `uitheme-web` does not ship a compiled CSS file for those components, so the consuming app must include the package in Tailwind's source scan.
