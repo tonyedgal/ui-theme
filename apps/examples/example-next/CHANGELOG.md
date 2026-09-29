@@ -1,5 +1,12 @@
 # example-next
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [822f02a]
+  - uitheme-web@1.0.1
+
 ## 0.1.4
 
 ### Patch Changes
