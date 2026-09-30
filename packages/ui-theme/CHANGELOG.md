@@ -1,5 +1,11 @@
 # uitheme-web
 
+## 1.1.0
+
+### Minor Changes
+
+- c373ad2: Add `npx uitheme-web migrate`, a command that rewrites `@ui-theme/web` imports, the Tailwind `@source` path and the `package.json` dependency to the new name.
+
 ## 1.0.1
 
 ### Patch Changes
