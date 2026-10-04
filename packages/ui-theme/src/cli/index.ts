@@ -38,6 +38,7 @@ async function main(argv: string[]): Promise<void> {
         help: { type: 'boolean', short: 'h', default: false },
       },
     });
+
     values = parsed.values;
     positionals = parsed.positionals;
   } catch (error) {
@@ -48,6 +49,7 @@ async function main(argv: string[]): Promise<void> {
 
   if (values.help || command === undefined || command === 'help') {
     process.stdout.write(USAGE);
+
     return;
   }
 
@@ -60,13 +62,14 @@ async function main(argv: string[]): Promise<void> {
       cwd: values.cwd ?? process.cwd(),
       yes: values.yes ?? false,
     });
+
     return;
   }
 
   fail(`Unknown command: ${command}`);
 }
 
-main(process.argv.slice(2)).catch((error: unknown) => {
+main(process.argv.slice(2)).catch((error) => {
   process.stderr.write(
     `${red('The command failed.')} ${
       error instanceof Error ? error.message : String(error)
