@@ -9,6 +9,7 @@ export async function GET(
 ) {
   const { slug } = await params;
   const page = source.getPage(slug);
+
   if (!page) notFound();
 
   return new Response(await getLLMText(page), {

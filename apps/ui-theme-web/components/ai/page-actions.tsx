@@ -1,4 +1,5 @@
 'use client';
+
 import { useMemo, useState } from 'react';
 import {
   Check,
@@ -27,8 +28,10 @@ export function LLMCopyButton({
   markdownUrl: string;
 }) {
   const [isLoading, setLoading] = useState(false);
+
   const [checked, onClick] = useCopyButton(async () => {
     const cached = cache.get(markdownUrl);
+
     if (cached) return navigator.clipboard.writeText(cached);
 
     setLoading(true);
@@ -86,6 +89,7 @@ export function ViewOptions({
       typeof window !== 'undefined'
         ? new URL(markdownUrl, window.location.origin)
         : 'loading';
+
     const q = `Read ${fullMarkdownUrl}, I want to ask questions about it.`;
 
     return [

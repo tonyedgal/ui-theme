@@ -46,6 +46,7 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const { themeData } = Route.useRouteContext();
+
   const htmlClass = [
     themeData.theme,
     themeData.colorTheme !== 'default' ? `theme-${themeData.colorTheme}` : '',

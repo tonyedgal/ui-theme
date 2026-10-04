@@ -75,7 +75,9 @@ function SlidingNumberDisplay({
     const currentNumber = latest % 10;
     const offset = (10 + number - currentNumber) % 10;
     let translateY = offset * height;
+
     if (offset > 5) translateY -= 10 * height;
+
     return translateY;
   });
 
@@ -130,6 +132,7 @@ function SlidingNumber({
     once: inViewOnce,
     margin: inViewMargin,
   });
+
   const isInView = !inView || inViewResult;
 
   const prevNumberRef = React.useRef<number>(0);
@@ -147,6 +150,7 @@ function SlidingNumber({
 
   const numberStr = formatNumber(effectiveNumber);
   const [newIntStrRaw, newDecStrRaw = ''] = numberStr.split('.');
+
   const newIntStr =
     padStart && newIntStrRaw?.length === 1 ? '0' + newIntStrRaw : newIntStrRaw;
 
@@ -154,6 +158,7 @@ function SlidingNumber({
   // eslint-disable-next-line react-hooks/refs
   const prevFormatted = formatNumber(prevNumberRef.current);
   const [prevIntStrRaw = '', prevDecStrRaw = ''] = prevFormatted.split('.');
+
   const prevIntStr =
     padStart && prevIntStrRaw.length === 1
       ? '0' + prevIntStrRaw
@@ -167,6 +172,7 @@ function SlidingNumber({
 
   const adjustedPrevDec = React.useMemo(() => {
     if (!newDecStrRaw) return '';
+
     return prevDecStrRaw.length > newDecStrRaw.length
       ? prevDecStrRaw.slice(0, newDecStrRaw.length)
       : prevDecStrRaw.padEnd(newDecStrRaw.length, '0');
@@ -177,6 +183,7 @@ function SlidingNumber({
   }, [effectiveNumber, isInView]);
 
   const intDigitCount = newIntStr?.length ?? 0;
+
   const intPlaces = React.useMemo(
     () =>
       Array.from({ length: intDigitCount }, (_, i) =>
@@ -184,6 +191,7 @@ function SlidingNumber({
       ),
     [intDigitCount]
   );
+
   const decPlaces = React.useMemo(
     () =>
       newDecStrRaw

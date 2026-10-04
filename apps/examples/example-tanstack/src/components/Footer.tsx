@@ -1,5 +1,5 @@
 export default function Footer() {
-  const year = new Date().getFullYear()
+  const year = new Date().getFullYear();
 
   return (
     <footer className="site-footer mt-20 px-4 pb-14 pt-10 text-muted-foreground">
@@ -7,7 +7,9 @@ export default function Footer() {
         <p className="m-0 text-sm">
           &copy; {year} Your name here. All rights reserved.
         </p>
-        <p className="island-kicker m-0">Built with UI Theme and TanStack Start</p>
+        <p className="island-kicker m-0">
+          Built with UI Theme and TanStack Start
+        </p>
       </div>
       <div className="mt-4 flex justify-center gap-4">
         <a
@@ -40,5 +42,5 @@ export default function Footer() {
         </a>
       </div>
     </footer>
-  )
+  );
 }

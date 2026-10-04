@@ -1,12 +1,12 @@
-import { useTanStackUITheme } from "uitheme-web/react"
+import { useTanStackUITheme } from 'uitheme-web/react';
 
-import { cn } from "#/lib/utils"
+import { cn } from '#/lib/utils';
 
-import { THEME_SWATCHES } from "./theme-data"
+import { THEME_SWATCHES } from './theme-data';
 
 export function ThemePalette() {
   const { resolvedTheme, createColorThemeToggle, isColorThemeActive } =
-    useTanStackUITheme()
+    useTanStackUITheme();
 
   return (
     <section aria-labelledby="theme-palette-title" className="grid gap-5">
@@ -27,7 +27,7 @@ export function ThemePalette() {
       <div className="theme-palette-grid">
         {THEME_SWATCHES.map((theme) => {
           const colors =
-            resolvedTheme === "dark" ? theme.colors.dark : theme.colors.light
+            resolvedTheme === 'dark' ? theme.colors.dark : theme.colors.light;
 
           return (
             <button
@@ -35,8 +35,8 @@ export function ThemePalette() {
               type="button"
               aria-pressed={isColorThemeActive(theme.value)}
               className={cn(
-                "theme-tile",
-                isColorThemeActive(theme.value) && "theme-tile-active"
+                'theme-tile',
+                isColorThemeActive(theme.value) && 'theme-tile-active'
               )}
               onClick={createColorThemeToggle(theme.value)}
             >
@@ -67,9 +67,9 @@ export function ThemePalette() {
                 {theme.value}
               </span>
             </button>
-          )
+          );
         })}
       </div>
     </section>
-  )
+  );
 }
