@@ -103,3 +103,5 @@ export type {
   ThemeTransitionInput,
   ColorThemeToggle,
 } from './types';
+
+export { useHydrated } from './hooks/use-hydrated';

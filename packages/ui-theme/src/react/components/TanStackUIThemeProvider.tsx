@@ -1,14 +1,12 @@
 'use client';
 
+import { notifyServerChange } from './server-notifications';
+import { serializeScriptValue } from './serialize-script-value';
+import { SharedThemeContext } from './shared-theme-context';
+import { useHydrated } from '../hooks/use-hydrated';
 import { getThemeLogoOptions } from '../../core/logo';
 
-import React, {
-  createContext,
-  useContext,
-  ReactNode,
-  useEffect,
-  useSyncExternalStore,
-} from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useTheme } from '../hooks/use-theme';
 import {
   Theme,
@@ -102,6 +100,8 @@ export type TanStackUIThemeProviderProps = ThemeAnimationOptions & {
    * Typically `setColorThemeServerFn` from `createThemeServerFns()`.
    */
   onServerColorThemeChange?: (colorTheme: string) => Promise<void> | void;
+  /** Observe failed cookie/server notifications; defaults to console.error. */
+  onServerError?: (error: Error) => void;
 };
 
 /**
@@ -147,13 +147,13 @@ const generateTanStackPreHydrationScript = (
   return `
 (function() {
   try {
-    var theme = localStorage.getItem('${storageKey}') || '${defaultTheme}';
-    var colorTheme = localStorage.getItem('${colorStorageKey}') || '${defaultColorTheme}';
+    var theme = localStorage.getItem(${serializeScriptValue(storageKey)}) || ${serializeScriptValue(defaultTheme)};
+    var colorTheme = localStorage.getItem(${serializeScriptValue(colorStorageKey)}) || ${serializeScriptValue(defaultColorTheme)};
     var el = document.documentElement;
     var resolved;
     if (theme === 'system') {
-      if ('${systemThemeMode}' === 'css') {
-        el.classList.remove('${globalClassName}');
+      if (${serializeScriptValue(systemThemeMode)} === 'css') {
+        el.classList.remove(${serializeScriptValue(globalClassName)});
         el.classList.remove('auto');
         el.classList.remove('system');
         el.classList.add('system');
@@ -161,9 +161,9 @@ const generateTanStackPreHydrationScript = (
       } else {
         resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         if (resolved === 'dark') {
-          el.classList.add('${globalClassName}');
+          el.classList.add(${serializeScriptValue(globalClassName)});
         } else {
-          el.classList.remove('${globalClassName}');
+          el.classList.remove(${serializeScriptValue(globalClassName)});
         }
         el.classList.remove('system');
         el.classList.remove('auto');
@@ -174,14 +174,14 @@ const generateTanStackPreHydrationScript = (
       el.classList.remove('system');
       el.classList.remove('auto');
       if (resolved === 'dark') {
-        el.classList.add('${globalClassName}');
+        el.classList.add(${serializeScriptValue(globalClassName)});
       } else {
-        el.classList.remove('${globalClassName}');
+        el.classList.remove(${serializeScriptValue(globalClassName)});
       }
       el.style.colorScheme = resolved;
     }
     if (colorTheme && colorTheme !== 'default') {
-      el.classList.add('${colorThemePrefix}' + colorTheme);
+      el.classList.add(${serializeScriptValue(colorThemePrefix)} + colorTheme);
     }
   } catch (e) {
     console.warn('Theme pre-hydration script failed:', e);
@@ -225,7 +225,7 @@ export const TanStackStartThemeScript: React.FC<TanStackStartThemeScriptProps> =
       colorThemePrefix = COLOR_THEME_PREFIX,
       nonce,
       systemThemeMode = 'js',
-    }) => {
+    }: TanStackStartThemeScriptProps) => {
       const scriptContent = generateTanStackPreHydrationScript(
         storageKey,
         colorStorageKey,
@@ -252,13 +252,6 @@ TanStackStartThemeScript.displayName = 'TanStackStartThemeScript';
  * Custom hook to detect hydration state
  * Compatible with TanStack Start's isomorphic model
  */
-const useHydrated = (): boolean => {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
-};
 
 /**
  * TanStack Start UI Theme Provider - Flash-free dark mode for TanStack Start
@@ -307,6 +300,7 @@ export const TanStackUIThemeProvider: React.FC<
   systemThemeMode = 'css',
   onServerThemeChange,
   onServerColorThemeChange,
+  onServerError,
 }) => {
   const isHydrated = useHydrated();
   const hasServerTheme = serverTheme !== undefined;
@@ -338,16 +332,22 @@ export const TanStackUIThemeProvider: React.FC<
     systemThemeMode,
     initialTheme,
     initialColorTheme: serverColorTheme,
-    onThemeChange: onServerThemeChange,
-    onColorThemeChange: onServerColorThemeChange,
+    onThemeChange: (value) => {
+      void notifyServerChange(onServerThemeChange, value, onServerError);
+    },
+    onColorThemeChange: (value) => {
+      void notifyServerChange(onServerColorThemeChange, value, onServerError);
+    },
   });
 
   // Sync localStorage with server-provided values on first hydration
   useEffect(() => {
     if (!hasServerTheme) return;
+
     if (initialTheme) {
       setStoredTheme(initialTheme, storageKey);
     }
+
     if (serverColorTheme) {
       setStoredColorTheme(serverColorTheme, colorStorageKey);
     }
@@ -355,12 +355,13 @@ export const TanStackUIThemeProvider: React.FC<
 
   const setThemeWithServer = themeState.setTheme;
   const setColorThemeWithServer = themeState.setColorTheme;
+
   const withoutHydrationAnimation = (
     options: ThemeTransitionInput = false
   ): ThemeTransitionInput =>
     isHydrated
       ? options
-      : typeof options === 'boolean'
+      : options === true || options === false
         ? true
         : { ...options, animationOff: true };
 
@@ -368,18 +369,23 @@ export const TanStackUIThemeProvider: React.FC<
     theme: Theme,
     options?: ThemeTransitionInput
   ) => themeState.switchTheme(theme, withoutHydrationAnimation(options));
+
   const toggleThemeWithHydrationAwareness = (options?: ThemeTransitionInput) =>
     themeState.toggleTheme(withoutHydrationAnimation(options));
+
   const toggleLightThemeWithHydrationAwareness = (
     options?: ThemeTransitionInput
   ) => themeState.toggleLightTheme(withoutHydrationAnimation(options));
+
   const toggleDarkThemeWithHydrationAwareness = (
     options?: ThemeTransitionInput
   ) => themeState.toggleDarkTheme(withoutHydrationAnimation(options));
+
   const switchColorThemeWithServer = (
     theme: string,
     options?: ThemeTransitionInput
   ) => themeState.switchColorTheme(theme, withoutHydrationAnimation(options));
+
   const switchThemeFromElement = (theme: Theme, element: Element) =>
     switchThemeWithHydrationAwareness(theme, { element });
 
@@ -393,9 +399,12 @@ export const TanStackUIThemeProvider: React.FC<
   const serverResolvedTheme: 'light' | 'dark' = (() => {
     if (hasServerTheme) {
       if (serverTheme === 'dark') return 'dark';
+
       if (serverTheme === 'system') return systemTheme;
+
       return 'light';
     }
+
     return defaultTheme === 'dark' ? 'dark' : 'light';
   })();
 
@@ -425,7 +434,9 @@ export const TanStackUIThemeProvider: React.FC<
 
     return (
       <TanStackUIThemeContext.Provider value={loadingContextValue}>
-        {children}
+        <SharedThemeContext.Provider value={loadingContextValue}>
+          {children}
+        </SharedThemeContext.Provider>
       </TanStackUIThemeContext.Provider>
     );
   }
@@ -452,7 +463,9 @@ export const TanStackUIThemeProvider: React.FC<
 
   return (
     <TanStackUIThemeContext.Provider value={contextValue}>
-      {children}
+      <SharedThemeContext.Provider value={contextValue}>
+        {children}
+      </SharedThemeContext.Provider>
     </TanStackUIThemeContext.Provider>
   );
 };
@@ -465,10 +478,12 @@ export const TanStackUIThemeProvider: React.FC<
  */
 export const useTanStackUITheme = (): TanStackUIThemeContextType => {
   const context = useContext(TanStackUIThemeContext);
+
   if (context === undefined) {
     throw new Error(
       'useTanStackUITheme must be used within a TanStackUIThemeProvider'
     );
   }
+
   return context;
 };

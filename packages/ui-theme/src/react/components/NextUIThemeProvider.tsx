@@ -1,13 +1,14 @@
 'use client';
 
+import { serializeScriptValue } from './serialize-script-value';
+import { SharedThemeContext } from './shared-theme-context';
+import { useHydrated } from '../hooks/use-hydrated';
 import { getThemeLogoOptions } from '../../core/logo';
 
 import React, {
   createContext,
   useContext,
   ReactNode,
-  useState,
-  useEffect,
   useCallback,
 } from 'react';
 import { useTheme } from '../hooks/use-theme';
@@ -92,24 +93,24 @@ const generatePreHydrationScript = (
   return `
 (function() {
   try {
-    var theme = localStorage.getItem('${storageKey}') || '${defaultTheme}';
-    var colorTheme = localStorage.getItem('${colorStorageKey}') || '${defaultColorTheme}';
+    var theme = localStorage.getItem(${serializeScriptValue(storageKey)}) || ${serializeScriptValue(defaultTheme)};
+    var colorTheme = localStorage.getItem(${serializeScriptValue(colorStorageKey)}) || ${serializeScriptValue(defaultColorTheme)};
     var resolved = theme === 'system' 
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : theme;
     
-    if ('${attribute}' === 'class') {
+    if (${serializeScriptValue(attribute)} === 'class') {
       if (resolved === 'dark') {
-        document.documentElement.classList.add('${globalClassName}');
+        document.documentElement.classList.add(${serializeScriptValue(globalClassName)});
       } else {
-        document.documentElement.classList.remove('${globalClassName}');
+        document.documentElement.classList.remove(${serializeScriptValue(globalClassName)});
       }
     } else {
       document.documentElement.setAttribute('data-theme', resolved);
     }
     
     document.documentElement.style.colorScheme = resolved;
-    document.documentElement.classList.add('${colorThemePrefix}' + colorTheme);
+    document.documentElement.classList.add(${serializeScriptValue(colorThemePrefix)} + colorTheme);
   } catch (e) {
     console.warn('Theme pre-hydration script failed:', e);
   }
@@ -121,7 +122,7 @@ const generatePreHydrationScript = (
  * Pre-hydration script component
  * Injects inline script before React hydration to prevent theme flash
  */
-const ThemePreHydrationScript: React.FC<{
+interface ThemePreHydrationScriptProps {
   storageKey: string;
   colorStorageKey: string;
   defaultTheme: Theme;
@@ -130,7 +131,9 @@ const ThemePreHydrationScript: React.FC<{
   globalClassName: string;
   colorThemePrefix: string;
   nonce?: string;
-}> = React.memo(
+}
+
+const ThemePreHydrationScript = React.memo(
   ({
     storageKey,
     colorStorageKey,
@@ -140,7 +143,7 @@ const ThemePreHydrationScript: React.FC<{
     globalClassName,
     colorThemePrefix,
     nonce,
-  }) => {
+  }: ThemePreHydrationScriptProps) => {
     const scriptContent = generatePreHydrationScript(
       storageKey,
       colorStorageKey,
@@ -203,7 +206,7 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
   disableAnimationOnInit = true,
   disablePreHydrationScript = false,
 }) => {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
 
   const themeState = useTheme({
     themes,
@@ -223,10 +226,6 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
     globalClassName: attribute === 'class' ? globalClassName : undefined,
     colorThemePrefix,
   });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const switchThemeWithHydrationAwareness = useCallback(
     async (theme: Theme, options: ThemeTransitionInput = false) => {
@@ -273,19 +272,21 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
 
     return (
       <NextUIThemeContext.Provider value={loadingContextValue}>
-        {!disablePreHydrationScript && (
-          <ThemePreHydrationScript
-            storageKey={storageKey}
-            colorStorageKey={colorStorageKey}
-            defaultTheme={defaultTheme}
-            defaultColorTheme={defaultColorTheme}
-            attribute={attribute}
-            globalClassName={globalClassName}
-            colorThemePrefix={colorThemePrefix}
-            nonce={nonce}
-          />
-        )}
-        {children}
+        <SharedThemeContext.Provider value={loadingContextValue}>
+          {!disablePreHydrationScript && (
+            <ThemePreHydrationScript
+              storageKey={storageKey}
+              colorStorageKey={colorStorageKey}
+              defaultTheme={defaultTheme}
+              defaultColorTheme={defaultColorTheme}
+              attribute={attribute}
+              globalClassName={globalClassName}
+              colorThemePrefix={colorThemePrefix}
+              nonce={nonce}
+            />
+          )}
+          {children}
+        </SharedThemeContext.Provider>
       </NextUIThemeContext.Provider>
     );
   }
@@ -311,19 +312,21 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
 
   return (
     <NextUIThemeContext.Provider value={contextValue}>
-      {!disablePreHydrationScript && (
-        <ThemePreHydrationScript
-          storageKey={storageKey}
-          colorStorageKey={colorStorageKey}
-          defaultTheme={defaultTheme}
-          defaultColorTheme={defaultColorTheme}
-          attribute={attribute}
-          globalClassName={globalClassName}
-          colorThemePrefix={colorThemePrefix}
-          nonce={nonce}
-        />
-      )}
-      {children}
+      <SharedThemeContext.Provider value={contextValue}>
+        {!disablePreHydrationScript && (
+          <ThemePreHydrationScript
+            storageKey={storageKey}
+            colorStorageKey={colorStorageKey}
+            defaultTheme={defaultTheme}
+            defaultColorTheme={defaultColorTheme}
+            attribute={attribute}
+            globalClassName={globalClassName}
+            colorThemePrefix={colorThemePrefix}
+            nonce={nonce}
+          />
+        )}
+        {children}
+      </SharedThemeContext.Provider>
     </NextUIThemeContext.Provider>
   );
 };
@@ -336,8 +339,10 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
  */
 export const useNextUITheme = (): NextUIThemeContextType => {
   const context = useContext(NextUIThemeContext);
+
   if (context === undefined) {
     throw new Error('useNextUITheme must be used within a NextUIThemeProvider');
   }
+
   return context;
 };

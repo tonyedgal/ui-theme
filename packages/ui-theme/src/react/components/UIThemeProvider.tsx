@@ -1,14 +1,10 @@
 'use client';
 
+import { SharedThemeContext } from './shared-theme-context';
+import { useHydrated } from '../hooks/use-hydrated';
 import { getThemeLogoOptions } from '../../core/logo';
 
-import React, {
-  createContext,
-  useContext,
-  ReactNode,
-  useState,
-  useEffect,
-} from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { useTheme } from '../hooks/use-theme';
 import type { UseThemeReturn } from '../types';
 import {
@@ -80,7 +76,7 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
   storageKey,
   colorStorageKey,
 }) => {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
 
   const themeState = useTheme({
     themes,
@@ -98,10 +94,6 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
     storageKey,
     colorStorageKey,
   });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const switchThemeFromElement = (theme: Theme, element: Element) =>
     themeState.switchTheme(theme, { element });
@@ -127,7 +119,9 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
 
     return (
       <UIThemeContext.Provider value={loadingContextValue}>
-        {children}
+        <SharedThemeContext.Provider value={loadingContextValue}>
+          {children}
+        </SharedThemeContext.Provider>
       </UIThemeContext.Provider>
     );
   }
@@ -152,7 +146,9 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
 
   return (
     <UIThemeContext.Provider value={contextValue}>
-      {children}
+      <SharedThemeContext.Provider value={contextValue}>
+        {children}
+      </SharedThemeContext.Provider>
     </UIThemeContext.Provider>
   );
 };
@@ -165,8 +161,10 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
  */
 export const useUITheme = (): UIThemeContextType => {
   const context = useContext(UIThemeContext);
+
   if (context === undefined) {
     throw new Error('useUITheme must be used within a UIThemeProvider');
   }
+
   return context;
 };
