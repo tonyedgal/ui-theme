@@ -8,9 +8,8 @@ import {
   type ServerThemeData,
 } from 'uitheme-web/tanstack';
 
-export const getThemeServerFn = createServerFn().handler(
-  (): ServerThemeData =>
-    buildServerThemeData(getCookie(STORAGE_KEY), getCookie(COLOR_STORAGE_KEY))
+export const getThemeServerFn = createServerFn().handler((): ServerThemeData =>
+  buildServerThemeData(getCookie(STORAGE_KEY), getCookie(COLOR_STORAGE_KEY))
 );
 
 export const setThemeServerFn = createServerFn()

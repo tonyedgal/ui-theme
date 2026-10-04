@@ -1,21 +1,21 @@
-import { useTanStackUITheme } from "uitheme-web/react"
+import { useTanStackUITheme } from 'uitheme-web/react';
 
-import { Button } from "#/components/ui/button"
+import { Button } from '#/components/ui/button';
 
 export default function ThemeToggle() {
-  const { theme, resolvedTheme, switchTheme, ref } = useTanStackUITheme()
+  const { theme, resolvedTheme, switchTheme, ref } = useTanStackUITheme();
 
   function toggleMode() {
     const nextMode =
-      theme === "light" ? "dark" : theme === "dark" ? "system" : "light"
+      theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
 
-    void switchTheme(nextMode)
+    void switchTheme(nextMode);
   }
 
   const label =
-    theme === "system"
+    theme === 'system'
       ? `Theme mode: system (${resolvedTheme}). Click to switch to light mode.`
-      : `Theme mode: ${theme}. Click to switch mode.`
+      : `Theme mode: ${theme}. Click to switch mode.`;
 
   return (
     <Button
@@ -28,7 +28,7 @@ export default function ThemeToggle() {
       title={label}
       className="rounded-full"
     >
-      {theme === "system" ? `System · ${resolvedTheme}` : theme}
+      {theme === 'system' ? `System · ${resolvedTheme}` : theme}
     </Button>
-  )
+  );
 }

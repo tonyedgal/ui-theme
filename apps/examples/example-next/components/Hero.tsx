@@ -10,6 +10,7 @@ import { ArrowDown } from 'lucide-react';
 export function Hero() {
   const scrollToContent = () => {
     const element = document.getElementById('theme-section');
+
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }

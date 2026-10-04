@@ -32,6 +32,7 @@ const commands = [
 const InstallSnippet = () => {
   const [value, setValue] = useState(commands[0].label);
   const activeCommand = commands.find((command) => command.label === value);
+
   return (
     <main className="flex items-center justify-center">
       <Snippet onValueChange={setValue} value={value} className="max-w-xl">
@@ -67,4 +68,5 @@ const InstallSnippet = () => {
     </main>
   );
 };
+
 export default InstallSnippet;

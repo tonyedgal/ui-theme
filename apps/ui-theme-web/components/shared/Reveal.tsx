@@ -126,8 +126,8 @@ export const Reveal = ({
     >
       <motion.div
         variants={variants}
-        initial='hidden'
-        animate='visible'
+        initial="hidden"
+        animate="visible"
         transition={{ duration: duration, delay }}
       >
         {children}

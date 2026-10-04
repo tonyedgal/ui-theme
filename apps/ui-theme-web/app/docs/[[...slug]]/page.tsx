@@ -14,9 +14,11 @@ import { LLMCopyButton, ViewOptions } from '@/components/ai/page-actions';
 export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const params = await props.params;
   const page = source.getPage(params.slug);
+
   if (!page) notFound();
 
   const MDX = page.data.body;
+
   const gitConfig = {
     user: 'username',
     repo: 'repo',
@@ -58,6 +60,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const params = await props.params;
   const page = source.getPage(params.slug);
+
   if (!page) notFound();
 
   return {
