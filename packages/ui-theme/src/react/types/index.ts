@@ -96,6 +96,7 @@ export interface ThemeTransitionOptions {
 
 /** Boolean arguments remain supported for backward compatibility. */
 export type ThemeTransitionInput = boolean | ThemeTransitionOptions;
+
 export type ColorThemeToggle = (
   options?:
     | ThemeTransitionInput

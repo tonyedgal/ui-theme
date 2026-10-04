@@ -1,11 +1,9 @@
 'use client';
 
-import { getThemeLogoOptions } from '../../core/logo';
-
-import React, { useRef } from 'react';
-import { ColorTheme } from '../../core/types';
+import { useRef } from 'react';
 import { useTheme } from '../hooks/use-theme';
-import { useUITheme, UIThemeContextType } from './UIThemeProvider';
+import { useSharedThemeContext } from './shared-theme-context';
+import type { UseThemeReturn } from '../types';
 import { UIThemeSelectorProps } from '../types';
 import {
   UISelect,
@@ -21,63 +19,25 @@ import {
  * Can work both with UIThemeProvider context or standalone.
  * When used with UIThemeProvider, it automatically syncs theme state.
  */
-export const UIThemeSelector: React.FC<UIThemeSelectorProps> = ({
-  themes = ['light', 'dark', 'system'],
+const UIThemeSelectorView = ({
+  state,
+  isControlled,
   colorThemes = ['default'],
-  currentColorTheme,
   onColorThemeChange,
-  animationType,
-  clipPathDirection,
-  animationPosition,
-  logo,
-  logoLight,
-  logoDark,
-  logoWidth,
-  logoHeight,
-  gradientWidth,
-  duration,
   className,
   placeholder = 'Choose a color theme',
-}) => {
-  let contextTheme: UIThemeContextType | null = null;
-  try {
-    contextTheme = useUITheme();
-  } catch {
-    // Context not available, use standalone mode
-  }
-
-  const standaloneHook = useTheme({
-    animationType,
-    clipPathDirection,
-    animationPosition,
-    ...getThemeLogoOptions({ logo, logoLight, logoDark }),
-    logoWidth,
-    logoHeight,
-    gradientWidth,
-    duration,
-    themes,
-    colorThemes,
-    ...(currentColorTheme !== undefined && { colorTheme: currentColorTheme }),
-    onColorThemeChange,
-  });
-
-  const isControlled = contextTheme !== null;
+}: UIThemeSelectorProps & { state: UseThemeReturn; isControlled: boolean }) => {
+  const { colorTheme, switchColorTheme } = state;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const keyboardInteraction = useRef(false);
-  const { colorTheme, switchColorTheme } =
-    isControlled && contextTheme
-      ? {
-          colorTheme: contextTheme.colorTheme,
-          switchColorTheme: contextTheme.switchColorTheme,
-        }
-      : standaloneHook;
 
   const handleColorThemeChange = (newColorTheme: string) => {
-    void switchColorTheme(newColorTheme as ColorTheme, {
+    void switchColorTheme(newColorTheme, {
       element: triggerRef.current,
       animationOff: keyboardInteraction.current,
     });
-    if (isControlled) onColorThemeChange?.(newColorTheme as ColorTheme);
+
+    if (isControlled) onColorThemeChange?.(newColorTheme);
   };
 
   if (colorThemes.length <= 1) {
@@ -98,7 +58,14 @@ export const UIThemeSelector: React.FC<UIThemeSelectorProps> = ({
         <UISelectTrigger ref={triggerRef} className="capitalize">
           <UISelectValue placeholder={placeholder} />
         </UISelectTrigger>
-        <UISelectContent>
+        <UISelectContent
+          onKeyDownCapture={() => {
+            keyboardInteraction.current = true;
+          }}
+          onPointerDownCapture={() => {
+            keyboardInteraction.current = false;
+          }}
+        >
           {colorThemes.map((theme) => (
             <UISelectItem key={theme} className="capitalize" value={theme}>
               {theme}
@@ -107,5 +74,21 @@ export const UIThemeSelector: React.FC<UIThemeSelectorProps> = ({
         </UISelectContent>
       </UISelect>
     </div>
+  );
+};
+
+const UIThemeSelectorStandalone = (props: UIThemeSelectorProps) => {
+  const state = useTheme({ ...props, colorTheme: props.currentColorTheme });
+
+  return <UIThemeSelectorView {...props} state={state} isControlled={false} />;
+};
+
+export const UIThemeSelector = (props: UIThemeSelectorProps) => {
+  const state = useSharedThemeContext();
+
+  return state ? (
+    <UIThemeSelectorView {...props} state={state} isControlled={true} />
+  ) : (
+    <UIThemeSelectorStandalone {...props} />
   );
 };

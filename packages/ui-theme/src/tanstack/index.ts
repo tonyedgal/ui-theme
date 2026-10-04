@@ -7,7 +7,9 @@ import type { Theme } from '../core/types';
 // needs to transform them at build time.
 
 export { STORAGE_KEY, COLOR_STORAGE_KEY } from '../core/constants';
+
 export { resolveThemeForServer } from '../core/animations';
+
 export type { Theme, ColorTheme } from '../core/types';
 
 /** Resolved theme class to apply on <html> */
@@ -45,10 +47,18 @@ export function buildServerThemeData(
   options: { defaultTheme?: Theme; defaultColorTheme?: string } = {}
 ): ServerThemeData {
   const { defaultTheme = 'system', defaultColorTheme = 'default' } = options;
-  const themePreference = (themeCookie as Theme) ?? defaultTheme;
+
+  const themePreference =
+    themeCookie === 'light' ||
+    themeCookie === 'dark' ||
+    themeCookie === 'system'
+      ? themeCookie
+      : defaultTheme;
+
   const colorTheme = colorThemeCookie ?? defaultColorTheme;
+
   return {
-    theme: resolveThemeForServer(themePreference) as ServerResolvedTheme,
+    theme: resolveThemeForServer(themePreference),
     themePreference,
     colorTheme,
   };

@@ -30,6 +30,7 @@ import {
   ThemeTransitionInput,
   ColorThemeToggle,
 } from '../types';
+import { useHydrated } from './use-hydrated';
 import { runThemeTransition } from '../../core/transitions';
 import { preloadThemeLogo, getThemeLogoOptions } from '../../core/logo';
 
@@ -38,7 +39,7 @@ const isBrowser = typeof window !== 'undefined';
 const getColorTransitionOptions = (
   input: Parameters<ColorThemeToggle>[0]
 ): ThemeTransitionInput | undefined =>
-  input && typeof input === 'object' && 'currentTarget' in input
+  input && input !== true && 'currentTarget' in input
     ? { element: input.currentTarget, animationOff: input.detail === 0 }
     : input;
 
@@ -98,25 +99,27 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
 
   useEffect(() => {
     if (animationType !== ThemeAnimationType.SVG_LOGO) return;
+
     for (const asset of [logo, logoLight, logoDark]) {
       if (asset) void preloadThemeLogo(asset);
     }
   }, [animationType, logo, logoLight, logoDark]);
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
 
   useEffect(() => {
     injectBaseStyles();
-    setMounted(true);
   }, []);
 
   const [internalTheme, setInternalTheme] = useState<Theme>(() => {
     if (initialTheme !== undefined) return initialTheme;
+
     return getStoredTheme(storageKey, themes, defaultTheme);
   });
 
   const [internalColorTheme, setInternalColorTheme] = useState(() => {
     if (initialColorTheme !== undefined) return initialColorTheme;
+
     return getStoredColorTheme(colorStorageKey, colorThemes, defaultColorTheme);
   });
 
@@ -133,6 +136,7 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
     const handleChange = () => setSystemTheme(getSystemTheme());
 
     mediaQuery.addEventListener('change', handleChange);
+
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
@@ -152,11 +156,13 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
       // JS mode or explicit light/dark: resolve and apply
       el.classList.remove('system');
       el.classList.remove('auto');
+
       if (resolvedTheme === 'dark') {
         el.classList.add(globalClassName);
       } else {
         el.classList.remove(globalClassName);
       }
+
       el.style.colorScheme = resolvedTheme;
     }
 
@@ -218,16 +224,16 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
 
   const setTheme = useCallback(
     (newTheme: Theme) => {
-      requestedTheme.current = newTheme;
       commitTheme(newTheme);
+      requestedTheme.current = newTheme;
     },
     [commitTheme]
   );
 
   const setColorTheme = useCallback(
     (newColorTheme: string) => {
-      requestedColorTheme.current = newColorTheme;
       commitColorTheme(newColorTheme);
+      requestedColorTheme.current = newColorTheme;
     },
     [commitColorTheme]
   );
@@ -235,14 +241,17 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
   const animateChange = useCallback(
     async (update: () => void, input: ThemeTransitionInput = false) => {
       const options =
-        typeof input === 'boolean' ? { animationOff: input } : input;
+        input === true || input === false ? { animationOff: input } : input;
+
       let config: AnimationConfig | null = null;
+
       if (!options.animationOff && duration > 0) {
         if (animationType === ThemeAnimationType.SLIDE) {
           const from =
             slideFromX !== undefined && slideFromY !== undefined
               ? { a: slideFromX, b: slideFromY }
               : getSlideFromCoords(slideDirection);
+
           config = {
             ...from,
             x: slideToX,
@@ -258,6 +267,7 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
           // responsive/moving layout may change during capture. All units are CSS px.
           const element = options.element ?? ref.current;
           const rect = options.origin ? null : element?.getBoundingClientRect();
+
           const origin =
             (animationType === ThemeAnimationType.SVG_LOGO
               ? getAnimationPosition('center')
@@ -272,6 +282,7 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
                   animationType === ThemeAnimationType.BLUR_CIRCLE
                 ? null
                 : getAnimationPosition('center'));
+
           if (
             origin &&
             Number.isFinite(origin.x) &&
@@ -299,7 +310,9 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
           }
         }
       }
+
       pendingUpdates.current++;
+
       try {
         await runThemeTransition(() => flushSync(update), config);
       } finally {
@@ -332,9 +345,16 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
     async (newTheme: Theme, options?: ThemeTransitionInput) => {
       if (newTheme === requestedTheme.current) return;
       requestedTheme.current = newTheme;
-      await animateChange(() => commitTheme(newTheme), options);
+
+      try {
+        await animateChange(() => commitTheme(newTheme), options);
+      } catch (error) {
+        if (requestedTheme.current === newTheme)
+          requestedTheme.current = currentTheme;
+        throw error;
+      }
     },
-    [animateChange, commitTheme]
+    [animateChange, commitTheme, currentTheme]
   );
 
   const switchColorTheme = useCallback(
@@ -343,13 +363,22 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
         console.warn(
           `Color theme "${newColorTheme}" not found in available themes`
         );
+
         return;
       }
+
       if (newColorTheme === requestedColorTheme.current) return;
       requestedColorTheme.current = newColorTheme;
-      await animateChange(() => commitColorTheme(newColorTheme), options);
+
+      try {
+        await animateChange(() => commitColorTheme(newColorTheme), options);
+      } catch (error) {
+        if (requestedColorTheme.current === newColorTheme)
+          requestedColorTheme.current = currentColorTheme;
+        throw error;
+      }
     },
-    [colorThemes, animateChange, commitColorTheme]
+    [colorThemes, animateChange, commitColorTheme, currentColorTheme]
   );
 
   const toggleTheme = useCallback(

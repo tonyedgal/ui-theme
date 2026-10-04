@@ -1,11 +1,12 @@
 'use client';
 
-import { getThemeLogoOptions } from '../../core/logo';
+import { useHydrated } from '../hooks/use-hydrated';
 
-import React, { type JSX, useEffect, useState } from 'react';
+import React, { type JSX, useState } from 'react';
 import { Theme } from '../../core/types';
 import { useTheme } from '../hooks/use-theme';
-import { useUITheme, UIThemeContextType } from './UIThemeProvider';
+import { useSharedThemeContext } from './shared-theme-context';
+import type { UseThemeReturn } from '../types';
 import { UIThemeSwitcherProps } from '../types';
 
 const SunIcon = () => (
@@ -58,10 +59,10 @@ const MonitorIcon = () => (
 
 interface ThemeOptionProps {
   icon: JSX.Element;
-  value: string;
+  value: Theme;
   isActive?: boolean;
   isHovered?: boolean;
-  onClick: (value: string, event?: React.MouseEvent<HTMLButtonElement>) => void;
+  onClick: (value: Theme, event?: React.MouseEvent<HTMLButtonElement>) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   buttonRef?: React.RefObject<HTMLButtonElement | null>;
@@ -79,9 +80,7 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
 }) => {
   return (
     <button
-      ref={
-        isActive ? (buttonRef as React.RefObject<HTMLButtonElement>) : undefined
-      }
+      ref={isActive ? buttonRef : undefined}
       className={`
         relative flex h-9 w-12 cursor-pointer items-center justify-center
         text-muted-foreground hover:text-foreground
@@ -122,7 +121,7 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
   );
 };
 
-const THEME_OPTIONS = [
+const THEME_OPTIONS: { icon: JSX.Element; value: Theme }[] = [
   { icon: <MonitorIcon />, value: 'system' },
   { icon: <SunIcon />, value: 'light' },
   { icon: <MoonIcon />, value: 'dark' },
@@ -134,75 +133,33 @@ const THEME_OPTIONS = [
  * Can work both with UIThemeProvider context or standalone.
  * When used with UIThemeProvider, it automatically syncs theme state.
  */
-export const UIThemeSwitcher: React.FC<UIThemeSwitcherProps> = ({
+const UIThemeSwitcherView = ({
+  state,
+  isControlled,
   themes = ['light', 'dark', 'system'],
-  currentTheme,
   onThemeChange,
-  animationType,
-  clipPathDirection,
-  animationPosition,
-  logo,
-  logoLight,
-  logoDark,
-  logoWidth,
-  logoHeight,
-  gradientWidth,
-  duration,
   className,
-}) => {
-  let contextTheme: UIThemeContextType | null = null;
-  try {
-    contextTheme = useUITheme();
-  } catch {
-    // Context not available, use standalone mode
-  }
-
-  const standaloneHook = useTheme({
-    animationType,
-    clipPathDirection,
-    animationPosition,
-    ...getThemeLogoOptions({ logo, logoLight, logoDark }),
-    logoWidth,
-    logoHeight,
-    gradientWidth,
-    duration,
-    themes,
-    ...(currentTheme !== undefined && { theme: currentTheme }),
-    onThemeChange,
-  });
-
-  const isControlled = contextTheme !== null;
-  const { ref, theme, switchTheme } =
-    isControlled && contextTheme
-      ? {
-          ref: contextTheme.ref,
-          theme: contextTheme.theme,
-          switchTheme: contextTheme.switchTheme,
-        }
-      : standaloneHook;
-
-  const [isMounted, setIsMounted] = useState(false);
+}: UIThemeSwitcherProps & { state: UseThemeReturn; isControlled: boolean }) => {
+  const { ref, theme, switchTheme } = state;
+  const isMounted = useHydrated();
   const [hoveredTheme, setHoveredTheme] = useState<string | null>(null);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const handleThemeChange = async (
-    newTheme: string,
+    newTheme: Theme,
     event?: React.MouseEvent<HTMLButtonElement>
   ) => {
-    if (isControlled && contextTheme && event) {
-      await contextTheme.switchTheme(newTheme as Theme, {
+    if (isControlled && event) {
+      await switchTheme(newTheme, {
         element: event.currentTarget,
         animationOff: event.detail === 0,
       });
+
       if (onThemeChange) {
-        onThemeChange(newTheme as Theme);
+        onThemeChange(newTheme);
       }
     } else {
       await switchTheme(
-        newTheme as Theme,
+        newTheme,
         event
           ? { element: event.currentTarget, animationOff: event.detail === 0 }
           : undefined
@@ -211,7 +168,7 @@ export const UIThemeSwitcher: React.FC<UIThemeSwitcherProps> = ({
   };
 
   const filteredOptions = THEME_OPTIONS.filter((option) =>
-    themes.includes(option.value as Theme)
+    themes.includes(option.value)
   );
 
   return (
@@ -242,5 +199,21 @@ export const UIThemeSwitcher: React.FC<UIThemeSwitcherProps> = ({
         />
       ))}
     </div>
+  );
+};
+
+const UIThemeSwitcherStandalone = (props: UIThemeSwitcherProps) => {
+  const state = useTheme({ ...props, theme: props.currentTheme });
+
+  return <UIThemeSwitcherView {...props} state={state} isControlled={false} />;
+};
+
+export const UIThemeSwitcher = (props: UIThemeSwitcherProps) => {
+  const state = useSharedThemeContext();
+
+  return state ? (
+    <UIThemeSwitcherView {...props} state={state} isControlled={true} />
+  ) : (
+    <UIThemeSwitcherStandalone {...props} />
   );
 };

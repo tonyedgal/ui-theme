@@ -1,5 +1,6 @@
 'use client';
 
+import { SharedThemeContext } from './shared-theme-context';
 import { getThemeLogoOptions } from '../../core/logo';
 
 import React, {
@@ -140,55 +141,59 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
       themeState.setTheme(theme);
       cleanup();
     },
-    [themeState.setTheme, applyTransitionDisable]
+    [themeState, applyTransitionDisable]
   );
 
   const wrappedSwitchTheme = useCallback(
     async (theme: Theme, options: ThemeTransitionInput = false) => {
       const cleanup = applyTransitionDisable();
+
       try {
         await themeState.switchTheme(theme, options);
       } finally {
         cleanup();
       }
     },
-    [themeState.switchTheme, applyTransitionDisable]
+    [themeState, applyTransitionDisable]
   );
 
   const wrappedToggleTheme = useCallback(
     async (options: ThemeTransitionInput = false) => {
       const cleanup = applyTransitionDisable();
+
       try {
         await themeState.toggleTheme(options);
       } finally {
         cleanup();
       }
     },
-    [themeState.toggleTheme, applyTransitionDisable]
+    [themeState, applyTransitionDisable]
   );
 
   const wrappedToggleLightTheme = useCallback(
     async (options: ThemeTransitionInput = false) => {
       const cleanup = applyTransitionDisable();
+
       try {
         await themeState.toggleLightTheme(options);
       } finally {
         cleanup();
       }
     },
-    [themeState.toggleLightTheme, applyTransitionDisable]
+    [themeState, applyTransitionDisable]
   );
 
   const wrappedToggleDarkTheme = useCallback(
     async (options: ThemeTransitionInput = false) => {
       const cleanup = applyTransitionDisable();
+
       try {
         await themeState.toggleDarkTheme(options);
       } finally {
         cleanup();
       }
     },
-    [themeState.toggleDarkTheme, applyTransitionDisable]
+    [themeState, applyTransitionDisable]
   );
 
   const switchThemeFromElement = (theme: Theme, element: Element) =>
@@ -217,7 +222,9 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
 
   return (
     <ViteUIThemeContext.Provider value={contextValue}>
-      {children}
+      <SharedThemeContext.Provider value={contextValue}>
+        {children}
+      </SharedThemeContext.Provider>
     </ViteUIThemeContext.Provider>
   );
 };
@@ -230,8 +237,10 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
  */
 export const useViteUITheme = (): ViteUIThemeContextType => {
   const context = useContext(ViteUIThemeContext);
+
   if (context === undefined) {
     throw new Error('useViteUITheme must be used within a ViteUIThemeProvider');
   }
+
   return context;
 };

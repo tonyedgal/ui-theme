@@ -17,8 +17,15 @@ export const getStoredTheme = (
 ): Theme => {
   if (!isBrowser) return defaultTheme;
 
-  const saved = localStorage.getItem(key) as Theme | null;
-  return saved && validThemes.includes(saved) ? saved : defaultTheme;
+  let saved: string | null;
+
+  try {
+    saved = localStorage.getItem(key);
+  } catch {
+    return defaultTheme;
+  }
+
+  return validThemes.find((theme) => theme === saved) ?? defaultTheme;
 };
 
 /**
@@ -48,7 +55,14 @@ export const getStoredColorTheme = (
 ): ColorTheme => {
   if (!isBrowser) return defaultColorTheme;
 
-  const saved = localStorage.getItem(key);
+  let saved: string | null;
+
+  try {
+    saved = localStorage.getItem(key);
+  } catch {
+    return defaultColorTheme;
+  }
+
   return saved && validColorThemes.includes(saved) ? saved : defaultColorTheme;
 };
 
