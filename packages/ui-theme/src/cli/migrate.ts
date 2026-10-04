@@ -70,10 +70,14 @@ interface PackageJsonChange {
 async function readOwnVersion(): Promise<string | null> {
   try {
     const manifestUrl = new URL('../../package.json', import.meta.url);
-    const manifest = JSON.parse(await readFile(manifestUrl, 'utf8')) as {
-      version?: string;
-    };
-    return manifest.version ?? null;
+
+    const manifest = JSON.parse(await readFile(manifestUrl, 'utf8'));
+
+    const version = String(manifest.version ?? '');
+
+    return /^\d+\.\d+\.\d+(?:[-+][a-zA-Z0-9.-]+)?$/.test(version)
+      ? version
+      : null;
   } catch {
     return null;
   }
@@ -98,6 +102,7 @@ async function collectSourceFiles(
       if (IGNORED_DIRECTORIES.has(entry.name)) {
         continue;
       }
+
       files.push(...(await collectSourceFiles(root, full, depth + 1)));
       continue;
     }
@@ -136,6 +141,7 @@ async function planPackageJsonChange(
   const file = path.join(root, 'package.json');
 
   let before: string;
+
   try {
     before = await readFile(file, 'utf8');
   } catch {
@@ -163,6 +169,7 @@ async function confirm(question: string): Promise<boolean> {
 
   try {
     const answer = await prompt.question(question);
+
     return /^y(es)?$/i.test(answer.trim());
   } finally {
     prompt.close();
@@ -180,6 +187,7 @@ function reportPlan(
     process.stdout.write(
       `${green('Nothing to do.')} No file mentions ${OLD_NAME}.\n\n`
     );
+
     return;
   }
 
@@ -226,6 +234,7 @@ export async function runMigrate(options: MigrateOptions): Promise<number> {
 
     if (!proceed) {
       process.stdout.write(`\n${yellow('Cancelled.')} No file was changed.\n`);
+
       return 0;
     }
   }

@@ -61,17 +61,16 @@ export function rewriteSource(source: string): string {
  * migration, so the result installs. When the version cannot be read, the
  * original range is kept and the caller warns.
  */
-export function rewritePackageJson(
-  source: string,
-  version: string | null
-): { text: string; changed: boolean; keptRange: boolean } {
+export function rewritePackageJson(source: string, version: string | null) {
   let keptRange = false;
 
   const text = source.replace(PACKAGE_JSON_ENTRY, (_match, range: string) => {
     if (version === null) {
       keptRange = true;
+
       return `"${NEW_NAME}": "${range}"`;
     }
+
     return `"${NEW_NAME}": "^${version}"`;
   });
 
