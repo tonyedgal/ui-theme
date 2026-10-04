@@ -1,5 +1,7 @@
 'use client';
 
+import { getThemeLogoOptions } from '../../core/logo';
+
 import React, { type JSX, useEffect, useState } from 'react';
 import { Theme } from '../../core/types';
 import { useTheme } from '../hooks/use-theme';
@@ -100,7 +102,6 @@ const ThemeOption: React.FC<ThemeOptionProps> = ({
           className="absolute inset-0 bg-muted"
           style={{
             borderRadius: 'var(--radius)',
-            transition: 'all 0.2s ease',
           }}
         />
       )}
@@ -138,6 +139,14 @@ export const UIThemeSwitcher: React.FC<UIThemeSwitcherProps> = ({
   currentTheme,
   onThemeChange,
   animationType,
+  clipPathDirection,
+  animationPosition,
+  logo,
+  logoLight,
+  logoDark,
+  logoWidth,
+  logoHeight,
+  gradientWidth,
   duration,
   className,
 }) => {
@@ -150,6 +159,12 @@ export const UIThemeSwitcher: React.FC<UIThemeSwitcherProps> = ({
 
   const standaloneHook = useTheme({
     animationType,
+    clipPathDirection,
+    animationPosition,
+    ...getThemeLogoOptions({ logo, logoLight, logoDark }),
+    logoWidth,
+    logoHeight,
+    gradientWidth,
     duration,
     themes,
     ...(currentTheme !== undefined && { theme: currentTheme }),
@@ -177,16 +192,21 @@ export const UIThemeSwitcher: React.FC<UIThemeSwitcherProps> = ({
     newTheme: string,
     event?: React.MouseEvent<HTMLButtonElement>
   ) => {
-    if (isControlled && contextTheme?.switchThemeFromElement && event) {
-      await contextTheme.switchThemeFromElement(
-        newTheme as Theme,
-        event.currentTarget
-      );
+    if (isControlled && contextTheme && event) {
+      await contextTheme.switchTheme(newTheme as Theme, {
+        element: event.currentTarget,
+        animationOff: event.detail === 0,
+      });
       if (onThemeChange) {
         onThemeChange(newTheme as Theme);
       }
     } else {
-      await switchTheme(newTheme as Theme);
+      await switchTheme(
+        newTheme as Theme,
+        event
+          ? { element: event.currentTarget, animationOff: event.detail === 0 }
+          : undefined
+      );
     }
   };
 

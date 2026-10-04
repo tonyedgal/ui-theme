@@ -1,65 +1,45 @@
 'use client';
 
+import { getThemeLogoOptions } from '../../core/logo';
+
 import React, {
   createContext,
   useContext,
   ReactNode,
-  useCallback,
   useEffect,
   useSyncExternalStore,
 } from 'react';
 import { useTheme } from '../hooks/use-theme';
-import { Theme, ColorTheme, ThemeAnimationType } from '../../core/types';
 import {
+  Theme,
+  ColorTheme,
+  ThemeAnimationType,
+  ThemeAnimationOptions,
+} from '../../core/types';
+import {
+  DEFAULT_DURATION,
   STORAGE_KEY,
   COLOR_STORAGE_KEY,
   GLOBAL_CLASS_NAME,
   COLOR_THEME_PREFIX,
 } from '../../core/constants';
 import { setStoredTheme, setStoredColorTheme } from '../../core/storage';
-import type { SystemThemeMode } from '../types';
+import type {
+  SystemThemeMode,
+  UseThemeReturn,
+  ThemeTransitionInput,
+} from '../types';
 
 /**
  * Context type for the TanStack Start UI Theme Provider
  */
-export interface TanStackUIThemeContextType {
-  /** Ref to attach to the trigger button */
-  ref: React.RefObject<HTMLButtonElement | null>;
-  /** Current theme value */
-  theme: Theme;
-  /** Current color theme value */
-  colorTheme: ColorTheme;
-  /** Resolved theme (light or dark) */
-  resolvedTheme: 'light' | 'dark';
+export interface TanStackUIThemeContextType extends UseThemeReturn {
   /** System theme preference */
   systemTheme: 'light' | 'dark';
   /** Whether the component is hydrated */
   isHydrated: boolean;
-  /** Set theme without animation */
-  setTheme: (theme: Theme) => void;
-  /** Set color theme */
-  setColorTheme: (colorTheme: ColorTheme) => void;
-  /** Switch theme with animation */
-  switchTheme: (theme: Theme, animationOff?: boolean) => Promise<void>;
-  /** Switch color theme */
-  switchColorTheme: (colorTheme: string) => void;
-  /** Toggle between light and dark */
-  toggleTheme: (animationOff?: boolean) => Promise<void>;
-  /** Switch to light theme with animation */
-  toggleLightTheme: (animationOff?: boolean) => Promise<void>;
-  /** Switch to dark theme with animation */
-  toggleDarkTheme: (animationOff?: boolean) => Promise<void>;
-  /** Cycle through color themes */
-  toggleColorTheme: () => void;
-  /** Create a toggle function for a specific color theme */
-  createColorThemeToggle: (targetColorTheme: string) => () => void;
-  /** Check if a color theme is active */
-  isColorThemeActive: (targetColorTheme: string) => boolean;
-  /** Switch theme from a specific element (for animation origin) */
-  switchThemeFromElement: (
-    theme: Theme,
-    element: HTMLButtonElement
-  ) => Promise<void>;
+  /** Legacy convenience wrapper; does not mutate the shared ref. */
+  switchThemeFromElement: (theme: Theme, element: Element) => Promise<void>;
 }
 
 const TanStackUIThemeContext = createContext<
@@ -69,7 +49,7 @@ const TanStackUIThemeContext = createContext<
 /**
  * Props for the TanStack Start UI Theme Provider
  */
-export interface TanStackUIThemeProviderProps {
+export type TanStackUIThemeProviderProps = ThemeAnimationOptions & {
   /** React children to wrap with theme context */
   children: ReactNode;
   /** Available theme options */
@@ -122,7 +102,7 @@ export interface TanStackUIThemeProviderProps {
    * Typically `setColorThemeServerFn` from `createThemeServerFns()`.
    */
   onServerColorThemeChange?: (colorTheme: string) => Promise<void> | void;
-}
+};
 
 /**
  * Props for the TanStackStartThemeScript component
@@ -309,7 +289,15 @@ export const TanStackUIThemeProvider: React.FC<
   defaultTheme = 'system',
   defaultColorTheme = 'default',
   animationType = ThemeAnimationType.CIRCLE,
-  duration = 750,
+  clipPathDirection,
+  animationPosition,
+  logo,
+  logoLight,
+  logoDark,
+  logoWidth,
+  logoHeight,
+  gradientWidth,
+  duration = DEFAULT_DURATION,
   storageKey = STORAGE_KEY,
   colorStorageKey = COLOR_STORAGE_KEY,
   globalClassName = GLOBAL_CLASS_NAME,
@@ -336,6 +324,12 @@ export const TanStackUIThemeProvider: React.FC<
     defaultTheme,
     defaultColorTheme,
     animationType,
+    clipPathDirection,
+    animationPosition,
+    ...getThemeLogoOptions({ logo, logoLight, logoDark }),
+    logoWidth,
+    logoHeight,
+    gradientWidth,
     duration,
     storageKey,
     colorStorageKey,
@@ -344,6 +338,8 @@ export const TanStackUIThemeProvider: React.FC<
     systemThemeMode,
     initialTheme,
     initialColorTheme: serverColorTheme,
+    onThemeChange: onServerThemeChange,
+    onColorThemeChange: onServerColorThemeChange,
   });
 
   // Sync localStorage with server-provided values on first hydration
@@ -357,132 +353,35 @@ export const TanStackUIThemeProvider: React.FC<
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- only on mount
 
-  // Wrap setTheme to also call server callback
-  const setThemeWithServer = useCallback(
-    (newTheme: Theme) => {
-      themeState.setTheme(newTheme);
-      if (onServerThemeChange) {
-        onServerThemeChange(newTheme);
-      }
-    },
-    [themeState, onServerThemeChange]
-  );
+  const setThemeWithServer = themeState.setTheme;
+  const setColorThemeWithServer = themeState.setColorTheme;
+  const withoutHydrationAnimation = (
+    options: ThemeTransitionInput = false
+  ): ThemeTransitionInput =>
+    isHydrated
+      ? options
+      : typeof options === 'boolean'
+        ? true
+        : { ...options, animationOff: true };
 
-  // Wrap setColorTheme to also call server callback
-  const setColorThemeWithServer = useCallback(
-    (newColorTheme: string) => {
-      themeState.setColorTheme(newColorTheme);
-      if (onServerColorThemeChange) {
-        onServerColorThemeChange(newColorTheme);
-      }
-    },
-    [themeState, onServerColorThemeChange]
-  );
-
-  const switchThemeWithHydrationAwareness = useCallback(
-    async (theme: Theme, animationOff: boolean = false) => {
-      if (!isHydrated) {
-        setThemeWithServer(theme);
-      } else {
-        await themeState.switchTheme(theme, animationOff);
-        if (onServerThemeChange) {
-          onServerThemeChange(theme);
-        }
-      }
-    },
-    [isHydrated, themeState, setThemeWithServer, onServerThemeChange]
-  );
-
-  const toggleThemeWithHydrationAwareness = useCallback(
-    async (animationOff: boolean = false) => {
-      if (!isHydrated) {
-        const nextTheme =
-          themeState.resolvedTheme === 'dark' ? 'light' : 'dark';
-        setThemeWithServer(nextTheme);
-      } else {
-        await themeState.toggleTheme(animationOff);
-        const nextTheme =
-          themeState.resolvedTheme === 'dark' ? 'light' : 'dark';
-        if (onServerThemeChange) {
-          onServerThemeChange(nextTheme);
-        }
-      }
-    },
-    [isHydrated, themeState, setThemeWithServer, onServerThemeChange]
-  );
-
-  const toggleLightThemeWithHydrationAwareness = useCallback(
-    async (animationOff: boolean = false) => {
-      if (!isHydrated) {
-        setThemeWithServer('light');
-      } else {
-        await themeState.toggleLightTheme(animationOff);
-        if (onServerThemeChange) {
-          onServerThemeChange('light');
-        }
-      }
-    },
-    [isHydrated, themeState, setThemeWithServer, onServerThemeChange]
-  );
-
-  const toggleDarkThemeWithHydrationAwareness = useCallback(
-    async (animationOff: boolean = false) => {
-      if (!isHydrated) {
-        setThemeWithServer('dark');
-      } else {
-        await themeState.toggleDarkTheme(animationOff);
-        if (onServerThemeChange) {
-          onServerThemeChange('dark');
-        }
-      }
-    },
-    [isHydrated, themeState, setThemeWithServer, onServerThemeChange]
-  );
-
-  const switchColorThemeWithServer = useCallback(
-    (newColorTheme: string) => {
-      themeState.switchColorTheme(newColorTheme);
-      if (onServerColorThemeChange) {
-        onServerColorThemeChange(newColorTheme);
-      }
-    },
-    [themeState, onServerColorThemeChange]
-  );
-
-  const switchThemeFromElement = useCallback(
-    async (theme: Theme, element: HTMLButtonElement) => {
-      if (!isHydrated) {
-        setThemeWithServer(theme);
-        return;
-      }
-
-      if (themeState.ref.current) {
-        const originalRef = themeState.ref.current;
-        Object.defineProperty(themeState.ref, 'current', {
-          value: element,
-          writable: true,
-          configurable: true,
-        });
-        await themeState.switchTheme(theme);
-        Object.defineProperty(themeState.ref, 'current', {
-          value: originalRef,
-          writable: true,
-          configurable: true,
-        });
-      } else {
-        Object.defineProperty(themeState.ref, 'current', {
-          value: element,
-          writable: true,
-          configurable: true,
-        });
-        await themeState.switchTheme(theme);
-      }
-      if (onServerThemeChange) {
-        onServerThemeChange(theme);
-      }
-    },
-    [isHydrated, themeState, setThemeWithServer, onServerThemeChange]
-  );
+  const switchThemeWithHydrationAwareness = (
+    theme: Theme,
+    options?: ThemeTransitionInput
+  ) => themeState.switchTheme(theme, withoutHydrationAnimation(options));
+  const toggleThemeWithHydrationAwareness = (options?: ThemeTransitionInput) =>
+    themeState.toggleTheme(withoutHydrationAnimation(options));
+  const toggleLightThemeWithHydrationAwareness = (
+    options?: ThemeTransitionInput
+  ) => themeState.toggleLightTheme(withoutHydrationAnimation(options));
+  const toggleDarkThemeWithHydrationAwareness = (
+    options?: ThemeTransitionInput
+  ) => themeState.toggleDarkTheme(withoutHydrationAnimation(options));
+  const switchColorThemeWithServer = (
+    theme: string,
+    options?: ThemeTransitionInput
+  ) => themeState.switchColorTheme(theme, withoutHydrationAnimation(options));
+  const switchThemeFromElement = (theme: Theme, element: Element) =>
+    switchThemeWithHydrationAwareness(theme, { element });
 
   const systemTheme =
     typeof window !== 'undefined' &&

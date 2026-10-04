@@ -1,5 +1,7 @@
 'use client';
 
+import { getThemeLogoOptions } from '../../core/logo';
+
 import React, {
   createContext,
   useContext,
@@ -7,48 +9,24 @@ import React, {
   useCallback,
 } from 'react';
 import { useTheme } from '../hooks/use-theme';
-import { Theme, ColorTheme, ThemeAnimationType } from '../../core/types';
+import type { UseThemeReturn, ThemeTransitionInput } from '../types';
+import {
+  Theme,
+  ColorTheme,
+  ThemeAnimationType,
+  ThemeAnimationOptions,
+} from '../../core/types';
+import { DEFAULT_DURATION } from '../../core/constants';
 import { getSystemTheme } from '../../core/animations';
 
 /**
  * Context type for the Vite UI Theme Provider
  */
-export interface ViteUIThemeContextType {
-  /** Ref to attach to the trigger button */
-  ref: React.RefObject<HTMLButtonElement | null>;
-  /** Current theme value */
-  theme: Theme;
-  /** Current color theme value */
-  colorTheme: ColorTheme;
-  /** Resolved theme (light or dark) */
-  resolvedTheme: 'light' | 'dark';
+export interface ViteUIThemeContextType extends UseThemeReturn {
   /** System theme preference */
   systemTheme: 'light' | 'dark';
-  /** Set theme without animation */
-  setTheme: (theme: Theme) => void;
-  /** Set color theme */
-  setColorTheme: (colorTheme: ColorTheme) => void;
-  /** Switch theme with animation */
-  switchTheme: (theme: Theme, animationOff?: boolean) => Promise<void>;
-  /** Switch color theme */
-  switchColorTheme: (colorTheme: string) => void;
-  /** Toggle between light and dark */
-  toggleTheme: (animationOff?: boolean) => Promise<void>;
-  /** Switch to light theme with animation */
-  toggleLightTheme: (animationOff?: boolean) => Promise<void>;
-  /** Switch to dark theme with animation */
-  toggleDarkTheme: (animationOff?: boolean) => Promise<void>;
-  /** Cycle through color themes */
-  toggleColorTheme: () => void;
-  /** Create a toggle function for a specific color theme */
-  createColorThemeToggle: (targetColorTheme: string) => () => void;
-  /** Check if a color theme is active */
-  isColorThemeActive: (targetColorTheme: string) => boolean;
-  /** Switch theme from a specific element (for animation origin) */
-  switchThemeFromElement: (
-    theme: Theme,
-    element: HTMLButtonElement
-  ) => Promise<void>;
+  /** Legacy convenience wrapper; does not mutate the shared ref. */
+  switchThemeFromElement: (theme: Theme, element: Element) => Promise<void>;
 }
 
 const ViteUIThemeContext = createContext<ViteUIThemeContextType | undefined>(
@@ -58,7 +36,7 @@ const ViteUIThemeContext = createContext<ViteUIThemeContextType | undefined>(
 /**
  * Props for the Vite UI Theme Provider
  */
-export interface ViteUIThemeProviderProps {
+export type ViteUIThemeProviderProps = ThemeAnimationOptions & {
   /** React children to wrap with theme context */
   children: ReactNode;
   /** Available theme options */
@@ -85,7 +63,7 @@ export interface ViteUIThemeProviderProps {
   globalClassName?: string;
   /** Prefix for color theme classes */
   colorThemePrefix?: string;
-}
+};
 
 /**
  * Vite UI Theme Provider - Theme provider optimized for Vite/SPA applications
@@ -105,7 +83,15 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
   defaultTheme = 'system',
   defaultColorTheme = 'default',
   animationType = ThemeAnimationType.CIRCLE,
-  duration = 750,
+  clipPathDirection,
+  animationPosition,
+  logo,
+  logoLight,
+  logoDark,
+  logoWidth,
+  logoHeight,
+  gradientWidth,
+  duration = DEFAULT_DURATION,
   attribute = 'class',
   disableTransitionOnChange = false,
   storageKey = 'ui-theme',
@@ -119,6 +105,12 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
     defaultTheme,
     defaultColorTheme,
     animationType,
+    clipPathDirection,
+    animationPosition,
+    ...getThemeLogoOptions({ logo, logoLight, logoDark }),
+    logoWidth,
+    logoHeight,
+    gradientWidth,
     duration,
     storageKey,
     colorStorageKey,
@@ -152,69 +144,55 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
   );
 
   const wrappedSwitchTheme = useCallback(
-    async (theme: Theme, animationOff: boolean = false) => {
+    async (theme: Theme, options: ThemeTransitionInput = false) => {
       const cleanup = applyTransitionDisable();
-      await themeState.switchTheme(theme, animationOff);
-      cleanup();
+      try {
+        await themeState.switchTheme(theme, options);
+      } finally {
+        cleanup();
+      }
     },
     [themeState.switchTheme, applyTransitionDisable]
   );
 
   const wrappedToggleTheme = useCallback(
-    async (animationOff: boolean = false) => {
+    async (options: ThemeTransitionInput = false) => {
       const cleanup = applyTransitionDisable();
-      await themeState.toggleTheme(animationOff);
-      cleanup();
+      try {
+        await themeState.toggleTheme(options);
+      } finally {
+        cleanup();
+      }
     },
     [themeState.toggleTheme, applyTransitionDisable]
   );
 
   const wrappedToggleLightTheme = useCallback(
-    async (animationOff: boolean = false) => {
+    async (options: ThemeTransitionInput = false) => {
       const cleanup = applyTransitionDisable();
-      await themeState.toggleLightTheme(animationOff);
-      cleanup();
+      try {
+        await themeState.toggleLightTheme(options);
+      } finally {
+        cleanup();
+      }
     },
     [themeState.toggleLightTheme, applyTransitionDisable]
   );
 
   const wrappedToggleDarkTheme = useCallback(
-    async (animationOff: boolean = false) => {
+    async (options: ThemeTransitionInput = false) => {
       const cleanup = applyTransitionDisable();
-      await themeState.toggleDarkTheme(animationOff);
-      cleanup();
+      try {
+        await themeState.toggleDarkTheme(options);
+      } finally {
+        cleanup();
+      }
     },
     [themeState.toggleDarkTheme, applyTransitionDisable]
   );
 
-  const switchThemeFromElement = async (
-    theme: Theme,
-    element: HTMLButtonElement
-  ) => {
-    const cleanup = applyTransitionDisable();
-    if (themeState.ref.current) {
-      const originalRef = themeState.ref.current;
-      Object.defineProperty(themeState.ref, 'current', {
-        value: element,
-        writable: true,
-        configurable: true,
-      });
-      await themeState.switchTheme(theme);
-      Object.defineProperty(themeState.ref, 'current', {
-        value: originalRef,
-        writable: true,
-        configurable: true,
-      });
-    } else {
-      Object.defineProperty(themeState.ref, 'current', {
-        value: element,
-        writable: true,
-        configurable: true,
-      });
-      await themeState.switchTheme(theme);
-    }
-    cleanup();
-  };
+  const switchThemeFromElement = (theme: Theme, element: Element) =>
+    wrappedSwitchTheme(theme, { element });
 
   const systemTheme = getSystemTheme();
 

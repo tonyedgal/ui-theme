@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import { getThemeLogoOptions } from '../../core/logo';
+
+import React, { useRef } from 'react';
 import { ColorTheme } from '../../core/types';
 import { useTheme } from '../hooks/use-theme';
 import { useUITheme, UIThemeContextType } from './UIThemeProvider';
@@ -25,6 +27,14 @@ export const UIThemeSelector: React.FC<UIThemeSelectorProps> = ({
   currentColorTheme,
   onColorThemeChange,
   animationType,
+  clipPathDirection,
+  animationPosition,
+  logo,
+  logoLight,
+  logoDark,
+  logoWidth,
+  logoHeight,
+  gradientWidth,
   duration,
   className,
   placeholder = 'Choose a color theme',
@@ -38,6 +48,12 @@ export const UIThemeSelector: React.FC<UIThemeSelectorProps> = ({
 
   const standaloneHook = useTheme({
     animationType,
+    clipPathDirection,
+    animationPosition,
+    ...getThemeLogoOptions({ logo, logoLight, logoDark }),
+    logoWidth,
+    logoHeight,
+    gradientWidth,
     duration,
     themes,
     colorThemes,
@@ -46,19 +62,22 @@ export const UIThemeSelector: React.FC<UIThemeSelectorProps> = ({
   });
 
   const isControlled = contextTheme !== null;
-  const { colorTheme, setColorTheme } =
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const keyboardInteraction = useRef(false);
+  const { colorTheme, switchColorTheme } =
     isControlled && contextTheme
       ? {
           colorTheme: contextTheme.colorTheme,
-          setColorTheme: contextTheme.setColorTheme,
+          switchColorTheme: contextTheme.switchColorTheme,
         }
       : standaloneHook;
 
   const handleColorThemeChange = (newColorTheme: string) => {
-    setColorTheme(newColorTheme as ColorTheme);
-    if (onColorThemeChange) {
-      onColorThemeChange(newColorTheme as ColorTheme);
-    }
+    void switchColorTheme(newColorTheme as ColorTheme, {
+      element: triggerRef.current,
+      animationOff: keyboardInteraction.current,
+    });
+    if (isControlled) onColorThemeChange?.(newColorTheme as ColorTheme);
   };
 
   if (colorThemes.length <= 1) {
@@ -66,9 +85,17 @@ export const UIThemeSelector: React.FC<UIThemeSelectorProps> = ({
   }
 
   return (
-    <div className={`flex flex-col gap-2 ${className || ''}`}>
+    <div
+      className={`flex flex-col gap-2 ${className || ''}`}
+      onKeyDownCapture={() => {
+        keyboardInteraction.current = true;
+      }}
+      onPointerDownCapture={() => {
+        keyboardInteraction.current = false;
+      }}
+    >
       <UISelect value={colorTheme} onValueChange={handleColorThemeChange}>
-        <UISelectTrigger className="capitalize">
+        <UISelectTrigger ref={triggerRef} className="capitalize">
           <UISelectValue placeholder={placeholder} />
         </UISelectTrigger>
         <UISelectContent>

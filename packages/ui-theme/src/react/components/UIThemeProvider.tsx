@@ -1,5 +1,7 @@
 'use client';
 
+import { getThemeLogoOptions } from '../../core/logo';
+
 import React, {
   createContext,
   useContext,
@@ -8,45 +10,21 @@ import React, {
   useEffect,
 } from 'react';
 import { useTheme } from '../hooks/use-theme';
-import { Theme, ColorTheme, ThemeAnimationType } from '../../core/types';
+import type { UseThemeReturn } from '../types';
+import {
+  Theme,
+  ColorTheme,
+  ThemeAnimationType,
+  ThemeAnimationOptions,
+} from '../../core/types';
+import { DEFAULT_DURATION } from '../../core/constants';
 
 /**
  * Context type for the UI Theme Provider
  */
-export interface UIThemeContextType {
-  /** Ref to attach to the trigger button */
-  ref: React.RefObject<HTMLButtonElement | null>;
-  /** Current theme value */
-  theme: Theme;
-  /** Current color theme value */
-  colorTheme: ColorTheme;
-  /** Resolved theme (light or dark) */
-  resolvedTheme: 'light' | 'dark';
-  /** Set theme without animation */
-  setTheme: (theme: Theme) => void;
-  /** Set color theme */
-  setColorTheme: (colorTheme: ColorTheme) => void;
-  /** Switch theme with animation */
-  switchTheme: (theme: Theme, animationOff?: boolean) => Promise<void>;
-  /** Switch color theme */
-  switchColorTheme: (colorTheme: string) => void;
-  /** Toggle between light and dark */
-  toggleTheme: (animationOff?: boolean) => Promise<void>;
-  /** Switch to light theme with animation */
-  toggleLightTheme: (animationOff?: boolean) => Promise<void>;
-  /** Switch to dark theme with animation */
-  toggleDarkTheme: (animationOff?: boolean) => Promise<void>;
-  /** Cycle through color themes */
-  toggleColorTheme: () => void;
-  /** Create a toggle function for a specific color theme */
-  createColorThemeToggle: (targetColorTheme: string) => () => void;
-  /** Check if a color theme is active */
-  isColorThemeActive: (targetColorTheme: string) => boolean;
-  /** Switch theme from a specific element (for animation origin) */
-  switchThemeFromElement: (
-    theme: Theme,
-    element: HTMLButtonElement
-  ) => Promise<void>;
+export interface UIThemeContextType extends UseThemeReturn {
+  /** Legacy convenience wrapper; does not mutate the shared ref. */
+  switchThemeFromElement: (theme: Theme, element: Element) => Promise<void>;
 }
 
 const UIThemeContext = createContext<UIThemeContextType | undefined>(undefined);
@@ -54,7 +32,7 @@ const UIThemeContext = createContext<UIThemeContextType | undefined>(undefined);
 /**
  * Props for the UI Theme Provider
  */
-export interface UIThemeProviderProps {
+export type UIThemeProviderProps = ThemeAnimationOptions & {
   /** React children to wrap with theme context */
   children: ReactNode;
   /** Available theme options */
@@ -73,7 +51,7 @@ export interface UIThemeProviderProps {
   storageKey?: string;
   /** Storage key for color theme */
   colorStorageKey?: string;
-}
+};
 
 /**
  * UI Theme Provider - Provides centralized theme state management
@@ -90,7 +68,15 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
   defaultTheme = 'system',
   defaultColorTheme = 'default',
   animationType = ThemeAnimationType.CIRCLE,
-  duration = 750,
+  clipPathDirection,
+  animationPosition,
+  logo,
+  logoLight,
+  logoDark,
+  logoWidth,
+  logoHeight,
+  gradientWidth,
+  duration = DEFAULT_DURATION,
   storageKey,
   colorStorageKey,
 }) => {
@@ -102,6 +88,12 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
     defaultTheme,
     defaultColorTheme,
     animationType,
+    clipPathDirection,
+    animationPosition,
+    ...getThemeLogoOptions({ logo, logoLight, logoDark }),
+    logoWidth,
+    logoHeight,
+    gradientWidth,
     duration,
     storageKey,
     colorStorageKey,
@@ -111,32 +103,8 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
     setMounted(true);
   }, []);
 
-  const switchThemeFromElement = async (
-    theme: Theme,
-    element: HTMLButtonElement
-  ) => {
-    if (themeState.ref.current) {
-      const originalRef = themeState.ref.current;
-      Object.defineProperty(themeState.ref, 'current', {
-        value: element,
-        writable: true,
-        configurable: true,
-      });
-      await themeState.switchTheme(theme);
-      Object.defineProperty(themeState.ref, 'current', {
-        value: originalRef,
-        writable: true,
-        configurable: true,
-      });
-    } else {
-      Object.defineProperty(themeState.ref, 'current', {
-        value: element,
-        writable: true,
-        configurable: true,
-      });
-      await themeState.switchTheme(theme);
-    }
-  };
+  const switchThemeFromElement = (theme: Theme, element: Element) =>
+    themeState.switchTheme(theme, { element });
 
   if (!mounted) {
     const loadingContextValue: UIThemeContextType = {
@@ -148,12 +116,12 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
       setColorTheme: () => {},
       switchTheme: async () => {},
       switchThemeFromElement: async () => {},
-      switchColorTheme: () => {},
+      switchColorTheme: async () => {},
       toggleTheme: async () => {},
       toggleLightTheme: async () => {},
       toggleDarkTheme: async () => {},
-      toggleColorTheme: () => {},
-      createColorThemeToggle: () => () => {},
+      toggleColorTheme: async () => {},
+      createColorThemeToggle: () => async () => {},
       isColorThemeActive: () => false,
     };
 

@@ -1,6 +1,13 @@
 // Re-export core types and utilities for convenience
+export { preloadThemeLogo } from '../core/logo';
+
 export {
   ThemeAnimationType,
+  TRANSITION_DIRECTIONS,
+  type TransitionDirection,
+  type AnimationPosition,
+  type ThemeAnimationOptions,
+  type ThemeLogoOptions,
   type Theme,
   type ColorTheme,
   type SlideDirection,
@@ -68,6 +75,7 @@ export {
 
 // React components
 export { UIThemeSwitcher } from './components/UIThemeSwitcher';
+
 export { UIThemeSelector } from './components/UIThemeSelector';
 
 // UI Components
@@ -91,4 +99,7 @@ export type {
   UIThemeSwitcherProps,
   UIThemeSelectorProps,
   SystemThemeMode,
+  ThemeTransitionOptions,
+  ThemeTransitionInput,
+  ColorThemeToggle,
 } from './types';
