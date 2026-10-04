@@ -6,6 +6,7 @@ import {
   cloneElement,
   isValidElement,
   type HTMLAttributes,
+  type ReactElement,
   useState,
 } from 'react';
 import { Button } from '@/components/ui/button';
@@ -36,12 +37,19 @@ export const SnippetHeader = ({ className, ...props }: SnippetHeaderProps) => (
   />
 );
 
-export type SnippetCopyButtonProps = ComponentProps<typeof Button> & {
-  value: string;
-  onCopy?: () => void;
-  onError?: (error: Error) => void;
-  timeout?: number;
-};
+export type SnippetCopyButtonProps = Omit<
+  ComponentProps<typeof Button>,
+  'asChild' | 'children'
+> &
+  (
+    | { asChild: true; children: ReactElement<ComponentProps<'button'>> }
+    | { asChild?: false; children?: React.ReactNode }
+  ) & {
+    value: string;
+    onCopy?: () => void;
+    onError?: (error: Error) => void;
+    timeout?: number;
+  };
 
 export const SnippetCopyButton = ({
   asChild,
@@ -73,7 +81,6 @@ export const SnippetCopyButton = ({
 
   if (asChild && isValidElement(children)) {
     return cloneElement(children, {
-      // @ts-expect-error - we know this is a button
       onClick: copyToClipboard,
     });
   }
