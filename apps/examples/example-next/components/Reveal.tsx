@@ -3,19 +3,15 @@
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 
-const revealSlideDirection = {
-  TOP: 'top',
-  BOTTOM: 'bottom',
-  LEFT: 'left',
-  RIGHT: 'right',
-  TOP_BLUR: 'top-blur',
-  BOTTOM_BLUR: 'bottom-blur',
-  LEFT_BLUR: 'left-blur',
-  RIGHT_BLUR: 'right-blur',
-} as const;
-
-type ObjectValues<T> = T[keyof T];
-type RevealSlideDirection = ObjectValues<typeof revealSlideDirection>;
+type RevealSlideDirection =
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-blur'
+  | 'bottom-blur'
+  | 'left-blur'
+  | 'right-blur';
 
 interface RevealProps {
   children: ReactNode;

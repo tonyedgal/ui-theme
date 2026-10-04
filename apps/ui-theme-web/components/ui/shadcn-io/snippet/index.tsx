@@ -4,8 +4,8 @@ import { CheckIcon, CopyIcon } from 'lucide-react';
 import {
   type ComponentProps,
   cloneElement,
+  isValidElement,
   type HTMLAttributes,
-  type ReactElement,
   useState,
 } from 'react';
 import { Button } from '@/components/ui/button';
@@ -71,8 +71,8 @@ export const SnippetCopyButton = ({
     }, onError);
   };
 
-  if (asChild) {
-    return cloneElement(children as ReactElement, {
+  if (asChild && isValidElement(children)) {
+    return cloneElement(children, {
       // @ts-expect-error - we know this is a button
       onClick: copyToClipboard,
     });
@@ -82,10 +82,10 @@ export const SnippetCopyButton = ({
 
   return (
     <Button
-      className='opacity-0 transition-opacity group-hover:opacity-100'
+      className="opacity-0 transition-opacity group-hover:opacity-100"
       onClick={copyToClipboard}
-      size='icon'
-      variant='ghost'
+      size="icon"
+      variant="ghost"
       {...props}
     >
       {children ?? icon}
@@ -118,6 +118,6 @@ export const SnippetTabsContent = ({
     className={cn('mt-0 bg-background p-4 text-sm', className)}
     {...props}
   >
-    <pre className='truncate'>{children}</pre>
+    <pre className="truncate">{children}</pre>
   </TabsContent>
 );

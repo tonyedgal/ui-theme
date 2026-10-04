@@ -23,7 +23,7 @@ export function Providers({ children }: ProvidersProps) {
       themes={['light', 'dark', 'system']}
       colorThemes={COLOR_THEMES}
     >
-      {children as React.ReactNode}
+      {children}
     </NextUIThemeProvider>
   );
 }

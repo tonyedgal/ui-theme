@@ -1,13 +1,24 @@
-import { useState } from "react"
+const slideDirections: SlideDirection[] = [
+  'left',
+  'right',
+  'top',
+  'bottom',
+  'top-left',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+];
+
+import { useRef, useState } from 'react';
 import {
   ThemeAnimationType,
   UIThemeSwitcher,
   type SlideDirection,
   useTanStackUITheme,
   useTheme,
-} from "uitheme-web/react"
+} from 'uitheme-web/react';
 
-import { Button } from "#/components/ui/button"
+import { Button } from '#/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -15,27 +26,30 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "#/components/ui/select"
+} from '#/components/ui/select';
 
-import { SLIDE_DIRECTIONS, THEME_SWATCHES } from "./theme-data"
+import { SLIDE_DIRECTIONS, THEME_SWATCHES } from './theme-data';
 
 export function ThemeStudio({ serverNote }: { serverNote: string }) {
-  const [slideDirection, setSlideDirection] =
-    useState<SlideDirection>("left")
-  const { theme, colorTheme, setTheme, setColorTheme } = useTanStackUITheme()
+  const [slideDirection, setSlideDirection] = useState<SlideDirection>('left');
+
+  const { theme, colorTheme, setTheme, setColorTheme, switchColorTheme } =
+    useTanStackUITheme();
+
+  const colorTrigger = useRef<HTMLButtonElement>(null);
 
   const { ref, toggleTheme } = useTheme({
     theme,
     colorTheme,
-    themes: ["light", "dark", "system"],
+    themes: ['light', 'dark', 'system'],
     colorThemes: THEME_SWATCHES.map((item) => item.value),
     animationType: ThemeAnimationType.SLIDE,
     duration: 900,
     slideDirection,
-    systemThemeMode: "css",
+    systemThemeMode: 'css',
     onThemeChange: setTheme,
     onColorThemeChange: setColorTheme,
-  })
+  });
 
   return (
     <section id="theme-studio" aria-labelledby="theme-studio-title">
@@ -57,21 +71,27 @@ export function ThemeStudio({ serverNote }: { serverNote: string }) {
         <div className="grid gap-4 xl:grid-cols-4">
           <div className="control-panel">
             <p className="control-label">Default Style</p>
-            <UIThemeSwitcher themes={["light", "dark", "system"]} />
+            <UIThemeSwitcher themes={['light', 'dark', 'system']} />
           </div>
 
           <div className="control-panel">
             <p className="control-label">Light / Dark</p>
-            <UIThemeSwitcher themes={["light", "dark"]} />
+            <UIThemeSwitcher themes={['light', 'dark']} />
           </div>
 
           <div className="control-panel">
             <label className="control-label" htmlFor="color-theme-select">
               Color Theme
             </label>
-            <Select value={colorTheme} onValueChange={setColorTheme}>
+            <Select
+              value={colorTheme}
+              onValueChange={(value) => {
+                void switchColorTheme(value, { element: colorTrigger.current });
+              }}
+            >
               <SelectTrigger
                 id="color-theme-select"
+                ref={colorTrigger}
                 className="min-w-full justify-between capitalize"
               >
                 <SelectValue placeholder="Choose a color theme" />
@@ -79,7 +99,10 @@ export function ThemeStudio({ serverNote }: { serverNote: string }) {
               <SelectContent>
                 <SelectGroup>
                   {THEME_SWATCHES.map((themeOption) => (
-                    <SelectItem key={themeOption.value} value={themeOption.value}>
+                    <SelectItem
+                      key={themeOption.value}
+                      value={themeOption.value}
+                    >
                       {themeOption.label}
                     </SelectItem>
                   ))}
@@ -98,7 +121,7 @@ export function ThemeStudio({ serverNote }: { serverNote: string }) {
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  void toggleTheme()
+                  void toggleTheme();
                 }}
               >
                 Preview
@@ -106,7 +129,12 @@ export function ThemeStudio({ serverNote }: { serverNote: string }) {
             </div>
             <Select
               value={slideDirection}
-              onValueChange={(value) => setSlideDirection(value as SlideDirection)}
+              onValueChange={(value) =>
+                setSlideDirection(
+                  slideDirections.find((direction) => direction === value) ??
+                    'left'
+                )
+              }
             >
               <SelectTrigger
                 id="slide-style-select"
@@ -132,5 +160,5 @@ export function ThemeStudio({ serverNote }: { serverNote: string }) {
         </p>
       </div>
     </section>
-  )
+  );
 }

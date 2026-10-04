@@ -1,7 +1,5 @@
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 
-import { ThemePalette } from '#/components/theme/ThemePalette';
-import { ThemeStudio } from '#/components/theme/ThemeStudio';
 import { Button } from '#/components/ui/button';
 import ThemeSection from '#/components/ThemeSection';
 
