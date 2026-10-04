@@ -4,6 +4,7 @@ import {
   ColorTheme,
   ThemeAnimationType,
   SlideDirection,
+  ThemeAnimationOptions,
 } from '../../core/types';
 
 /** System theme resolution mode */
@@ -12,16 +13,16 @@ export type SystemThemeMode = 'css' | 'js';
 /**
  * Props for the useTheme hook
  */
-export interface UseThemeProps {
+export type UseThemeProps = ThemeAnimationOptions & {
   /** Animation duration in milliseconds */
   duration?: number;
   /** CSS easing function */
   easing?: string;
   /** Type of animation to use */
   animationType?: ThemeAnimationType;
-  /** Blur amount for blur circle animation */
+  /** Reveal edge feather in CSS pixels, capped at 20 (0 uses a sharp circle). */
   blurAmount?: number;
-  /** ID for injected style element */
+  /** Legacy style ID, retained for compatibility with the native animation path. */
   styleId?: string;
 
   /** Available themes */
@@ -81,11 +82,26 @@ export interface UseThemeProps {
    * @default 'js'
    */
   systemThemeMode?: SystemThemeMode;
+};
+
+/** Per-call animation controls shared by all providers. */
+export interface ThemeTransitionOptions {
+  /** Skip the view transition (also automatically skipped for reduced motion). */
+  animationOff?: boolean;
+  /** Trigger element; its viewport rectangle is read synchronously. */
+  element?: Element | null;
+  /** Viewport-relative CSS pixels. Never multiply these coordinates by DPR. */
+  origin?: { x: number; y: number };
 }
 
-/**
- * Return type for the useTheme hook
- */
+/** Boolean arguments remain supported for backward compatibility. */
+export type ThemeTransitionInput = boolean | ThemeTransitionOptions;
+export type ColorThemeToggle = (
+  options?:
+    | ThemeTransitionInput
+    | Pick<React.MouseEvent<HTMLElement>, 'currentTarget' | 'detail'>
+) => Promise<void>;
+
 export interface UseThemeReturn {
   /** Ref to attach to the trigger button */
   ref: RefObject<HTMLButtonElement | null>;
@@ -99,25 +115,28 @@ export interface UseThemeReturn {
 
   /** Set theme without animation */
   setTheme: (theme: Theme) => void;
-  /** Set color theme */
+  /** Set color theme without animation */
   setColorTheme: (colorTheme: ColorTheme) => void;
 
   /** Switch theme with animation */
-  switchTheme: (theme: Theme, animationOff?: boolean) => Promise<void>;
-  /** Switch color theme */
-  switchColorTheme: (colorTheme: string) => void;
+  switchTheme: (theme: Theme, options?: ThemeTransitionInput) => Promise<void>;
+  /** Switch color theme with animation */
+  switchColorTheme: (
+    colorTheme: string,
+    options?: ThemeTransitionInput
+  ) => Promise<void>;
 
   /** Toggle between light and dark */
-  toggleTheme: (animationOff?: boolean) => Promise<void>;
+  toggleTheme: (options?: ThemeTransitionInput) => Promise<void>;
   /** Switch to light theme with animation */
-  toggleLightTheme: (animationOff?: boolean) => Promise<void>;
+  toggleLightTheme: (options?: ThemeTransitionInput) => Promise<void>;
   /** Switch to dark theme with animation */
-  toggleDarkTheme: (animationOff?: boolean) => Promise<void>;
+  toggleDarkTheme: (options?: ThemeTransitionInput) => Promise<void>;
   /** Cycle through color themes */
-  toggleColorTheme: () => void;
+  toggleColorTheme: ColorThemeToggle;
 
   /** Create a toggle function for a specific color theme */
-  createColorThemeToggle: (targetColorTheme: string) => () => void;
+  createColorThemeToggle: (targetColorTheme: string) => ColorThemeToggle;
   /** Check if a color theme is active */
   isColorThemeActive: (targetColorTheme: string) => boolean;
 }
@@ -125,7 +144,7 @@ export interface UseThemeReturn {
 /**
  * Props for UIThemeSwitcher component
  */
-export interface UIThemeSwitcherProps {
+export type UIThemeSwitcherProps = ThemeAnimationOptions & {
   /** Available themes */
   themes?: Theme[];
   /** Current theme (controlled) */
@@ -151,12 +170,12 @@ export interface UIThemeSwitcherProps {
     dark?: React.ReactNode;
     system?: React.ReactNode;
   };
-}
+};
 
 /**
  * Props for UIThemeSelector component
  */
-export interface UIThemeSelectorProps {
+export type UIThemeSelectorProps = ThemeAnimationOptions & {
   /** Available themes */
   themes?: Theme[];
   /** Available color themes */
@@ -185,4 +204,4 @@ export interface UIThemeSelectorProps {
   themeLabel?: string;
   /** Label for color theme selector */
   colorThemeLabel?: string;
-}
+};

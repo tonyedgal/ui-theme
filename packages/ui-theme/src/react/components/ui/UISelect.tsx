@@ -66,16 +66,18 @@ function UISelectValue({
   return <SelectPrimitive.Value data-slot="ui-select-value" {...props} />;
 }
 
-function UISelectTrigger({
-  className,
-  size = 'default',
-  children,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
-  size?: 'sm' | 'default';
-}) {
+const UISelectTrigger = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & {
+    size?: 'sm' | 'default';
+  }
+>(function UISelectTrigger(
+  { className, size = 'default', children, ...props },
+  ref
+) {
   return (
     <SelectPrimitive.Trigger
+      ref={ref}
       data-slot="ui-select-trigger"
       data-size={size}
       className={`
@@ -105,7 +107,7 @@ function UISelectTrigger({
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
-}
+});
 
 function UISelectContent({
   className,

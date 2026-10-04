@@ -1,5 +1,10 @@
 export {
   ThemeAnimationType,
+  TRANSITION_DIRECTIONS,
+  type TransitionDirection,
+  type AnimationPosition,
+  type ThemeAnimationOptions,
+  type ThemeLogoOptions,
   type Theme,
   type ColorTheme,
   type SlideDirection,
@@ -17,9 +22,18 @@ export {
   createCircleAnimation,
   createBlurCircleAnimation,
   createSlideAnimation,
+  createClipPathAnimation,
+  createPolygonGradientAnimation,
+  createTriangleAnimation,
+  createSvgLogoAnimation,
+  getAnimationPosition,
   createBlurCircleMask,
   getSlideFromCoords,
 } from './animations';
+
+export { runThemeTransition } from './transitions';
+
+export { preloadThemeLogo } from './logo';
 
 export {
   STORAGE_KEY,
