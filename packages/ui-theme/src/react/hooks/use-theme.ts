@@ -182,11 +182,15 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
   ]);
 
   const ref = useRef<HTMLButtonElement>(null);
+  const committedTheme = useRef(currentTheme);
+  const committedColorTheme = useRef(currentColorTheme);
   const requestedTheme = useRef(currentTheme);
   const requestedColorTheme = useRef(currentColorTheme);
   const pendingUpdates = useRef(0);
   useEffect(() => {
     if (pendingUpdates.current === 0) {
+      committedTheme.current = currentTheme;
+      committedColorTheme.current = currentColorTheme;
       requestedTheme.current = currentTheme;
       requestedColorTheme.current = currentColorTheme;
     }
@@ -195,6 +199,7 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
   const commitTheme = useCallback(
     (newTheme: Theme) => {
       setStoredTheme(newTheme, storageKey);
+      committedTheme.current = newTheme;
 
       if (externalTheme === undefined) {
         setInternalTheme(newTheme);
@@ -210,6 +215,7 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
   const commitColorTheme = useCallback(
     (newColorTheme: string) => {
       setStoredColorTheme(newColorTheme, colorStorageKey);
+      committedColorTheme.current = newColorTheme;
 
       if (externalColorTheme === undefined) {
         setInternalColorTheme(newColorTheme);
@@ -350,11 +356,11 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
         await animateChange(() => commitTheme(newTheme), options);
       } catch (error) {
         if (requestedTheme.current === newTheme)
-          requestedTheme.current = currentTheme;
+          requestedTheme.current = committedTheme.current;
         throw error;
       }
     },
-    [animateChange, commitTheme, currentTheme]
+    [animateChange, commitTheme]
   );
 
   const switchColorTheme = useCallback(
@@ -374,11 +380,11 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
         await animateChange(() => commitColorTheme(newColorTheme), options);
       } catch (error) {
         if (requestedColorTheme.current === newColorTheme)
-          requestedColorTheme.current = currentColorTheme;
+          requestedColorTheme.current = committedColorTheme.current;
         throw error;
       }
     },
-    [colorThemes, animateChange, commitColorTheme, currentColorTheme]
+    [colorThemes, animateChange, commitColorTheme]
   );
 
   const toggleTheme = useCallback(
