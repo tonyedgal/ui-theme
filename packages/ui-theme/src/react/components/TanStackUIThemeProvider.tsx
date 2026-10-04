@@ -6,7 +6,13 @@ import { SharedThemeContext } from './shared-theme-context';
 import { useHydrated } from '../hooks/use-hydrated';
 import { getThemeLogoOptions } from '../../core/logo';
 
-import React, { createContext, useContext, ReactNode, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  ReactNode,
+  useEffect,
+  useRef,
+} from 'react';
 import { useTheme } from '../hooks/use-theme';
 import {
   Theme,
@@ -340,18 +346,29 @@ export const TanStackUIThemeProvider: React.FC<
     },
   });
 
-  // Sync localStorage with server-provided values on first hydration
+  const seededStorage = useRef(false);
+
+  // Persist server preferences once, after hydration, without hiding dependencies.
   useEffect(() => {
-    if (!hasServerTheme) return;
+    if (!hasServerTheme || !isHydrated || seededStorage.current) return;
+    seededStorage.current = true;
 
-    if (initialTheme) {
-      setStoredTheme(initialTheme, storageKey);
-    }
+    try {
+      if (initialTheme) setStoredTheme(initialTheme, storageKey);
 
-    if (serverColorTheme) {
-      setStoredColorTheme(serverColorTheme, colorStorageKey);
+      if (serverColorTheme)
+        setStoredColorTheme(serverColorTheme, colorStorageKey);
+    } catch (error) {
+      console.warn('Unable to persist the initial server theme:', error);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- only on mount
+  }, [
+    hasServerTheme,
+    isHydrated,
+    initialTheme,
+    serverColorTheme,
+    storageKey,
+    colorStorageKey,
+  ]);
 
   const setThemeWithServer = themeState.setTheme;
   const setColorThemeWithServer = themeState.setColorTheme;
