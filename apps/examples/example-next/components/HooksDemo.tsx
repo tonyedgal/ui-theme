@@ -1,5 +1,16 @@
 'use client';
 
+const slideDirections: SlideDirection[] = [
+  'left',
+  'right',
+  'top',
+  'bottom',
+  'top-left',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+];
+
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { SlideThemeToggle } from '@/components/theme/SlideThemeToggle';
 import {
@@ -29,28 +40,35 @@ export function HooksDemo() {
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 p-4 md:p-6 rounded-lg border border-border bg-background/50 backdrop-blur-sm">
           <div className="flex gap-2 items-center justify-center">
-            <label className="text-xs sm:text-sm font-medium whitespace-nowrap">
+            <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
               Circle Theme:
-            </label>
+            </span>
             <ThemeToggle />
           </div>
 
           <div className="flex gap-2 items-center justify-center">
-            <label className="text-xs sm:text-sm font-medium whitespace-nowrap">
+            <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
               Slide Theme:
-            </label>
+            </span>
             <SlideThemeToggle slideDirection={slideDirection} />
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-2 p-2 bg-background rounded-md w-full sm:w-auto">
-            <label className="text-xs sm:text-sm font-medium whitespace-nowrap">
+            <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
               Slide direction:
-            </label>
+            </span>
             <Select
               value={slideDirection}
-              onValueChange={(v) => setSlideDirection(v as SlideDirection)}
+              onValueChange={(v) =>
+                setSlideDirection(
+                  slideDirections.find((direction) => direction === v) ?? 'left'
+                )
+              }
             >
-              <SelectTrigger className="w-full sm:w-36">
+              <SelectTrigger
+                aria-label="Slide direction"
+                className="w-full sm:w-36"
+              >
                 <SelectValue>{slideDirection}</SelectValue>
               </SelectTrigger>
               <SelectContent>
