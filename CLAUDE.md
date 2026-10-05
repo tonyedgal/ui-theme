@@ -108,3 +108,20 @@ or changelogs. Verify the packed package when exports or build output change.
 Follow the `/auto-commit` workflow in [AGENTS.md](AGENTS.md). Keep commits scoped
 and preserve stashes. A passing local check does not confirm publication or
 remote CI. Push and publish only within the human's explicit authorization.
+
+## Local commit checks
+
+`pnpm install` installs the Husky pre-commit hook. Each commit runs ESLint and
+Prettier on staged files, then the library unit tests. Browser tests and full
+workspace type checks remain in CI. There is no pre-push hook.
+
+`pnpm test:browser:smoke` builds the library and runs a focused Chromium check.
+This local command is optional. Install Chromium with
+`pnpm --filter uitheme-web exec playwright install chromium` first.
+
+The full browser suite covers every case in Chromium, WebKit, and Firefox at
+DPR 2. Extra DPR 1 and mobile DPR 3 runs cover geometry and rasterization.
+PR CI runs browsers for package, example, dependency, and check-configuration
+changes; main always runs them. The CI job still reports success for other PRs
+after its remaining checks pass. Required branch protection must be configured
+in GitHub to enforce that CI result before merging.
