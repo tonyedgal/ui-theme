@@ -6,7 +6,9 @@ on:
     branches:
       - main
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
@@ -15,6 +17,24 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect browser changes
+        id: browser
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            changed_files=$(git diff --name-only "$BASE_SHA...HEAD")
+            if grep -Eq '^(packages/|apps/examples/|package.json$|pnpm-lock.yaml$|pnpm-workspace.yaml$|turbo.json$|eslint.config.mjs$|\.github/workflows/|\.husky/|\.lintstagedrc)' <<< "$changed_files"; then
+              echo "run=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "run=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -50,9 +70,11 @@ jobs:
         run: pnpm --filter uitheme-web test:package
 
       - name: Install browser engines
+        if: steps.browser.outputs.run == 'true'
         run: pnpm --filter uitheme-web exec playwright install --with-deps chromium firefox webkit
 
       - name: Browser regression tests
+        if: steps.browser.outputs.run == 'true'
         run: pnpm --filter uitheme-web test:browser
 
   release:
