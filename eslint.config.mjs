@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import globals from 'globals';
 import prettier from 'eslint-config-prettier/flat';
 import { all as antiSlop } from 'antislop-plugin/eslint';
+import { plugin as shadcn } from '@shadcn/lint';
 
 const scripts = ['**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}'];
 
@@ -76,6 +77,10 @@ export default defineConfig([
     },
     plugins: { import: importPlugin },
     rules: { 'import/no-anonymous-default-export': 'warn' },
+  },
+  {
+    files: ['apps/ui-theme-web/**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}'],
+    plugins: { shadcn },
   },
   {
     files: scripts,
