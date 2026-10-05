@@ -926,7 +926,7 @@ test('last corner is already painted before snapshot cleanup despite viewport ro
 });
 
 for (const provider of ['hook', 'ui', 'next', 'vite', 'tanstack']) {
-  test(`${provider} selects the destination logo with auto dimensions`, async ({
+  test(`${provider} selects the current theme logo with auto dimensions`, async ({
     page,
   }) => {
     await open(
@@ -945,10 +945,13 @@ for (const provider of ['hook', 'ui', 'next', 'vite', 'tanstack']) {
       await expect(image).toBeVisible();
       expect(
         decodeURIComponent((await image.getAttribute('src')) ?? '')
-      ).toContain(`id="${destination}-logo"`);
+      ).toContain(`id="${destination === 'light' ? 'dark' : 'light'}-logo"`);
       const bounds = await image.boundingBox();
       expect(bounds!.width).toBeCloseTo(180, 2);
       expect(bounds!.height).toBeCloseTo(120, 2);
+      await page.screenshot({
+        path: test.info().outputPath(`${destination}-transition.png`),
+      });
       await page.evaluate(() =>
         window.themeFixture.inspection.transitions.at(-1)!.skipTransition()
       );
@@ -985,7 +988,7 @@ test('gallery activates light and dark uploads only after both are supplied', as
     await expect(image).toBeVisible();
     expect(
       decodeURIComponent((await image.getAttribute('src')) ?? '')
-    ).toContain(`id="${destination}-logo"`);
+    ).toContain(`id="${destination === 'light' ? 'dark' : 'light'}-logo"`);
     await page.evaluate(() =>
       window.themeFixture.inspection.transitions.at(-1)!.skipTransition()
     );
