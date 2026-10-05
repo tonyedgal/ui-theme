@@ -1,5 +1,10 @@
 import { defineConfig } from '@playwright/test';
 
+// Extra display-density runs cover geometry and rasterization contracts.
+// Engine compatibility remains covered by the full DPR 2 projects.
+const displayCases =
+  /declared ref|circle origins|covers all four corners|SVG logo stays centered|clicked element overrides|CSS zoom|last corner/;
+
 export default defineConfig({
   testDir: './tests/browser',
   fullyParallel: false,
@@ -14,6 +19,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-dpr1',
+      grep: displayCases,
       use: {
         browserName: 'chromium',
         viewport: { width: 1280, height: 800 },
@@ -30,6 +36,7 @@ export default defineConfig({
     },
     {
       name: 'chromium-dpr3-mobile',
+      grep: displayCases,
       use: {
         browserName: 'chromium',
         viewport: { width: 390, height: 844 },
