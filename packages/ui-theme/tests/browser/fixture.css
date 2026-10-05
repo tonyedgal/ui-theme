@@ -38,6 +38,8 @@ body {
 aside {
   position: fixed;
   top: 0;
+  bottom: 0;
+  overflow-y: auto;
   left: 0;
   width: 280px;
   padding: 24px;
