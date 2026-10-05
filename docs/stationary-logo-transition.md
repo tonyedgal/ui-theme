@@ -81,6 +81,6 @@ The previous expanding-silhouette GPU measurements in the earlier report describ
 the earlier implementation, not this stationary-logo effect. No compositor-only
 or physical Arc/4K performance guarantee is inferred from these browser checks.
 
-Use `logoLight` and `logoDark` together instead of `logo` to select the destination theme’s asset: light for dark-to-light, dark for light-to-dark. Both are required; combining the pair with `logo` is rejected.
+Use `logoLight` and `logoDark` together instead of `logo` to select the current theme’s asset: `logoDark` for dark-to-light, `logoLight` for light-to-dark. Use a light or white `logoDark` on the dark interface and a dark or black `logoLight` on the light interface. Both are required; combining the pair with `logo` is rejected.
 
 When one dimension is set and the other omitted, the omitted dimension defaults to `"auto"` and preserves the SVG aspect ratio. Explicit `"auto"` for both uses the SVG’s intrinsic size. With both omitted, the existing 96 px default width is preserved.
