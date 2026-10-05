@@ -3,3 +3,12 @@ node_modules
 .turbo
 .changeset
 pnpm-lock.yaml
+
+**/.next
+**/.source
+**/.output
+**/.nitro
+**/routeTree.gen.ts
+**/next-env.d.ts
+**/test-results
+**/playwright-report

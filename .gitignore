@@ -46,3 +46,7 @@ next-env.d.ts
 
 plan.md
 agents.md
+
+# Browser verification artifacts
+playwright-report/
+test-results/
