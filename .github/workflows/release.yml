@@ -1,6 +1,7 @@
 name: CI & Release
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -28,16 +29,31 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Format
-        run: pnpm format
+        run: pnpm format:check
 
       - name: Lint
         run: pnpm lint
 
+      - name: Build
+        run: pnpm build
+
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Build
-        run: pnpm build
+      - name: Unit and declaration tests
+        run: pnpm --filter uitheme-web test && pnpm --filter uitheme-web test:types
+
+      - name: Production dependency audit
+        run: pnpm audit --prod
+
+      - name: Packed package tests
+        run: pnpm --filter uitheme-web test:package
+
+      - name: Install browser engines
+        run: pnpm --filter uitheme-web exec playwright install --with-deps chromium firefox webkit
+
+      - name: Browser regression tests
+        run: pnpm --filter uitheme-web test:browser
 
   release:
     name: Release
