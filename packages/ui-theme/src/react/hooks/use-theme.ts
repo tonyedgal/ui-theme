@@ -305,7 +305,7 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
               animationPosition,
               logo:
                 logoLight !== undefined
-                  ? resolveTheme(requestedTheme.current) === 'light'
+                  ? resolveTheme(committedTheme.current) === 'light'
                     ? logoLight
                     : logoDark
                   : logo,
