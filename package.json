@@ -18,7 +18,10 @@
     "changeset:breaking": "changeset add --type major",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm build && changeset publish",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "prepare": "husky",
+    "test:commit": "pnpm --filter uitheme-web test",
+    "test:browser:smoke": "pnpm --filter uitheme-web build && pnpm --filter uitheme-web exec playwright test --project=chromium-dpr2 --grep \"declared ref|color palettes use|selects the current theme logo|reduced motion, unsupported|clicked element overrides\""
   },
   "repository": {
     "type": "git",
@@ -49,6 +52,8 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.9.9",
     "tsup": "^8.5.1",
     "turbo": "^2.11.7",
