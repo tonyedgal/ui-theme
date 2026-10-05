@@ -26,6 +26,7 @@ Web framework agnostic UI theme switching library with smooth view transition an
 ## Features
 
 - Smooth view transition animations with customizable origins
+- Eight-direction polygon wipes, triangle reveals, and SVG logo transitions
 - Multi-theme support (light, dark, system)
 - Color theme variants (brand colors, custom themes)
 - Framework-optimized providers
@@ -46,6 +47,8 @@ Web framework agnostic UI theme switching library with smooth view transition an
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to contribute to this project.
+
+See [Workspace linting](./docs/linting.md) for the shared ESLint presets, anti-slop rules, runtime requirements, and lint commands.
 
 ## License
 
