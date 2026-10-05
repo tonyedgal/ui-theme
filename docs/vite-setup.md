@@ -319,24 +319,24 @@ export function CustomToggle() {
 
 ### useViteUITheme Hook
 
-| Return Value           | Type                                                    | Description                       |
-| ---------------------- | ------------------------------------------------------- | --------------------------------- |
-| theme                  | Theme                                                   | Current theme                     |
-| colorTheme             | ColorTheme                                              | Current color theme               |
-| resolvedTheme          | 'light' \| 'dark'                                       | Resolved theme                    |
-| systemTheme            | 'light' \| 'dark'                                       | OS theme preference               |
-| ref                    | RefObject<HTMLElement>                                  | Ref for animation origin          |
-| setTheme               | (theme: Theme) => void                                  | Set theme instantly               |
-| setColorTheme          | (colorTheme: ColorTheme) => void                        | Set color theme                   |
-| switchTheme            | (theme: Theme, animationOff?: boolean) => Promise<void> | Switch with animation             |
-| switchColorTheme       | (colorTheme: string) => void                            | Switch color theme with animation |
-| toggleTheme            | (animationOff?: boolean) => Promise<void>               | Toggle light/dark                 |
-| toggleLightTheme       | (animationOff?: boolean) => Promise<void>               | Switch to light theme             |
-| toggleDarkTheme        | (animationOff?: boolean) => Promise<void>               | Switch to dark theme              |
-| toggleColorTheme       | () => void                                              | Toggle between color themes       |
-| createColorThemeToggle | (colorTheme: string) => () => void                      | Create color theme toggle         |
-| isColorThemeActive     | (colorTheme: string) => boolean                         | Check if color theme active       |
-| switchThemeFromElement | (theme: Theme, element: HTMLElement) => Promise<void>   | Switch from specific element      |
+| Return Value           | Type                                                                  | Description                       |
+| ---------------------- | --------------------------------------------------------------------- | --------------------------------- |
+| theme                  | Theme                                                                 | Current theme                     |
+| colorTheme             | ColorTheme                                                            | Current color theme               |
+| resolvedTheme          | 'light' \| 'dark'                                                     | Resolved theme                    |
+| systemTheme            | 'light' \| 'dark'                                                     | OS theme preference               |
+| ref                    | RefObject<HTMLElement>                                                | Ref for animation origin          |
+| setTheme               | (theme: Theme) => void                                                | Set theme instantly               |
+| setColorTheme          | (colorTheme: ColorTheme) => void                                      | Set color theme                   |
+| switchTheme            | (theme: Theme, options?: ThemeTransitionInput) => Promise<void>       | Switch with animation             |
+| switchColorTheme       | (colorTheme: string, options?: ThemeTransitionInput) => Promise<void> | Switch color theme with animation |
+| toggleTheme            | (options?: ThemeTransitionInput) => Promise<void>                     | Toggle light/dark                 |
+| toggleLightTheme       | (options?: ThemeTransitionInput) => Promise<void>                     | Switch to light theme             |
+| toggleDarkTheme        | (options?: ThemeTransitionInput) => Promise<void>                     | Switch to dark theme              |
+| toggleColorTheme       | ColorThemeToggle                                                      | Toggle between color themes       |
+| createColorThemeToggle | (colorTheme: string) => ColorThemeToggle                              | Create color theme toggle         |
+| isColorThemeActive     | (colorTheme: string) => boolean                                       | Check if color theme active       |
+| switchThemeFromElement | (theme: Theme, element: HTMLElement) => Promise<void>                 | Switch from specific element      |
 
 ## Color Theme Management
 
@@ -359,7 +359,12 @@ export function ColorThemeSelector() {
       {colorThemes.map((theme) => (
         <button
           key={theme.value}
-          onClick={() => switchColorTheme(theme.value)}
+          onClick={(event) =>
+            void switchColorTheme(theme.value, {
+              element: event.currentTarget,
+              animationOff: event.detail === 0,
+            })
+          }
           className={`px-3 py-1 rounded ${
             isColorThemeActive(theme.value)
               ? 'bg-primary text-primary-foreground'

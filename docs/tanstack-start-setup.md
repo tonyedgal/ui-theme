@@ -67,9 +67,8 @@ import {
   type ServerThemeData,
 } from 'uitheme-web/tanstack';
 
-export const getThemeServerFn = createServerFn().handler(
-  (): ServerThemeData =>
-    buildServerThemeData(getCookie(STORAGE_KEY), getCookie(COLOR_STORAGE_KEY))
+export const getThemeServerFn = createServerFn().handler((): ServerThemeData =>
+  buildServerThemeData(getCookie(STORAGE_KEY), getCookie(COLOR_STORAGE_KEY))
 );
 
 export const setThemeServerFn = createServerFn()
@@ -478,23 +477,23 @@ import { ThemeAnimationType } from 'uitheme-web/core';
 
 ### TanStackUIThemeProvider Props
 
-| Prop                     | Type                            | Default                       | Description                               |
-| ------------------------ | ------------------------------- | ----------------------------- | ----------------------------------------- |
-| defaultTheme             | Theme                           | `'system'`                    | Initial theme                             |
-| defaultColorTheme        | ColorTheme                      | `'default'`                   | Initial color theme                       |
-| themes                   | Theme[]                         | `['light', 'dark', 'system']` | Available themes                          |
-| colorThemes              | ColorTheme[]                    | `['default']`                 | Available color themes                    |
-| animationType            | ThemeAnimationType              | `'circle'`                    | Animation type                            |
-| duration                 | number                          | `750`                         | Animation duration (ms)                   |
-| storageKey               | string                          | `'theme'`                     | localStorage key for theme                |
-| colorStorageKey          | string                          | `'color-theme'`               | localStorage key for color theme          |
-| globalClassName          | string                          | `'dark'`                      | Class name for dark theme                 |
-| colorThemePrefix         | string                          | `'theme-'`                    | Prefix for color theme classes            |
-| serverTheme              | `'light' \| 'dark' \| 'system'` | -                             | Server-resolved theme from cookie         |
-| serverColorTheme         | string                          | -                             | Server-resolved color theme from cookie   |
-| systemThemeMode          | `'css' \| 'js'`                 | `'css'`                       | How to handle system theme                |
-| onServerThemeChange      | `(theme: Theme) => void`        | -                             | Callback to persist theme to cookie       |
-| onServerColorThemeChange | `(colorTheme: string) => void`  | -                             | Callback to persist color theme to cookie |
+| Prop                     | Type                                            | Default                       | Description                               |
+| ------------------------ | ----------------------------------------------- | ----------------------------- | ----------------------------------------- |
+| defaultTheme             | Theme                                           | `'system'`                    | Initial theme                             |
+| defaultColorTheme        | ColorTheme                                      | `'default'`                   | Initial color theme                       |
+| themes                   | Theme[]                                         | `['light', 'dark', 'system']` | Available themes                          |
+| colorThemes              | ColorTheme[]                                    | `['default']`                 | Available color themes                    |
+| animationType            | ThemeAnimationType                              | `'circle'`                    | Animation type                            |
+| duration                 | number                                          | `400`                         | Animation duration (ms)                   |
+| storageKey               | string                                          | `'theme'`                     | localStorage key for theme                |
+| colorStorageKey          | string                                          | `'color-theme'`               | localStorage key for color theme          |
+| globalClassName          | string                                          | `'dark'`                      | Class name for dark theme                 |
+| colorThemePrefix         | string                                          | `'theme-'`                    | Prefix for color theme classes            |
+| serverTheme              | `'light' \| 'dark' \| 'system'`                 | -                             | Server-resolved theme from cookie         |
+| serverColorTheme         | string                                          | -                             | Server-resolved color theme from cookie   |
+| systemThemeMode          | `'css' \| 'js'`                                 | `'css'`                       | How to handle system theme                |
+| onServerThemeChange      | `(theme: Theme) => Promise<void> \| void`       | -                             | Callback to persist theme to cookie       |
+| onServerColorThemeChange | `(colorTheme: string) => Promise<void> \| void` | -                             | Callback to persist color theme to cookie |
 
 ### TanStackStartThemeScript Props
 
@@ -511,25 +510,25 @@ import { ThemeAnimationType } from 'uitheme-web/core';
 
 ### useTanStackUITheme Hook
 
-| Return Value           | Type                                                      | Description                      |
-| ---------------------- | --------------------------------------------------------- | -------------------------------- |
-| theme                  | Theme                                                     | Current theme preference         |
-| colorTheme             | ColorTheme                                                | Current color theme              |
-| resolvedTheme          | `'light' \| 'dark'`                                       | Resolved theme                   |
-| systemTheme            | `'light' \| 'dark'`                                       | OS theme preference              |
-| isHydrated             | boolean                                                   | Whether component is hydrated    |
-| ref                    | RefObject\<HTMLButtonElement\>                            | Ref for animation origin         |
-| setTheme               | `(theme: Theme) => void`                                  | Set theme instantly              |
-| setColorTheme          | `(colorTheme: ColorTheme) => void`                        | Set color theme                  |
-| switchTheme            | `(theme: Theme, animationOff?: boolean) => Promise<void>` | Switch with animation            |
-| switchColorTheme       | `(colorTheme: string) => void`                            | Switch color theme               |
-| toggleTheme            | `(animationOff?: boolean) => Promise<void>`               | Toggle light/dark                |
-| toggleLightTheme       | `(animationOff?: boolean) => Promise<void>`               | Switch to light                  |
-| toggleDarkTheme        | `(animationOff?: boolean) => Promise<void>`               | Switch to dark                   |
-| toggleColorTheme       | `() => void`                                              | Cycle color themes               |
-| createColorThemeToggle | `(colorTheme: string) => () => void`                      | Create toggle for specific color |
-| isColorThemeActive     | `(colorTheme: string) => boolean`                         | Check if color theme active      |
-| switchThemeFromElement | `(theme: Theme, el: HTMLButtonElement) => Promise<void>`  | Switch from element              |
+| Return Value           | Type                                                                    | Description                       |
+| ---------------------- | ----------------------------------------------------------------------- | --------------------------------- |
+| theme                  | Theme                                                                   | Current theme preference          |
+| colorTheme             | ColorTheme                                                              | Current color theme               |
+| resolvedTheme          | `'light' \| 'dark'`                                                     | Resolved theme                    |
+| systemTheme            | `'light' \| 'dark'`                                                     | OS theme preference               |
+| isHydrated             | boolean                                                                 | Whether component is hydrated     |
+| ref                    | RefObject\<HTMLButtonElement\>                                          | Ref for animation origin          |
+| setTheme               | `(theme: Theme) => void`                                                | Set theme instantly               |
+| setColorTheme          | `(colorTheme: ColorTheme) => void`                                      | Set color theme                   |
+| switchTheme            | `(theme: Theme, options?: ThemeTransitionInput) => Promise<void>`       | Switch with animation             |
+| switchColorTheme       | `(colorTheme: string, options?: ThemeTransitionInput) => Promise<void>` | Switch color theme                |
+| toggleTheme            | `(options?: ThemeTransitionInput) => Promise<void>`                     | Toggle light/dark                 |
+| toggleLightTheme       | `(options?: ThemeTransitionInput) => Promise<void>`                     | Switch to light                   |
+| toggleDarkTheme        | `(options?: ThemeTransitionInput) => Promise<void>`                     | Switch to dark                    |
+| toggleColorTheme       | `ColorThemeToggle`                                                      | Cycle color themes with animation |
+| createColorThemeToggle | `(colorTheme: string) => ColorThemeToggle`                              | Create toggle for specific color  |
+| isColorThemeActive     | `(colorTheme: string) => boolean`                                       | Check if color theme active       |
+| switchThemeFromElement | `(theme: Theme, el: HTMLButtonElement) => Promise<void>`                | Switch from element               |
 
 ### buildServerThemeData (from `uitheme-web/tanstack`)
 
