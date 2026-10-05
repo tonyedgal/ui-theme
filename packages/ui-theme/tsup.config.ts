@@ -13,11 +13,11 @@ export default defineConfig([
     },
     format: ['cjs', 'esm'],
     dts: true,
-    splitting: false,
+    splitting: true,
     sourcemap: false,
     clean: false,
     treeshake: true,
-    minify: false,
+    minify: true,
     external: [
       'react',
       'react-dom',
@@ -40,7 +40,7 @@ export default defineConfig([
     sourcemap: false,
     clean: false,
     treeshake: true,
-    minify: false,
+    minify: true,
     banner: { js: '#!/usr/bin/env node' },
   },
 ]);
