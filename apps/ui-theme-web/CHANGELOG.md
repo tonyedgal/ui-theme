@@ -1,5 +1,26 @@
 # ui-theme-web
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [eb8d705]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+- Updated dependencies [cac47d1]
+  - uitheme-web@1.2.0
+
 ## 0.0.4
 
 ### Patch Changes
