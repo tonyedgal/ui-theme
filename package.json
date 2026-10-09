@@ -43,6 +43,7 @@
     "@next/eslint-plugin-next": "16.3.8",
     "@shadcn/lint": "^0.2.0",
     "@types/node": "^22.20.5",
+    "@types/react": "19.3.0",
     "@vitest/ui": "^4.1.11",
     "antislop-plugin": "0.1.0",
     "eslint": "^9.39.5",
@@ -70,7 +71,8 @@
     "overrides": {
       "yaml@>=2.0.0 <2.8.3": "2.8.3",
       "esbuild@>=0.27.0 <0.28.1": "0.28.1",
-      "seroval@<1.6.3": "1.6.8"
+      "seroval@<1.6.3": "1.6.8",
+      "lightningcss": "1.30.1"
     }
   }
 }

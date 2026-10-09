@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "UI-Theme Uniwind",
+    "slug": "uitheme-uniwind-example",
+    "scheme": "uithemeuniwind",
+    "userInterfaceStyle": "automatic",
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
+        }
+      ]
+    ],
+    "version": "1.0.0",
+    "ios": {
+      "bundleIdentifier": "com.tonyedgal.uithemeuniwind",
+      "infoPlist": {
+        "CADisableMinimumFrameDurationOnPhone": true
+      }
+    }
+  }
+}
