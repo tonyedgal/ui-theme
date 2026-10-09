@@ -14,8 +14,10 @@
 - Both styling examples offer all nine screen effects. The simulator checks and
   evidence are in each example's DEVICE-CHECKS.md. Palette checks are in the
   package's STYLING-CHECKS.md.
-- The Uniwind signed Release app installs and opens on the connected iPhone.
-  The NativeWind standalone simulator Release app builds and opens.
+- Both Uniwind and NativeWind signed Release apps install and open on the
+  connected iPhone. Both include native duration sliders for appearance and
+  palette transitions. Physical screenshots confirm the installed controls.
+  The NativeWind standalone simulator Release app also builds and opens.
 
 The shared root React types remain pinned to the web workspace's existing
 19.3.0 version. Each Expo workspace keeps its SDK-compatible 19.2 types. This
