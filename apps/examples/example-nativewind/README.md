@@ -27,7 +27,9 @@ includes iOS, Android, and web bundles; an export does not establish device QA.
 The Transition style section offers Fade, Circle, Wipe, Slide, Split, Heart,
 Star, Pixelize, and Dissolve. Circle is selected when the screen opens. Select a
 style, then change appearance or a palette to use that effect. The selector is
-disabled while a transition runs. Reduce Motion applies changes immediately.
+disabled while a transition runs. The native Transition duration slider controls
+both appearance and palette changes from 100 to 2,000 ms, in 50 ms steps. It starts
+at 350 ms and is disabled during playback. Reduce Motion applies changes immediately.
 
 ## Local native build
 
