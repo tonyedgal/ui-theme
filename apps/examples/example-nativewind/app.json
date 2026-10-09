@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "UI-Theme NativeWind",
+    "slug": "uitheme-nativewind-example",
+    "scheme": "uithemenativewind",
+    "userInterfaceStyle": "automatic",
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "enableSceneSupport": true
+          }
+        }
+      ]
+    ],
+    "version": "1.0.0",
+    "ios": {
+      "bundleIdentifier": "com.tonyedgal.uithemenativewind",
+      "infoPlist": {
+        "CADisableMinimumFrameDurationOnPhone": true
+      }
+    }
+  }
+}
