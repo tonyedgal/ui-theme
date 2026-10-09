@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Host, Slider } from '@expo/ui';
+import {
+  accessibilityLabel,
+  accessibilityValue,
+} from '@expo/ui/swift-ui/modifiers';
+import { semantics } from '@expo/ui/jetpack-compose/modifiers';
 import { UIThemeProvider, useUITheme } from 'uitheme-rn';
 import { NativeWindTheme } from 'uitheme-rn/nativewind';
 import {
@@ -59,6 +65,8 @@ export default function Demo() {
 
   const [transition, setTransition] =
     useState<ScreenTransitionType>('circularReveal');
+
+  const [duration, setDuration] = useState(350);
 
   return (
     <ScrollView
@@ -120,6 +128,52 @@ export default function Demo() {
           ))}
         </View>
       </View>
+      <View className="bg-card rounded-xl p-4 gap-3">
+        <View className="flex-row items-center justify-between gap-3">
+          <Text
+            accessibilityRole="header"
+            className="text-foreground font-semibold"
+          >
+            Transition duration
+          </Text>
+          <Text
+            className="text-foreground"
+            style={{ fontVariant: ['tabular-nums'] }}
+          >
+            {duration} ms
+          </Text>
+        </View>
+        <Host
+          colorScheme={theme.resolvedTheme}
+          seedColor={theme.colors.accent}
+          matchContents={{ vertical: true }}
+          style={{ width: '100%', minHeight: 44 }}
+        >
+          <Slider
+            value={duration}
+            onValueChange={setDuration}
+            min={100}
+            max={2000}
+            step={50}
+            disabled={theme.isTransitioning}
+            testID="transition-duration"
+            modifiers={
+              Platform.OS === 'ios'
+                ? [
+                    accessibilityLabel('Transition duration'),
+                    accessibilityValue(`${duration} milliseconds`),
+                  ]
+                : Platform.OS === 'android'
+                  ? [semantics({ contentDescription: 'Transition duration' })]
+                  : []
+            }
+          />
+        </Host>
+        <View className="flex-row justify-between">
+          <Text className="text-muted-foreground">100 ms</Text>
+          <Text className="text-muted-foreground">2,000 ms</Text>
+        </View>
+      </View>
       <View className="flex-row flex-wrap gap-2">
         {(['light', 'dark', 'system'] as const).map((value) => (
           <Pressable
@@ -131,7 +185,7 @@ export default function Demo() {
             }}
             disabled={theme.isTransitioning}
             onPress={() => {
-              void theme.setTheme(value, { transition });
+              void theme.setTheme(value, { transition, duration });
             }}
             className="bg-card rounded-xl p-4"
           >
@@ -150,7 +204,7 @@ export default function Demo() {
             }}
             disabled={theme.isTransitioning}
             onPress={() => {
-              void theme.setColorTheme(value, { transition });
+              void theme.setColorTheme(value, { transition, duration });
             }}
             className="bg-card rounded-xl p-4"
           >
