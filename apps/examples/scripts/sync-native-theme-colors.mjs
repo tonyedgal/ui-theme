@@ -1,8 +1,20 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { transform, Features } from 'lightningcss';
+import { fileURLToPath } from 'node:url';
+import { format, resolveConfig } from 'prettier';
 
 // This source has flat theme selectors. Match only those blocks and OKLCH colors;
 // leave the web app's layout, fonts, shadows, and animations in its stylesheet.
 const examples = new URL('../', import.meta.url);
+
+const formatting = await resolveConfig(fileURLToPath(import.meta.url));
+
+async function writeGenerated(url, contents) {
+  await writeFile(
+    url,
+    await format(contents, { ...formatting, filepath: fileURLToPath(url) })
+  );
+}
 
 const source = await readFile(
   new URL('example-next/app/globals.css', examples),
@@ -50,6 +62,66 @@ const variants = palettes.flatMap((palette) =>
   })
 );
 
+// React Native StyleSheet needs sRGB colors, not CSS OKLCH syntax.
+// Compile the same source values rather than maintain a second hand-written palette.
+function nativeColor(value) {
+  const css = transform({
+    code: Buffer.from(`a { color: ${value}; }`),
+    include: Features.Colors,
+    minify: true,
+  }).code.toString();
+
+  const color = css.match(/color:([^;}]+)/)?.[1];
+
+  if (!color || !/^(#[\da-f]{3,8}|rgba?\([\d., %]+\)|[a-z]+)$/.test(color))
+    throw new Error(`Could not compile native color: ${value}`);
+
+  return color;
+}
+
+const nativeTokens = Object.fromEntries(
+  palettes.map((name) => [
+    name,
+    Object.fromEntries(
+      ['light', 'dark'].map((mode) => [
+        mode,
+        Object.fromEntries(
+          variants
+            .find((variant) => variant.name === `${name}-${mode}`)
+            .colors.map(([token, value]) => [token, nativeColor(value)])
+        ),
+      ])
+    ),
+  ])
+);
+
+const nativeModule = `// Generated from example-next/app/globals.css. Run pnpm sync:colors.
+import type { ThemeColors, ThemePalette } from 'uitheme-rn';
+
+export const webColorTokens = ${JSON.stringify(nativeTokens, null, 2)} as const;
+
+function semanticColors(colors: Record<string, string>): ThemeColors {
+  return {
+    background: colors.background,
+    surface: colors.card,
+    text: colors.foreground,
+    secondaryText: colors['muted-foreground'],
+    separator: colors.border,
+    accent: colors.primary,
+    onAccent: colors['primary-foreground'],
+  };
+}
+
+export const webPalettes = {
+${palettes.map((name) => `  ${name}: { label: '${name === 'default' ? 'Default' : name[0].toUpperCase() + name.slice(1)}', light: semanticColors(webColorTokens.${name}.light), dark: semanticColors(webColorTokens.${name}.dark) },`).join('\n')}
+} satisfies Record<string, ThemePalette>;
+`;
+
+await writeGenerated(
+  new URL('example-expo/src/theme/web-palettes.ts', examples),
+  nativeModule
+);
+
 const aliases = variants[0].colors
   .map(([name]) => `  --color-${name}: var(--${name});`)
   .join('\n');
@@ -89,27 +161,27 @@ for (const engine of ['nativewind', 'uniwind']) {
     css += `\n    @variant light {\n${declarations(variants[0].colors)}\n    }\n    @variant dark {\n${declarations(variants[1].colors)}\n    }\n  }\n}`;
   }
 
-  await writeFile(
+  await writeGenerated(
     new URL(`example-${engine}/src/global.css`, examples),
     `${css}\n`
   );
   const manifest = `import type { ThemeStyleScopes } from 'uitheme-rn/${engine}';\n\nexport const palettes = {\n${palettes.map((name) => `  ${name}: { label: '${name === 'default' ? 'Default' : name[0].toUpperCase() + name.slice(1)}' },`).join('\n')}\n};\n\nexport const scopes: ThemeStyleScopes = {\n${palettes.map((name) => `  ${name}: { light: '${name}-light', dark: '${name}-dark' },`).join('\n')}\n};\n`;
-  await writeFile(
+  await writeGenerated(
     new URL(`example-${engine}/src/theme.ts`, examples),
     manifest
   );
 }
 
-await writeFile(
+await writeGenerated(
   new URL('example-nativewind/metro.config.cjs', examples),
-  `const { getDefaultConfig } = require('expo/metro-config');\nconst { withNativewind } = require('nativewind/metro');\nmodule.exports = withNativewind(getDefaultConfig(__dirname), {\n  inlineVariables: { exclude: ${JSON.stringify(variants[0].colors.flatMap(([name]) => [`--${name}`, `--color-${name}`]))} },\n});\n`
+  `const { getDefaultConfig } = require('expo/metro-config');\n\nconst { withNativewind } = require('nativewind/metro');\n\nmodule.exports = withNativewind(getDefaultConfig(__dirname), {\n  inlineVariables: { exclude: ${JSON.stringify(variants[0].colors.flatMap(([name]) => [`--${name}`, `--color-${name}`]))} },\n});\n`
 );
 
-await writeFile(
+await writeGenerated(
   new URL('example-uniwind/metro.config.cjs', examples),
-  `const { getDefaultConfig } = require('expo/metro-config');\nconst { withUniwindConfig } = require('uniwind/metro');\nmodule.exports = withUniwindConfig(getDefaultConfig(__dirname), {\n  cssEntryFile: './src/global.css',\n  dtsFile: './src/uniwind-types.d.ts',\n  extraThemes: ${JSON.stringify(variants.map(({ name }) => name))},\n});\n`
+  `const { getDefaultConfig } = require('expo/metro-config');\n\nconst { withUniwindConfig } = require('uniwind/metro');\n\nmodule.exports = withUniwindConfig(getDefaultConfig(__dirname), {\n  cssEntryFile: './src/global.css',\n  dtsFile: './src/uniwind-types.d.ts',\n  extraThemes: ${JSON.stringify(variants.map(({ name }) => name))},\n});\n`
 );
 
 console.log(
-  'Synced 32 color tokens across 12 palette/mode combinations for both engines.'
+  'Synced 32 color tokens across 12 palette/mode combinations for native TypeScript and both CSS engines.'
 );

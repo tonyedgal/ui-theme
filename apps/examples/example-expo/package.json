@@ -40,7 +40,8 @@
     "build": "expo export --platform all",
     "ios:go": "expo start --ios",
     "ios:release": "expo run:ios --configuration Release --device",
-    "android:release": "expo run:android --variant release --device"
+    "android:release": "expo run:android --variant release --device",
+    "sync:colors": "node ../scripts/sync-native-theme-colors.mjs"
   },
   "private": true
 }
