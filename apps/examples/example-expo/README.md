@@ -8,6 +8,18 @@ Reanimated color styles for applications that need per-element transitions.
 Native headers and Expo UI controls keep their platform behavior.
 The provider restores appearance and palette preferences from Expo SQLite.
 
+The TypeScript styling system is React Native `StyleSheet`/style objects with
+`uitheme-rn` palettes and `themeTokens`. Expo UI provides the native controls.
+Default, Supabase, Mono, Caffeine, Mocha, and Perpetuity use the Next example's
+colors in light and dark modes. Forest and Clay remain available.
+
+Run `pnpm --filter example-expo sync:colors` from the root after changing
+`example-next/app/globals.css`. The shared generator also refreshes the two CSS
+styling examples. Lightning CSS compiles OKLCH source values to native sRGB at
+build time. All 32 tokens per mode are exported as `webColorTokens` from
+`src/theme`; seven semantic colors supply the provider, controls, and navigation.
+The native runtime imports generated TypeScript colors and needs no CSS engine.
+
 See [VERIFICATION.md](./VERIFICATION.md) for the checks completed locally and
 the remaining device checks. The browser preview uses a separate localStorage
 adapter; native preferences use SQLite.

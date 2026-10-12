@@ -1,8 +1,11 @@
 import { defaultPalettes, themeTokens } from 'uitheme-rn';
 import type { ThemePalette } from 'uitheme-rn';
+import { webPalettes } from './web-palettes';
+
+export { webColorTokens } from './web-palettes';
 
 export const palettes = {
-  ...defaultPalettes,
+  ...webPalettes,
   forest: {
     label: 'Forest',
     light: {
