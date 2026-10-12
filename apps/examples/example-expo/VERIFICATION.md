@@ -312,3 +312,28 @@ attachment. Instruments still reports a device disconnection; no usable trace
 was produced. The log is `test-results/ios-profile-retry.log`. Android SDK tools,
 an emulator, and a connected Android device are absent on this Mac. Android
 rendering and TalkBack therefore remain pending.
+
+## Shared web palettes in native TypeScript — 2026-10-12
+
+The native StyleSheet/token app now uses Default, Supabase, Mono, Caffeine,
+Mocha, and Perpetuity from `example-next/app/globals.css`. Forest and Clay
+remain available, and existing stored choices still restore. The shared sync
+script exports all 32 tokens across six light/dark palettes, compiled from
+OKLCH to native sRGB by Lightning CSS. Seven semantic colors map directly to
+background, card, foreground, muted-foreground, border, primary, and
+primary-foreground. No CSS styling engine is imported by this native app.
+
+- Type checks, scoped lint, formatting, and iOS/Android/web exports pass.
+- All six palettes complete transitions in dark and light mode in Expo Go on
+  iPhone 16 Pro / iOS 18.6. Each completes at Ready.
+- Xcode 27 signed Release build passes. Installation and launch succeed on the
+  connected physical iPhone 15 Pro / iOS 27.0.1. The initial Forest preference
+  restores. The native picker exposes all eight palettes. Supabase selection
+  and a subsequent Light appearance change render on the phone.
+- `test-results/typescript-web-palettes.mp4` records the simulator cases.
+  `typescript-perpetuity-light.png` shows the final simulator screen.
+  `iphone-typescript-supabase-light.png` shows the installed physical app.
+  These local artifacts are ignored by Git.
+
+These are functional and rendering checks. They do not replace release
+performance profiling or physical screen-reader interaction checks.
