@@ -1,0 +1,27 @@
+{
+  "name": "example-nuxt",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@ui-theme/vue-demo": "workspace:*",
+    "uitheme-vue": "workspace:*",
+    "vue": "^3.5.44",
+    "nuxt": "^4.6.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.3.13",
+    "tailwindcss": "^4.3.1",
+    "@tailwindcss/postcss": "^4.3.3"
+  },
+  "scripts": {
+    "dev": "nuxt dev --port 4181",
+    "build": "nuxt build",
+    "typecheck": "nuxt prepare && nuxt typecheck",
+    "preview": "nuxt preview --port 4181"
+  },
+  "engines": {
+    "node": "^22.21.0 || ^24.11.0 || >=26.0.0"
+  }
+}
