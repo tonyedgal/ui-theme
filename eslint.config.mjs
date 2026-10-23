@@ -2,6 +2,7 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import react from 'eslint-plugin-react';
+import vue from 'eslint-plugin-vue';
 import reactHooks from 'eslint-plugin-react-hooks';
 import next from '@next/eslint-plugin-next';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
@@ -29,6 +30,7 @@ export default defineConfig([
     '**/out/**',
     '**/.next/**',
     '**/.expo/**',
+    '**/.nuxt/**',
     'apps/examples/example-*/ios/**',
     'apps/examples/example-*/android/**',
     '**/expo-env.d.ts',
@@ -90,6 +92,15 @@ export default defineConfig([
     files: scripts,
     languageOptions: { parser: tseslint.parser },
     extends: [antiSlop],
+  },
+  ...vue.configs['flat/recommended'],
+  {
+    files: ['**/*.vue'],
+    extends: [antiSlop],
+    languageOptions: {
+      parserOptions: { parser: tseslint.parser },
+      globals: globals.browser,
+    },
   },
   // Keep formatting in Prettier; all anti-slop policy rules stay enabled.
   prettier,

@@ -22,6 +22,7 @@
     "prepare": "husky",
     "test:commit": "pnpm --filter uitheme-web test",
     "test:browser:smoke": "pnpm --filter uitheme-web build && pnpm --filter uitheme-web exec playwright test --project=chromium-dpr2 --grep \"declared ref|color palettes use|selects the current theme logo|reduced motion, unsupported|clicked element overrides\"",
+    "test:release:consumers": "pnpm build:packages && node scripts/check-vue-release-consumer.mjs && node scripts/check-native-release-consumer.mjs",
     "build:packages": "turbo run build --filter=./packages/*",
     "test:release:native": "pnpm --filter uitheme-rn build && node scripts/check-native-release-consumer.mjs"
   },
@@ -52,6 +53,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-vue": "^10.11.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^16.5.0",

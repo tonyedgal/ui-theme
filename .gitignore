@@ -51,3 +51,6 @@ agents.md
 # Browser verification artifacts
 playwright-report/
 test-results/
+
+**/.nuxt/
+**/.output/
