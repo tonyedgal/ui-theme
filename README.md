@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/2819cf70-c474-478e-b821-6b26457c8d4a
   </a>
 </p>
 
-Web framework agnostic UI theme switching library with smooth view transition animations, multi-theme support, and synchronized state management. Currently supporting React with additional framework adapters planned.
+Web framework agnostic UI theme switching library with smooth view transition animations, multi-theme support, and synchronized state management. Supports React, Vue 3, Nuxt 4, and React Native through dedicated packages.
 
 ## Live Demo
 
@@ -39,6 +39,9 @@ Web framework agnostic UI theme switching library with smooth view transition an
 ## Documentation
 
 - **[uitheme-web Package Documentation](./packages/ui-theme/README.md)** - Complete API reference, installation, and usage
+- **[uitheme-vue Package Documentation](./packages/ui-theme-vue/README.md)** - Vue composables, controls, and a Nuxt SSR module
+- **[Vue Example](./apps/examples/example-vue/README.md)** - Vite and Tailwind v4 palettes
+- **[Nuxt Example](./apps/examples/example-nuxt/README.md)** - Server rendering and cookie persistence
 - **[uitheme-rn Package Documentation](./packages/ui-theme-rn/README.md)** - React Native appearance, palettes, storage, and Expo UI controls
 - **[NativeWind v5 Example](./apps/examples/example-nativewind/README.md)** - Tailwind v4 CSS palettes and native styles
 - **[Uniwind Example](./apps/examples/example-uniwind/README.md)** - Tailwind v4 scoped themes and native styles
