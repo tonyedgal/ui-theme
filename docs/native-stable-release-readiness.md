@@ -4,6 +4,12 @@ The first stable release target is `uitheme-rn@1.0.0`. A major changeset sets
 that target. The manifest stays at `0.1.0-alpha` and the npm tag stays `alpha`
 until the release gates pass and Changesets versions the package.
 
+The version wrapper runs standard Changesets versioning and refreshes the
+lockfile. An isolated October 23 rehearsal selects only the RN changesets and
+changes only RN to 1.0.0. A separate web-only rehearsal changes only web to
+1.2.0. Private example versions stay unchanged. Neither rehearsal modifies
+the working manifests or publishes a package.
+
 ## Compatibility fixes
 
 The examples use Skia 2.11.1 to fix Android overflow capture. This deliberately
@@ -19,7 +25,7 @@ Skia 2.11.1. Launch and bundle checks do not prove visual or spoken behavior.
 
 ## Release steps
 
-1. Resolve the production dependency audit without suppressing advisories.
+1. Review the advisory production dependency audit and track upstream fixes.
 2. Complete iPhone effect, interruption, frame-time, and memory checks.
 3. Complete VoiceOver speech, traversal, selected-state, and focus checks.
 4. Complete Android rendering, interruption, large-text, and TalkBack checks.
@@ -45,14 +51,23 @@ and bundles all optional entries for iOS and Android. Optional declarations use
 `skipLibCheck: true`; they do not prove all upstream declarations are strict.
 Evidence is saved under `test-results/release-consumers-native/`.
 
-The dependency audit remains a gate. The last audit reports two high advisories
-in Expo tooling: node-forge and braces. No advisory is suppressed.
+The production dependency audit is advisory. CI runs the full audit and reports
+failures as a warning and job summary without blocking release. Builds, types,
+and tests remain required. The audit is not clean: it reports two high findings
+in example tooling. No advisory is excluded from the report.
+
+On October 23, npm still serves node-forge 1.4.0 and braces 3.0.3 as latest.
+Neither advisory lists a patched release. The proposed
+[node-forge fix](https://github.com/digitalbazaar/forge/pull/1152) remains open;
+the [braces issue](https://github.com/micromatch/braces/issues/70) remains open.
+Relaxing CI does not fix these vulnerabilities. No dependency override or
+unreleased patch is added. Recheck upstream releases before the next update.
 
 ## October 23 device and CI follow-up
 
 Hosted CI at `7a66037` passes formatting, lint, builds, types, unit/declaration
-checks, packed checks, isolated native consumers, and browser regressions. Only
-the production audit fails on the two disclosed high advisories. The upstream
+checks, packed checks, isolated native consumers, and browser regressions. Before the audit policy change, only
+the production audit failed on the two disclosed high advisories. The upstream
 advisories list no patched version.
 
 Both Android styling apps pass nine-effect appearance and palette controls,
