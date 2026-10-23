@@ -1,4 +1,5 @@
 import { Link } from 'expo-router';
+import { Pressable } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAnimatedUITheme } from 'uitheme-rn/transitions';
@@ -103,25 +104,39 @@ export default function AppearanceScreen() {
           Your choices are saved on this device.
         </Animated.Text>
       </Animated.View>
-      <Link
-        href="/transitions"
-        accessibilityRole="link"
-        style={{ ...tokens.typography.headline, color: colors.accent }}
-      >
-        Try screen transitions
+      <Link href="/transitions" asChild>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel="Try screen transitions"
+          style={{
+            minHeight: 44,
+            justifyContent: 'center',
+            alignSelf: 'flex-start',
+          }}
+        >
+          <Animated.Text
+            style={{ ...tokens.typography.headline, color: colors.accent }}
+          >
+            Try screen transitions
+          </Animated.Text>
+        </Pressable>
       </Link>
       <Link href="/preview" asChild>
-        <Animated.Text
-          style={{
-            ...tokens.typography.headline,
-            color: colors.accent,
-            paddingVertical: tokens.spacing.md,
-          }}
+        <Pressable
           accessibilityRole="link"
           accessibilityLabel="Open theme preview"
+          style={{
+            minHeight: 44,
+            justifyContent: 'center',
+            alignSelf: 'flex-start',
+          }}
         >
-          Open preview
-        </Animated.Text>
+          <Animated.Text
+            style={{ ...tokens.typography.headline, color: colors.accent }}
+          >
+            Open preview
+          </Animated.Text>
+        </Pressable>
       </Link>
     </Animated.ScrollView>
   );
