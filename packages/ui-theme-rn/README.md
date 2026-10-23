@@ -18,6 +18,13 @@ The reference app uses SDK 57, React 19.2.3, and React Native 0.86.3. The declar
 React Native range begins at 0.83; older versions in that range still need device
 verification. Expo is required only for the `/expo` entry point.
 
+Animation peers are restricted to Reanimated 4.5.x, Worklets 0.10.x, and Skia
+2.11.x. These ranges prevent npm from selecting incompatible animation engines.
+NativeWind support targets exactly `5.0.0-rc.0`. Newer engine versions need a
+separate compatibility check. See
+[the release review](https://github.com/tonyedgal/ui-theme/blob/main/docs/native-stable-release-readiness.md) for the current
+validation scope and remaining gates.
+
 ## Provider
 
 ```tsx
@@ -227,21 +234,35 @@ the example README for the native acceptance checklist and repeatable flows.
 For the screen effects shown in the
 [reference Snack](https://snack.expo.dev/@mariops03/react-native-theme-transition?platform=ios),
 use the optional `uitheme-rn/transitions` entry. Install SDK-compatible Skia,
-Reanimated, and Worklets through Expo. The tested pair uses Skia 2.6.2,
+Reanimated, and Worklets through Expo. Pin Skia to `2.11.1` or a supported
+2.11 patch release; SDK 57's bundled Skia 2.6.2 has a broken Android overflow
+capture path. This override requires a custom native build and does not claim
+Expo Go compatibility. See the
+[upstream fix](https://github.com/wcandillon/react-native-skia/pull/4004). The tested pair uses Skia 2.11.1,
 Reanimated 4.5.1, and Worklets 0.10.1 on Expo SDK 57.
 
 ```tsx
-import { UIThemeProvider } from 'uitheme-rn';
+import { Button, View } from 'react-native';
+import { UIThemeProvider, defaultPalettes } from 'uitheme-rn';
 import {
   UIThemeTransitionProvider,
   useAnimatedUITheme,
 } from 'uitheme-rn/transitions';
 
-function App() {
+const palettes = {
+  ...defaultPalettes,
+  forest: {
+    label: 'Forest',
+    light: { ...defaultPalettes.default.light, accent: '#216E46' },
+    dark: { ...defaultPalettes.default.dark, accent: '#80D6A5' },
+  },
+};
+
+export default function App() {
   return (
-    <UIThemeProvider>
+    <UIThemeProvider palettes={palettes}>
       <UIThemeTransitionProvider defaults={{ transition: 'circularReveal' }}>
-        <Navigation />
+        <Controls />
       </UIThemeTransitionProvider>
     </UIThemeProvider>
   );
@@ -249,12 +270,25 @@ function App() {
 
 function Controls() {
   const { setTheme, setColorTheme, isTransitioning } = useAnimatedUITheme();
-  // Call in an event handler. Commands return Promise<boolean>.
-  // false means unchanged, interrupted before commit, or another effect is busy.
-  const changeAppearance = () =>
-    setTheme('dark', { transition: 'circularReveal' });
-  const changePalette = () => setColorTheme('forest', { transition: 'wipe' });
-  // Connect these handlers to your controls; disable them while isTransitioning.
+
+  return (
+    <View>
+      <Button
+        title="Dark mode"
+        disabled={isTransitioning}
+        onPress={() => {
+          void setTheme('dark');
+        }}
+      />
+      <Button
+        title="Forest palette"
+        disabled={isTransitioning}
+        onPress={() => {
+          void setColorTheme('forest', { transition: 'wipe' });
+        }}
+      />
+    </View>
+  );
 }
 ```
 

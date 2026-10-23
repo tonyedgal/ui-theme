@@ -2,6 +2,9 @@
 
 2026-10-09
 
+This is the historical alpha report. See the
+[stable release review](native-stable-release-readiness.md) for current gates.
+
 ## Completed locally
 
 - npm serves `uitheme-rn@0.1.0-alpha`. A clean consumer installs the published
