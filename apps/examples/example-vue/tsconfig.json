@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "../vue-theme-demo/src/**/*.vue",
+    "../vue-theme-demo/src/**/*.ts",
+    "vite.config.ts"
+  ]
+}

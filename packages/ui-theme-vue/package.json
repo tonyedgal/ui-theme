@@ -1,0 +1,67 @@
+{
+  "name": "uitheme-vue",
+  "version": "0.1.0-alpha.0",
+  "description": "Vue 3 and Nuxt theme switching with animated appearance and color palettes",
+  "type": "module",
+  "license": "MIT",
+  "author": "Tony Edgal (https://github.com/tonyedgal)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonyedgal/ui-theme.git",
+    "directory": "packages/ui-theme-vue"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "tag": "alpha"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/types/ui-theme-vue/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/ui-theme-vue/src/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./nuxt": {
+      "types": "./dist/types/ui-theme-vue/src/nuxt.d.ts",
+      "import": "./dist/nuxt.js"
+    },
+    "./bootstrap": {
+      "types": "./dist/types/ui-theme-vue/src/bootstrap.d.ts",
+      "import": "./dist/bootstrap.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "vite build && vue-tsc -p tsconfig.build.json && node scripts/resolve-declarations.mjs",
+    "dev": "vite build --watch",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint .",
+    "test:browser": "playwright test",
+    "test:package": "node scripts/smoke-package.mjs",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm build && pnpm test:package"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "@nuxt/kit": "^4.6.2",
+    "@nuxt/schema": "^4.6.2"
+  },
+  "devDependencies": {
+    "vue": "^3.5.44",
+    "@playwright/test": "1.62.1",
+    "vite": "^7.3.7",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "vue-tsc": "^3.3.13",
+    "@vue/compiler-sfc": "^3.5.44",
+    "typescript": "^5.9.3"
+  }
+}
