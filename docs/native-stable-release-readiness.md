@@ -68,10 +68,28 @@ An independent source review finds no redundant capture or confirmed image leak.
 Skia performs Android view traversal and bitmap copying on the main thread.
 These results do not pass the performance gate. Diagnostic code was removed.
 
-The iPhone test runner times out enabling automation. macOS developer-tool
-authorization is disabled, and enabling it requires a pending system
-authentication prompt. Physical iOS interaction and VoiceOver remain open.
-The temporary test runner is removed and all three example apps are restored.
+macOS developer-tool authorization and iPhone UI Automation are enabled.
+A fresh Xcode 27.1 test runner successfully exercises the physical iPhone:
+
+- All nine effects pass appearance and palette control checks in all three apps.
+- NativeWind and Uniwind pass Apple's accessibility audit. VoiceOver speaks the
+  controls and selected state, activates appearance changes, and retains focus.
+- NativeWind appearance and Uniwind appearance/palette measurements record zero
+  XCTest hitches. Peak physical memory is approximately 561 MB and 518 MB,
+  respectively. One measured iteration plus warmup is not a long-run memory
+  stability test. Capture latency is not measured separately on iOS.
+- TypeScript and Uniwind commit appearance and palette changes with the actual
+  iOS Reduce Motion setting enabled. The setting is restored after the test.
+- The TypeScript example's navigation links now have 44-point touch targets.
+  Both devices run the updated example, and all nine TypeScript effects pass.
+
+The TypeScript audit then reports a clipped Appearance label in the native
+selector. This is an open release gate. Follow-up automation again times out
+before tests start, including with a fresh runner. No audit finding is suppressed.
+NativeWind palette performance, full iOS large-text traversal, TypeScript spoken
+VoiceOver, iOS interruption checks, and spoken TalkBack still need completion.
+The existing styling-app VoiceOver and performance results remain valid; the
+later runner failure does not establish new results.
 
 Device evidence remains under `test-results/device-release-2026-10-23/`.
 Vue child PR #21 contains the combined review and its separate checks.
