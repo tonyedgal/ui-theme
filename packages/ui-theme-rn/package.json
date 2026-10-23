@@ -1,6 +1,6 @@
 {
   "name": "uitheme-rn",
-  "version": "0.1.0-alpha",
+  "version": "1.0.0",
   "description": "Native appearance and color palettes for React Native and Expo",
   "type": "module",
   "license": "MIT",
