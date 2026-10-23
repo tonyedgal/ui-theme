@@ -13,7 +13,11 @@ concurrency:
 jobs:
   ci:
     name: CI
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TURBO_SCM_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+      TURBO_SCM_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -23,19 +27,26 @@ jobs:
       - name: Detect browser changes
         id: browser
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            changed_files=$(git diff --name-only "$BASE_SHA...$HEAD_SHA")
-            if grep -Eq '^(packages/|apps/examples/|package.json$|pnpm-lock.yaml$|pnpm-workspace.yaml$|turbo.json$|scripts/|eslint.config.mjs$|\.github/workflows/|\.husky/|\.lintstagedrc)' <<< "$changed_files"; then
-              echo "run=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "run=false" >> "$GITHUB_OUTPUT"
-            fi
+          if [ -z "$BASE_SHA" ] || [[ "$BASE_SHA" =~ ^0+$ ]]; then
+            echo "web=true" >> "$GITHUB_OUTPUT"
+            echo "vue=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          changed_files=$(git diff --no-renames --name-only "$BASE_SHA...$HEAD_SHA")
+          shared='^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json|\.github/workflows/(release|full-validation)\.yml)$'
+          web='^(packages/ui-theme/|apps/examples/example-(next|tanstack|tanstack-ssr)/)'
+          vue='^(packages/ui-theme-vue/|packages/ui-theme/src/core/|packages/ui-theme/package\.json$|apps/examples/(example-vue|example-nuxt|vue-theme-demo)/)'
+          for target in web vue; do
+            pattern=${!target}
+            if grep -Eq "$shared|$pattern" <<< "$changed_files"; then
+              echo "$target=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$target=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -55,11 +66,22 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Build
-        run: pnpm build
+      - name: Restore build cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Check packages
+        run: pnpm exec turbo run build typecheck --filter='./packages/*'
+
+      - name: Check affected workspaces
+        run: pnpm exec turbo run build typecheck --affected
+
+      - name: Build Vue browser examples
+        if: steps.browser.outputs.vue == 'true'
+        run: pnpm exec turbo run build --filter=example-vue --filter=example-nuxt
 
       - name: Unit and declaration tests
         run: pnpm --filter uitheme-web test && pnpm --filter uitheme-web test:types
@@ -76,36 +98,28 @@ jobs:
       - name: Native packed package tests
         run: pnpm --filter uitheme-rn test:package
 
-      - name: Install browser engines
-        if: steps.browser.outputs.run == 'true'
-        run: pnpm --filter uitheme-web exec playwright install --with-deps chromium firefox webkit
-
-      - name: Independent native release consumer
-        if: steps.browser.outputs.run == 'true'
-        run: pnpm test:release:native
-
-      - name: Independent Vue and Nuxt release consumer
-        if: steps.browser.outputs.run == 'true'
-        run: node scripts/check-vue-release-consumer.mjs
-
-      - name: Browser regression tests
-        if: steps.browser.outputs.run == 'true'
-        run: pnpm --filter uitheme-web test:browser
+      - name: Web browser checks
+        if: steps.browser.outputs.web == 'true'
+        env:
+          PLAYWRIGHT_CHANNEL: chrome
+        run: pnpm --filter uitheme-web test:browser --project=chromium-dpr2
 
       - name: Vue and Nuxt browser checks
-        if: steps.browser.outputs.run == 'true'
-        run: pnpm --filter uitheme-vue test:browser
+        if: steps.browser.outputs.vue == 'true'
+        env:
+          PLAYWRIGHT_CHANNEL: chrome
+        run: pnpm --filter uitheme-vue test:browser --project=chromium --project=mobile
 
-      - name: Save Vue browser evidence
-        if: always() && steps.browser.outputs.run == 'true'
+      - name: Save browser evidence
+        if: failure() && (steps.browser.outputs.web == 'true' || steps.browser.outputs.vue == 'true')
         uses: actions/upload-artifact@v4
         with:
-          name: vue-browser-evidence
+          name: browser-failures
+          retention-days: 7
           path: |
+            packages/ui-theme/test-results
             packages/ui-theme-vue/playwright-report
             packages/ui-theme-vue/test-results
-            test-results/release-consumers-vue
-            test-results/release-consumers-native
 
       - name: Production dependency audit
         id: dependency-audit
@@ -123,7 +137,7 @@ jobs:
     name: Release
     needs: ci
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
