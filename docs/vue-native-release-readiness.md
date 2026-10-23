@@ -2,10 +2,11 @@
 
 Review date: October 23, 2026 (Africa/Lagos).
 
-The code and package checks pass. The updated native dependency is still undergoing device checks. Neither package is marked ready for a stable
-release. The production dependency audit still blocks CI. RN also needs the
-physical-device evidence listed below. Nothing was published or pushed during
-this review.
+The code and package checks pass. RN and Vue remain draft PRs #20 and #21.
+Neither package is ready for stable publication. The dependency audit and native
+performance checks fail. The final iPhone follow-up below records completed
+controls and accessibility checks, plus the remaining device gates. Nothing was
+published.
 
 ## Independent review and fixes
 
@@ -82,20 +83,18 @@ launch alone do not establish transition performance or spoken accessibility.
    are native example tooling: node-forge through Expo signing tooling, and
    braces through Metro/micromatch. The audit lists no patched release for either
    advisory. No advisory is suppressed. Re-run the audit before release.
-2. Record physical iPhone frame hitches, capture delay, and memory while changing
-   both appearance and palettes through every native effect. An idle recording,
-   successful archive, or screenshot cannot pass this gate.
-3. Check physical VoiceOver speech, selected state, traversal, and focus retention
-   through transitions in the native examples.
-4. Run Android rendering, interruption, large-text, and TalkBack checks. Android
-   bundle exports pass. A Samsung SM-S948B running Android 17 is now connected and
-   authorized. Platform tools, Java 17, and the SDK command-line tools are
-   installed. All three Android native projects are prepared with distinct
-   package identifiers. The user authorized Google's Android SDK License Agreement. The required SDK
-   components are installed and the first Release APK build is in progress. APK
-   installation, launch, rendering, and TalkBack remain unverified.
-5. Run the reviewed changes through GitHub CI after an authorized push. Local
-   passing checks do not establish a remote CI result.
+2. Resolve Android capture stalls. Complete NativeWind palette performance,
+   separate iOS capture timing, and longer memory checks. Current iPhone
+   appearance metrics record zero hitches; Android metrics fail the gate.
+3. Fix the TypeScript native selector's clipped Appearance label. Restore working
+   iPhone follow-up automation, then finish TypeScript spoken VoiceOver and full
+   iOS large-text/interruption checks. Both styling apps already pass Apple's
+   accessibility audit and actual VoiceOver checks.
+4. Complete spoken TalkBack checks. All three Android apps are installed and
+   their nine-effect appearance/palette controls pass. Both styling apps also
+   pass rapid-input, disabled-animation, and full large-text control traversal.
+5. Check the latest hosted results after the final push. Earlier hosted build
+   and test steps pass; the production audit fails.
 
 Advisories:
 [node-forge](https://github.com/advisories/GHSA-86w9-cpqp-85rv) and
@@ -189,13 +188,13 @@ Browser change detection compares the PR base SHA with the PR head SHA rather
 than the synthetic merge commit. A temporary stacked Git history reproduces
 unrelated parent changes entering the old diff and verifies their exclusion
 from the new diff. PRs against feature branches already trigger the workflow.
-No Vue child PR is currently open, so hosted verification remains pending.
-The existing RN PR fails at the dependency audit. The refreshed local audit
+Vue child draft PR #21 is open against RN draft PR #20. Hosted build and test
+steps pass for both prior heads; the dependency audit fails. The refreshed local audit
 still reports two high advisories; this change does not bypass that gate.
 
 The connected iPhone launches the installed NativeWind and Uniwind apps again.
-This confirms launch only. Physical motion, performance, and VoiceOver checks
-remain open.
+This initial check confirmed launch only. The final iPhone follow-up below
+records the later effect, performance, and VoiceOver results.
 
 ## Physical-device follow-up
 
@@ -203,8 +202,8 @@ The user authorized removing Car Platform Demo. It was removed from the iPhone,
 and the latest TypeScript archive was installed and launched. All three theme
 examples are now installed. The temporary XCTest runner failed to enable device
 UI automation and timed out. It was removed, and Uniwind was restored and
-launched. Physical iOS interaction, VoiceOver, and active performance remain
-unverified; device connection and installation do not pass those gates.
+launched. That initial runner failure established no interaction or accessibility result.
+The final iPhone follow-up below records later successful checks.
 
 On the Samsung SM-S948B, both Uniwind and NativeWind pass 72 combined control
 checks: nine effects, light/dark appearance, and two palette commands per effect.
