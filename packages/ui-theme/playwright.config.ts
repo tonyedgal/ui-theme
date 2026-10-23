@@ -22,6 +22,7 @@ export default defineConfig({
       grep: displayCases,
       use: {
         browserName: 'chromium',
+        channel: process.env.PLAYWRIGHT_CHANNEL,
         viewport: { width: 1280, height: 800 },
         deviceScaleFactor: 1,
       },
@@ -30,6 +31,7 @@ export default defineConfig({
       name: 'chromium-dpr2',
       use: {
         browserName: 'chromium',
+        channel: process.env.PLAYWRIGHT_CHANNEL,
         viewport: { width: 1440, height: 900 },
         deviceScaleFactor: 2,
       },
@@ -39,6 +41,7 @@ export default defineConfig({
       grep: displayCases,
       use: {
         browserName: 'chromium',
+        channel: process.env.PLAYWRIGHT_CHANNEL,
         viewport: { width: 390, height: 844 },
         deviceScaleFactor: 3,
         isMobile: true,
