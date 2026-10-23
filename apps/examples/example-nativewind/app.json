@@ -25,6 +25,9 @@
       "infoPlist": {
         "CADisableMinimumFrameDurationOnPhone": true
       }
+    },
+    "android": {
+      "package": "com.tonyedgal.uithemenativewind"
     }
   }
 }

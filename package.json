@@ -16,12 +16,14 @@
     "changeset:patch": "changeset add --type patch",
     "changeset:feature": "changeset add --type minor",
     "changeset:breaking": "changeset add --type major",
-    "changeset:version": "changeset version",
-    "changeset:publish": "pnpm build && changeset publish",
+    "changeset:version": "node .github/changeset-version.js",
+    "changeset:publish": "pnpm build:packages && changeset publish",
     "lint:fix": "eslint . --fix",
     "prepare": "husky",
     "test:commit": "pnpm --filter uitheme-web test",
-    "test:browser:smoke": "pnpm --filter uitheme-web build && pnpm --filter uitheme-web exec playwright test --project=chromium-dpr2 --grep \"declared ref|color palettes use|selects the current theme logo|reduced motion, unsupported|clicked element overrides\""
+    "test:browser:smoke": "pnpm --filter uitheme-web build && pnpm --filter uitheme-web exec playwright test --project=chromium-dpr2 --grep \"declared ref|color palettes use|selects the current theme logo|reduced motion, unsupported|clicked element overrides\"",
+    "build:packages": "turbo run build --filter=./packages/*",
+    "test:release:native": "pnpm --filter uitheme-rn build && node scripts/check-native-release-consumer.mjs"
   },
   "repository": {
     "type": "git",
@@ -40,7 +42,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
     "@eslint/js": "^9.39.5",
-    "@next/eslint-plugin-next": "16.3.8",
+    "@next/eslint-plugin-next": "16.4.1",
     "@shadcn/lint": "^0.2.0",
     "@types/node": "^22.20.5",
     "@types/react": "19.3.0",
