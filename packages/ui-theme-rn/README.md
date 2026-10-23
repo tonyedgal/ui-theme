@@ -387,3 +387,17 @@ resolved CSS scope. Use `useAnimatedUITheme()` for animated appearance and
 palette commands. Semantic colors follow the provider's resolved mode without
 changing OS Appearance. NativeWind's global `dark:` variant still follows the
 engine's system appearance; use semantic colors for provider-owned palettes.
+
+## Snapshot performance and native surfaces
+
+Screen effects take two snapshots of the provider's content. On the tested
+Android flagship, each awaited view capture takes 113–133 ms. Capture can pause
+the UI before the shader animation begins. Reanimated color transitions avoid
+this snapshot path. Do not assume full-screen effects meet the same frame budget.
+
+Disable snapshot transitions with `enabled={false}` around trees containing
+Android `SurfaceView` content, such as some video and camera views. The tested
+Skia capture path waits on the main thread for a callback scheduled on that
+same thread, which can time out and produce incomplete capture. Such trees are
+not verified for these effects. Keep system windows and native chrome outside
+the capture boundary. See the stable release review for current device limits.
