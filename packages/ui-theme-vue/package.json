@@ -1,6 +1,6 @@
 {
   "name": "uitheme-vue",
-  "version": "0.1.0-alpha.0",
+  "version": "1.0.0",
   "description": "Vue 3 and Nuxt theme switching with animated appearance and color palettes",
   "type": "module",
   "license": "MIT",
