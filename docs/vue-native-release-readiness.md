@@ -249,3 +249,25 @@ The app content remains accessible in the exported hierarchy while the service
 is configured. Spoken speech and focus traversal are not verified. The previous
 accessibility settings, font scale, animation scales, and landscape rotation
 were restored after the checks.
+
+### Capture timing and stable consumers
+
+A temporary Release build measured eight awaited Skia view captures during four
+circular appearance transitions on Android. Capture takes 113.39–133.10 ms.
+Image conversion takes 0.010–0.027 ms after the first 1.49 ms conversion.
+The captured delay supports profiling the native view-capture path before
+changing shaders or removing the conversion. These measurements include native
+scheduling and do not isolate CPU work on a particular thread. Diagnostic code
+was removed after measurement; no speculative performance fix was committed.
+
+Both isolated stable tarballs also pass the complete fresh-consumer runners.
+The Vue 1.0.0 consumer passes strict declarations, SSR, Nuxt preparation, types,
+production build, hydration, and preference reload. The RN 1.0.0 consumer passes
+ordinary installation, strict root declarations, optional declarations, and
+Metro exports for iOS and Android. Publication remains blocked by the audit,
+native performance, physical accessibility, and incomplete iOS interactions.
+
+Git history confirms all 15 pending web changesets were added after the current
+`uitheme-web@1.1.0` tag. They are not removed as already-released notes. Standard
+Changesets therefore includes the proposed web 1.2.0 in the full batch. No
+unrelated package version is manually changed to limit that batch.
