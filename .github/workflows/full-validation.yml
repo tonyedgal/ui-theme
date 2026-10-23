@@ -1,0 +1,63 @@
+name: Full release validation
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: full-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Full validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      options: --ipc=host --init
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all workspaces
+        run: pnpm build
+
+      - name: Typecheck all workspaces
+        run: pnpm typecheck
+
+      - name: Independent native release consumer
+        run: node scripts/check-native-release-consumer.mjs
+
+      - name: Independent Vue and Nuxt release consumer
+        run: node scripts/check-vue-release-consumer.mjs
+
+      - name: Full web browser matrix
+        run: pnpm --filter uitheme-web test:browser
+
+      - name: Full Vue and Nuxt browser matrix
+        run: pnpm --filter uitheme-vue test:browser
+
+      - name: Save validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-validation-evidence
+          retention-days: 7
+          path: |
+            packages/ui-theme/test-results
+            packages/ui-theme-vue/playwright-report
+            packages/ui-theme-vue/test-results
+            test-results/release-consumers-native
+            test-results/release-consumers-vue
