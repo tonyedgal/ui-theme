@@ -70,6 +70,9 @@ jobs:
       - name: Packed package tests
         run: pnpm --filter uitheme-web test:package
 
+      - name: Vue packed package checks
+        run: pnpm --filter uitheme-vue test:package
+
       - name: Native packed package tests
         run: pnpm --filter uitheme-rn test:package
 
@@ -81,16 +84,28 @@ jobs:
         if: steps.browser.outputs.run == 'true'
         run: pnpm test:release:native
 
+      - name: Independent Vue and Nuxt release consumer
+        if: steps.browser.outputs.run == 'true'
+        run: node scripts/check-vue-release-consumer.mjs
+
       - name: Browser regression tests
         if: steps.browser.outputs.run == 'true'
         run: pnpm --filter uitheme-web test:browser
 
-      - name: Save native consumer evidence
+      - name: Vue and Nuxt browser checks
+        if: steps.browser.outputs.run == 'true'
+        run: pnpm --filter uitheme-vue test:browser
+
+      - name: Save Vue browser evidence
         if: always() && steps.browser.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: native-consumer-evidence
-          path: test-results/release-consumers-native
+          name: vue-browser-evidence
+          path: |
+            packages/ui-theme-vue/playwright-report
+            packages/ui-theme-vue/test-results
+            test-results/release-consumers-vue
+            test-results/release-consumers-native
 
       # Keep the audit as a release gate after independent regression checks.
       - name: Production dependency audit
