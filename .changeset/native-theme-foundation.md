@@ -1,5 +1,5 @@
 ---
-'uitheme-rn': minor
+'uitheme-rn': major
 ---
 
 Add the React Native theme package with independent appearance and color palette
