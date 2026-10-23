@@ -210,8 +210,8 @@ On the Samsung SM-S948B, both Uniwind and NativeWind pass 72 combined control
 checks: nine effects, light/dark appearance, and two palette commands per effect.
 CSS and native color labels match after appearance changes. Screenshots show
 matching color samples. Both apps settle after rapid input and commit appearance
-with system animation scales disabled. At font scale 1.5, the heading and color
-samples remain present; complete large-text traversal is not established.
+with system animation scales disabled. At font scale 1.5, all transition, appearance, palette, and duration controls
+remain reachable in both styling apps.
 The TypeScript preview changes appearance in both directions and returns ready.
 No matching fatal/capture/serialization errors occur in the sampled Android log.
 Recordings, screenshots, memory and frame data are under
@@ -271,3 +271,30 @@ Git history confirms all 15 pending web changesets were added after the current
 `uitheme-web@1.1.0` tag. They are not removed as already-released notes. Standard
 Changesets therefore includes the proposed web 1.2.0 in the full batch. No
 unrelated package version is manually changed to limit that batch.
+
+### Final iPhone follow-up
+
+A fresh Xcode 27.1 runner completes physical iPhone checks after macOS developer
+authorization. All nine effects pass appearance and palette controls in all
+three apps. NativeWind and Uniwind pass Apple's accessibility audit and actual
+VoiceOver traversal, spoken selected state, activation, and appearance focus
+retention. NativeWind appearance and Uniwind appearance/palette measurements
+record zero XCTest hitches, with peak physical memory of about 561 MB and
+518 MB. One measured iteration plus warmup does not prove long-run stability.
+TypeScript and Uniwind also pass appearance/palette commands with iOS Reduce
+Motion enabled. The setting is restored.
+
+Parent PR #20 fixes the TypeScript example's navigation touch targets. Updated
+signed apps build and open on both devices. All nine TypeScript effects pass
+on Android and iOS. A subsequent Apple audit reports a clipped native Appearance
+label. Follow-up automation times out before tests begin, including with a
+clean runner; no speculative label fix is retained. NativeWind palette
+performance, iOS capture latency, full iOS large-text/interruption checks,
+TypeScript spoken VoiceOver, and spoken TalkBack remain open.
+
+The temporary iPhone test runner is removed. TypeScript, NativeWind, and Uniwind
+are installed and each launches. Android preferences are restored. RN package
+tests, packed checks, fresh iOS/Android consumers, formatting, lint, and example
+types pass after the touch-target fix. Hosted build/test steps pass on the
+previous RN/Vue heads; only the production audit fails. The two high advisories
+still list no patched versions. Publication remains blocked; nothing is published.
