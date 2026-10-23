@@ -3,8 +3,8 @@
 Review date: October 23, 2026 (Africa/Lagos).
 
 The code and package checks pass. RN and Vue remain draft PRs #20 and #21.
-Neither package is ready for stable publication. The dependency audit and native
-performance checks fail. The final iPhone follow-up below records completed
+Neither package is published as stable. The dependency audit reports two high
+findings and is now advisory. Native performance checks still fail. The final iPhone follow-up below records completed
 controls and accessibility checks, plus the remaining device gates. Nothing was
 published.
 
@@ -78,11 +78,11 @@ launch alone do not establish transition performance or spoken accessibility.
 
 ## Remaining release gates
 
-1. Resolve the two high production dependency advisories. Current audit results
-   are zero critical, two high, zero moderate, and zero low. The remaining paths
-   are native example tooling: node-forge through Expo signing tooling, and
-   braces through Metro/micromatch. The audit lists no patched release for either
-   advisory. No advisory is suppressed. Re-run the audit before release.
+1. Review the production audit and track upstream fixes. The audit currently
+   reports zero critical and two high findings in example build tooling. The
+   full audit remains visible in CI, with a warning and job summary on failure.
+   Audit failures no longer block CI or release. All other checks remain required.
+   No advisory is excluded from the report.
 2. Resolve Android capture stalls. Complete NativeWind palette performance,
    separate iOS capture timing, and longer memory checks. Current iPhone
    appearance metrics record zero hitches; Android metrics fail the gate.
@@ -94,7 +94,7 @@ launch alone do not establish transition performance or spoken accessibility.
    their nine-effect appearance/palette controls pass. Both styling apps also
    pass rapid-input, disabled-animation, and full large-text control traversal.
 5. Check the latest hosted results after the final push. Earlier hosted build
-   and test steps pass; the production audit fails.
+   and test steps pass; the production audit reports the known findings.
 
 Advisories:
 [node-forge](https://github.com/advisories/GHSA-86w9-cpqp-85rv) and
@@ -109,7 +109,7 @@ remain unchanged while gates are open.
 
 Complete these steps in order:
 
-1. Resolve the production dependency audit without suppressing advisories.
+1. Review the advisory production dependency audit and track upstream fixes.
 2. Complete iPhone transition, interruption, frame-time, and memory checks.
 3. Complete VoiceOver speech, traversal, selected-state, and focus checks.
 4. Complete Android rendering, interruption, large-text, and TalkBack checks.
@@ -144,7 +144,8 @@ pnpm audit --prod
 Browser checks require ports 4280–4282 to be free. These dedicated ports do not
 reuse the open development demos on 4180–4181. The consumer runner uses a
 separate assigned port and does not depend on the examples or workspace links.
-The final audit command currently fails for the two disclosed advisories.
+The final audit command currently exits nonzero for the two disclosed
+advisories. CI treats this one step as advisory.
 
 ## Android follow-up: Skia capture fix
 
@@ -189,8 +190,8 @@ than the synthetic merge commit. A temporary stacked Git history reproduces
 unrelated parent changes entering the old diff and verifies their exclusion
 from the new diff. PRs against feature branches already trigger the workflow.
 Vue child draft PR #21 is open against RN draft PR #20. Hosted build and test
-steps pass for both prior heads; the dependency audit fails. The refreshed local audit
-still reports two high advisories; this change does not bypass that gate.
+steps pass for both prior heads; the production audit was the failing gate.
+The audit is now advisory, as requested; its findings remain visible.
 
 The connected iPhone launches the installed NativeWind and Uniwind apps again.
 This initial check confirmed launch only. The final iPhone follow-up below
@@ -263,8 +264,8 @@ Both isolated stable tarballs also pass the complete fresh-consumer runners.
 The Vue 1.0.0 consumer passes strict declarations, SSR, Nuxt preparation, types,
 production build, hydration, and preference reload. The RN 1.0.0 consumer passes
 ordinary installation, strict root declarations, optional declarations, and
-Metro exports for iOS and Android. Publication remains blocked by the audit,
-native performance, physical accessibility, and incomplete iOS interactions.
+Metro exports for iOS and Android. The remaining native gates concern performance, physical accessibility, and
+incomplete iOS interactions. The advisory audit is no longer a release gate.
 
 Git history confirms all 15 pending web changesets were added after the current
 `uitheme-web@1.1.0` tag. They are not removed as already-released notes. Standard
@@ -295,5 +296,21 @@ The temporary iPhone test runner is removed. TypeScript, NativeWind, and Uniwind
 are installed and each launches. Android preferences are restored. RN package
 tests, packed checks, fresh iOS/Android consumers, formatting, lint, and example
 types pass after the touch-target fix. Hosted build/test steps pass on the
-previous RN/Vue heads; only the production audit fails. The two high advisories
-still list no patched versions. Publication remains blocked; nothing is published.
+previous RN/Vue heads; the production audit was the only CI failure. The two
+high advisories still list no patched versions. The audit is now advisory;
+nothing is published.
+
+### Audit policy and Changesets verification
+
+On October 23, npm still serves node-forge 1.4.0 and braces 3.0.3 as latest.
+The [node-forge fix PR](https://github.com/digitalbazaar/forge/pull/1152) and
+[braces issue](https://github.com/micromatch/braces/issues/70) are open. No fixed
+version is available to override. The CI policy change does not fix either
+vulnerability, and no unreleased patch is installed.
+
+Fresh isolated runs of the actual version wrapper and lockfile refresh confirm:
+RN-only changesets update only RN to 1.0.0; Vue-only changesets update only Vue
+to 1.0.0; web-only changesets update only web to 1.2.0. Private example versions
+stay unchanged. With all current pending changesets present, the full plan
+contains RN 1.0.0, Vue 1.0.0, and web 1.2.0. The web bump comes from its own 15
+pending changesets. Working package versions remain unchanged.
