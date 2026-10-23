@@ -98,7 +98,6 @@ try {
       '--ignore-scripts',
       '--omit=dev',
       '--omit=peer',
-      '--legacy-peer-deps',
       '--no-audit',
       '--no-fund',
     ],
