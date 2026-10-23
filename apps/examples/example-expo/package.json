@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.22",
-    "@shopify/react-native-skia": "2.6.2",
+    "@shopify/react-native-skia": "2.11.1",
     "expo": "~57.0.27",
     "expo-build-properties": "~57.0.22",
     "expo-constants": "~57.0.21",
@@ -43,5 +43,12 @@
     "android:release": "expo run:android --variant release --device",
     "sync:colors": "node ../scripts/sync-native-theme-colors.mjs"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "install": {
+      "exclude": [
+        "@shopify/react-native-skia"
+      ]
+    }
+  }
 }
