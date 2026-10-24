@@ -20,11 +20,14 @@
     "changeset:publish": "pnpm build:packages && changeset publish",
     "lint:fix": "eslint . --fix",
     "prepare": "husky",
-    "test:commit": "pnpm --filter uitheme-web test",
+    "test:commit": "node scripts/test-staged.mjs",
     "test:browser:smoke": "pnpm --filter uitheme-web build && pnpm --filter uitheme-web exec playwright test --project=chromium-dpr2 --grep \"declared ref|color palettes use|selects the current theme logo|reduced motion, unsupported|clicked element overrides\"",
     "test:release:consumers": "pnpm build:packages && node scripts/check-vue-release-consumer.mjs && node scripts/check-native-release-consumer.mjs",
     "build:packages": "turbo run build --filter=./packages/*",
-    "test:release:native": "pnpm --filter uitheme-rn build && node scripts/check-native-release-consumer.mjs"
+    "test:release:native": "pnpm --filter uitheme-rn build && node scripts/check-native-release-consumer.mjs",
+    "test:validation": "node --test scripts/tests/validation.test.mjs",
+    "test:browsers:install": "pnpm --filter uitheme-web exec playwright install chromium firefox webkit",
+    "test:local": "node scripts/validate.mjs --all"
   },
   "repository": {
     "type": "git",

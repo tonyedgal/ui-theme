@@ -765,6 +765,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ui-theme
     devDependencies:
+      '@playwright/test':
+        specifier: 1.62.1
+        version: 1.62.1
       '@tailwindcss/postcss':
         specifier: ^4.3.3
         version: 4.3.3
