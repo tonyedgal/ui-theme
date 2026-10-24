@@ -1,0 +1,26 @@
+name: Advisory dependency audit
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit lockfile
+        id: audit
+        continue-on-error: true
+        run: pnpm audit --prod
+      - name: Report findings
+        if: always() && steps.audit.outcome == 'failure'
+        run: |
+          echo "::warning::Dependency audit reported findings or could not complete. Review the audit log."
+          echo "The advisory dependency audit reported findings or could not complete. See the audit log." >> "$GITHUB_STEP_SUMMARY"
