@@ -1,0 +1,49 @@
+{
+  "dependencies": [
+    "reka-ui@^2.11.0",
+    "tailwind-merge@{{tailwindMergeVersion}}"
+  ],
+  "components": {
+    "theme-toggle": {
+      "title": "Theme Toggle",
+      "description": "Toggle between the resolved light and dark themes.",
+      "files": [
+        { "source": "theme-toggle.vue", "path": "theme-toggle.vue" },
+        { "source": "classes.ts", "path": "classes.ts", "type": "registry:lib" }
+      ]
+    },
+    "appearance-selector": {
+      "title": "Appearance Selector",
+      "description": "Choose an available appearance theme.",
+      "files": [
+        {
+          "source": "appearance-selector.vue",
+          "path": "appearance-selector.vue"
+        },
+        { "source": "classes.ts", "path": "classes.ts", "type": "registry:lib" }
+      ]
+    },
+    "color-theme-selector": {
+      "title": "Color Theme Selector",
+      "description": "Choose an available color theme.",
+      "files": [
+        {
+          "source": "color-theme-selector.vue",
+          "path": "color-theme-selector.vue"
+        },
+        { "source": "classes.ts", "path": "classes.ts", "type": "registry:lib" }
+      ]
+    },
+    "transition-settings": {
+      "title": "Transition Settings",
+      "description": "Control the transition animation and duration.",
+      "files": [
+        {
+          "source": "transition-settings.vue",
+          "path": "transition-settings.vue"
+        },
+        { "source": "classes.ts", "path": "classes.ts", "type": "registry:lib" }
+      ]
+    }
+  }
+}

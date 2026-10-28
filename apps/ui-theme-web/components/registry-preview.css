@@ -1,0 +1,3 @@
+@reference '../app/global.css';
+@tailwind utilities;
+@source '../../../packages/ui-theme-registry/src/templates/react';

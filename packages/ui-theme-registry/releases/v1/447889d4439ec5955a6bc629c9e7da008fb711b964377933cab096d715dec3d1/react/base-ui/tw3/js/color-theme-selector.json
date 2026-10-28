@@ -1,0 +1,36 @@
+{
+  "name": "color-theme-selector",
+  "type": "registry:ui",
+  "title": "Color Theme Selector",
+  "description": "Choose an available color theme.",
+  "dependencies": [
+    "tailwind-merge@^2.6.0",
+    "@base-ui/react@^1.8.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "color-theme-selector.jsx",
+      "content": "'use client';\nimport * as React from 'react';\nimport { useUITheme } from 'uitheme-web/react';\nimport { cn } from './classes';\nimport { Select } from '@base-ui/react/select';\nexport const ColorThemeSelector = React.forwardRef(function ColorThemeSelector({ className, classes, label = 'Color theme', options: optionOverrides, disabled = false, }, forwardedRef) {\n    const { colorTheme, colorThemes, mounted, switchColorTheme } = useUITheme();\n    const triggerRef = React.useRef(null);\n    const selected = colorTheme;\n    const options = optionOverrides ??\n        colorThemes.map((value) => ({\n            value,\n            label: value\n                .replaceAll('-', ' ')\n                .replace(/\\b\\w/g, (letter) => letter.toUpperCase()),\n        }));\n    React.useImperativeHandle(forwardedRef, () => triggerRef.current);\n    const change = (value) => switchColorTheme(value, { element: triggerRef.current });\n    return (<div className={cn('flex flex-col gap-2', classes?.root, className)}>\n      <Select.Root items={options} value={selected} disabled={disabled || !mounted} onValueChange={(next) => next && void change(next)}>\n        <Select.Label className={cn('text-sm font-medium text-foreground', classes?.label)}>\n          {label}\n        </Select.Label>\n        <Select.Trigger ref={triggerRef} disabled={disabled || !mounted} className={cn('flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50', classes?.trigger)}>\n          <Select.Value />\n          <span aria-hidden=\"true\">⌄</span>\n        </Select.Trigger>\n        <Select.Portal>\n          <Select.Positioner>\n            <Select.Popup className={cn('z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none', classes?.content)}>\n              <Select.List>\n                {options.map((option) => (<Select.Item key={option.value} value={option.value} className={cn('relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50', classes?.item)}>\n                    <Select.ItemText>{option.label}</Select.ItemText>\n                  </Select.Item>))}\n              </Select.List>\n            </Select.Popup>\n          </Select.Positioner>\n        </Select.Portal>\n      </Select.Root>\n    </div>);\n});\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.js",
+      "content": "import { twMerge } from 'tailwind-merge';\nexport function cn(...classes) {\n    return twMerge(classes.filter(Boolean).join(' '));\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "447889d4439ec5955a6bc629c9e7da008fb711b964377933cab096d715dec3d1",
+      "component": "color-theme-selector",
+      "framework": "react",
+      "base": "base-ui",
+      "tailwind": 3,
+      "language": "js",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

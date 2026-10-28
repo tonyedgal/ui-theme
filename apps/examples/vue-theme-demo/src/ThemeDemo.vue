@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { shallowRef } from 'vue';
-import { useUITheme, type TransitionOptions } from 'uitheme-vue';
+import { useUITheme, type TransitionOptions } from 'uitheme-web/vue';
 import ThemeStudio from './components/ThemeStudio.vue';
 import ThemePalette from './components/ThemePalette.vue';
 import ThemePreview from './components/ThemePreview.vue';
@@ -53,7 +53,7 @@ const { theme, colorTheme, mounted } = useUITheme();
             CSS variables.
           </p>
           <code class="w-fit rounded-md border bg-muted px-4 py-3 text-sm"
-            >pnpm add uitheme-vue</code
+            >pnpm add uitheme-web</code
           >
         </div>
         <p class="text-xs text-muted-foreground" role="status">

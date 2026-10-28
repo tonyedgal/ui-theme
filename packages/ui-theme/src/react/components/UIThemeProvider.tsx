@@ -32,9 +32,9 @@ export type UIThemeProviderProps = ThemeAnimationOptions & {
   /** React children to wrap with theme context */
   children: ReactNode;
   /** Available theme options */
-  themes?: Theme[];
+  themes?: readonly Theme[];
   /** Available color theme options */
-  colorThemes?: ColorTheme[];
+  colorThemes?: readonly ColorTheme[];
   /** Default theme to use */
   defaultTheme?: Theme;
   /** Default color theme to use */
@@ -62,7 +62,7 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
   themes = ['light', 'dark', 'system'],
   colorThemes = ['default'],
   defaultTheme = 'system',
-  defaultColorTheme = 'default',
+  defaultColorTheme = colorThemes[0] ?? 'default',
   animationType = ThemeAnimationType.CIRCLE,
   clipPathDirection,
   animationPosition,
@@ -100,6 +100,10 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
 
   if (!mounted) {
     const loadingContextValue: UIThemeContextType = {
+      themes,
+      colorThemes,
+      mounted: false,
+      systemTheme: 'light',
       ref: { current: null },
       theme: defaultTheme,
       colorTheme: defaultColorTheme,
@@ -127,21 +131,8 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
   }
 
   const contextValue: UIThemeContextType = {
-    ref: themeState.ref,
-    theme: themeState.theme,
-    colorTheme: themeState.colorTheme,
-    resolvedTheme: themeState.resolvedTheme,
-    setTheme: themeState.setTheme,
-    setColorTheme: themeState.setColorTheme,
-    switchTheme: themeState.switchTheme,
+    ...themeState,
     switchThemeFromElement,
-    switchColorTheme: themeState.switchColorTheme,
-    toggleTheme: themeState.toggleTheme,
-    toggleLightTheme: themeState.toggleLightTheme,
-    toggleDarkTheme: themeState.toggleDarkTheme,
-    toggleColorTheme: themeState.toggleColorTheme,
-    createColorThemeToggle: themeState.createColorThemeToggle,
-    isColorThemeActive: themeState.isColorThemeActive,
   };
 
   return (
@@ -160,11 +151,15 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
  * @throws Error if used outside of UIThemeProvider
  */
 export const useUITheme = (): UIThemeContextType => {
-  const context = useContext(UIThemeContext);
+  const context = useContext(SharedThemeContext);
 
-  if (context === undefined) {
+  if (context === null) {
     throw new Error('useUITheme must be used within a UIThemeProvider');
   }
 
-  return context;
+  return {
+    ...context,
+    switchThemeFromElement: (theme, element) =>
+      context.switchTheme(theme, { element }),
+  };
 };

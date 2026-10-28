@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue';
 import {
-  UIThemeSwitcher,
-  UIThemeSelector,
   useUITheme,
   ThemeAnimationType,
   TRANSITION_DIRECTIONS,
   type SlideDirection,
   type AnimationPosition,
   type TransitionOptions,
-} from 'uitheme-vue';
+} from 'uitheme-web/vue';
+
+import AppearanceSelector from './ui/appearance-selector.vue';
+import ThemeToggle from './ui/theme-toggle.vue';
+import ColorThemeSelector from './ui/color-theme-selector.vue';
 
 const effect = shallowRef(ThemeAnimationType.CIRCLE);
 
@@ -63,18 +65,12 @@ const effects = Object.values(ThemeAnimationType);
       </button>
     </div>
     <div class="grid gap-6 rounded-xl border p-5 sm:grid-cols-2 lg:grid-cols-3">
-      <label class="grid gap-2 text-sm"
-        >Appearance<UIThemeSwitcher :disabled="!mounted"
-      /></label>
-      <label class="grid gap-2 text-sm"
-        >Light / dark only<UIThemeSwitcher
-          label="Light or dark"
-          :themes="['light', 'dark']"
-          :disabled="!mounted"
-      /></label>
-      <label class="grid gap-2 text-sm"
-        >Color theme<UIThemeSelector :disabled="!mounted"
-      /></label>
+      <AppearanceSelector :disabled="!mounted" />
+      <div class="grid gap-2 text-sm">
+        <span>Light / dark only</span>
+        <ThemeToggle label="Light or dark" :disabled="!mounted" />
+      </div>
+      <ColorThemeSelector :disabled="!mounted" />
       <label class="grid gap-2 text-sm"
         >Transition style<select v-model="effect" aria-label="Transition style">
           <option v-for="value in effects" :key="value" :value="value">

@@ -1,13 +1,44 @@
 ---
-title: Hello World
-description: Your first document
+title: UI-Theme v2
+description: One runtime for React, Vue, Next.js, TanStack Start, and Nuxt 4.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+Install the runtime once. Choose the import for your framework.
+UI-Theme manages appearance, palettes, persistence, and animated theme transitions.
+Styled controls are source files that you install separately.
 
-## What is Next?
+```sh
+npm install uitheme-web@^2
+```
+
+| Environment                      | Import                              |
+| -------------------------------- | ----------------------------------- |
+| Framework-neutral browser engine | `uitheme-web` or `uitheme-web/core` |
+| React                            | `uitheme-web/react`                 |
+| Next.js client provider          | `uitheme-web/next`                  |
+| Next.js server bootstrap         | `uitheme-web/next/server`           |
+| TanStack Start server helpers    | `uitheme-web/tanstack`              |
+| Vue 3                            | `uitheme-web/vue`                   |
+| Vue server bootstrap             | `uitheme-web/vue/bootstrap`         |
+| Nuxt 4 module                    | `uitheme-web/nuxt`                  |
+
+The runtime has no UI primitive dependency. Framework dependencies are optional peers.
+Install React or Vue in the app that uses that adapter.
 
 <Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
+  <Card
+    title="Set up your framework"
+    href="/docs/installation"
+    description="Providers, server bootstrap, and styling."
+  />
+  <Card
+    title="Install controls"
+    href="/docs/components"
+    description="Preview Base UI or Radix. Get Vue source with Reka."
+  />
+  <Card
+    title="Migrate from v1"
+    href="/docs/migration"
+    description="Move styled controls to local source and update Vue imports."
+  />
 </Cards>

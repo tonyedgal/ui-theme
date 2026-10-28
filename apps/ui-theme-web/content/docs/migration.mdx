@@ -1,0 +1,62 @@
+---
+title: Migrate to v2
+description: Keep the runtime and move styled controls into your app.
+---
+
+## Web controls
+
+Upgrade the runtime to `uitheme-web@^2`. Keep providers, hooks, theme values,
+storage keys, and callbacks. Test the saved appearance and palette before and
+after the upgrade.
+
+Styled controls are no longer exported by the v2 runtime. Install the controls
+as editable source with `uitheme-cli`, then change imports to your local files.
+The runtime does not depend on Base UI, Radix, or Reka.
+
+```sh
+npx uitheme-cli migrate --dry-run
+pnpm add uitheme-web@^2.0.0
+npx uitheme-cli add theme-toggle appearance-selector color-theme-selector transition-settings --base base-ui
+npx uitheme-cli migrate --dry-run
+```
+
+Use your app’s package manager for the dependency upgrade. Work on a migration
+branch. The app can have unresolved imports until you finish replacing the old
+controls. `add` requires v2 and does not run on an installed v1 runtime.
+For verified bare controls inside a known provider, review the migration preview
+and apply it with `npx uitheme-cli migrate --yes`. Custom props and unknown
+provider wiring need manual changes; the command reports these before any writes.
+
+Choose `--base radix` for Radix React controls. Vue uses `--base reka`.
+Select the Tailwind major already used by the app with `--tailwind 3` or `--tailwind 4`.
+The copied files have no runtime switch between bases.
+
+Replace the previous packaged control imports with the installed paths:
+
+```tsx
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { AppearanceSelector } from '@/components/ui/appearance-selector';
+```
+
+Check the destinations in `uitheme.json` if your app uses another alias or
+component directory. Preserve customized controls until you have reviewed
+and tested their replacements. `--yes` does not overwrite edits.
+
+## Vue v1
+
+The published `uitheme-vue@1` package remains available. There is no bridge
+package. To adopt v2, install `uitheme-web@^2` and move Vue runtime imports to
+`uitheme-web/vue`. Use `uitheme-web/vue/bootstrap` for server bootstrap.
+Replace styled controls with local Reka source installed by `uitheme-cli`.
+
+For Nuxt 4, replace the previous Vue module entry with `uitheme-web/nuxt`.
+Nuxt 3 automatic migration is not supported. Review framework compatibility
+before changing the Nuxt module.
+
+## Verify the app
+
+Check appearance and palette persistence after reload. Check the initial
+server HTML and hydration with light, dark, and system preferences.
+Check both transition directions and reduced motion.
+Check selector keyboard navigation, translated labels, and the duration value.
+Keep `TransitionSettings` state in the app and pass it to the provider.

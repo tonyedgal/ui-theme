@@ -53,20 +53,41 @@ export function validate(files, { ci = false, root = process.cwd() } = {}) {
       run('--filter', name, 'test:types');
     }
 
-    if (name === 'uitheme-rn') run('--filter', name, 'test');
-    run('--filter', name, 'test:package');
+    if (name !== 'uitheme-web') run('--filter', name, 'test');
+
+    if (name !== '@ui-theme/registry') run('--filter', name, 'test:package');
   }
 
   for (const suite of plan.browsers) {
-    const name = suite === 'website' ? 'ui-theme-web' : `uitheme-${suite}`;
-    run('--filter', name, 'test:browser');
+    const name =
+      suite === 'website'
+        ? 'ui-theme-web'
+        : suite === 'registry'
+          ? '@ui-theme/registry'
+          : 'uitheme-web';
+
+    run(
+      '--filter',
+      name,
+      suite === 'vue' ? 'test:browser:vue' : 'test:browser'
+    );
+  }
+
+  if (plan.consumers.includes('registry')) {
+    for (const name of ['uitheme-web', 'uitheme-cli']) {
+      if (!plan.packages.includes(name)) run('--filter', name, 'build');
+    }
   }
 
   for (const name of plan.consumers) {
     const script = name === 'rn' ? 'native' : name;
     execFileSync(
       process.execPath,
-      [`scripts/check-${script}-release-consumer.mjs`],
+      [
+        name === 'registry'
+          ? 'scripts/check-registry-release-consumers.mjs'
+          : `scripts/check-${script}-release-consumer.mjs`,
+      ],
       {
         cwd: root,
         stdio: 'inherit',
@@ -117,7 +138,7 @@ if (
     )
       release = true;
 
-    for (const folder of ['ui-theme', 'ui-theme-rn', 'ui-theme-vue']) {
+    for (const folder of ['ui-theme', 'ui-theme-rn', 'ui-theme-cli']) {
       const file = `packages/${folder}/package.json`;
 
       if (!files.includes(file)) continue;

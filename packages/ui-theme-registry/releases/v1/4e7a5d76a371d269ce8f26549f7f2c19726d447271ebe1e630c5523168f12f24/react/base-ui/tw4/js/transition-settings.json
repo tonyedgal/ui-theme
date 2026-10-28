@@ -1,0 +1,36 @@
+{
+  "name": "transition-settings",
+  "type": "registry:ui",
+  "title": "Transition Settings",
+  "description": "Control the transition animation and duration.",
+  "dependencies": [
+    "tailwind-merge@^3.0.0",
+    "@base-ui/react@^1.8.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "transition-settings.jsx",
+      "content": "'use client';\nimport { ThemeAnimationType, DEFAULT_DURATION } from 'uitheme-web/react';\nimport { cn } from './classes';\nimport { Slider } from '@base-ui/react/slider';\nimport { Select } from '@base-ui/react/select';\nconst animationTypes = [\n    ThemeAnimationType.CIRCLE,\n    ThemeAnimationType.BLUR_CIRCLE,\n    ThemeAnimationType.SLIDE,\n    ThemeAnimationType.CLIP_PATH,\n    ThemeAnimationType.POLYGON_GRADIENT,\n    ThemeAnimationType.TRIANGLE,\n];\nexport function TransitionSettings({ value, onValueChange, className, classes, animationLabel = 'Transition animation', durationLabel = 'Transition duration', disabled = false, }) {\n    return (<div className={cn('flex flex-col gap-4', classes?.root, className)}>\n      <Select.Root items={animationTypes.map((value) => ({\n            value,\n            label: value.replaceAll('-', ' '),\n        }))} disabled={disabled} value={value.animationType} onValueChange={(animationType) => animationType &&\n            onValueChange({\n                ...value,\n                animationType: animationTypes.find((type) => type === animationType) ??\n                    ThemeAnimationType.CIRCLE,\n            })}>\n        <Select.Label className={cn('text-sm font-medium text-foreground', classes?.label)}>\n          {animationLabel}\n        </Select.Label>\n        <Select.Trigger className={cn('flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', classes?.trigger)}>\n          <Select.Value />\n          <span aria-hidden=\"true\">⌄</span>\n        </Select.Trigger>\n        <Select.Portal>\n          <Select.Positioner>\n            <Select.Popup className={cn('z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none', classes?.content)}>\n              <Select.List>\n                {animationTypes.map((type) => (<Select.Item key={type} value={type} className={cn('cursor-default rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground', classes?.item)}>\n                    <Select.ItemText>\n                      {type\n                .replaceAll('-', ' ')\n                .replace(/\\b\\w/g, (letter) => letter.toUpperCase())}\n                    </Select.ItemText>\n                  </Select.Item>))}\n              </Select.List>\n            </Select.Popup>\n          </Select.Positioner>\n        </Select.Portal>\n      </Select.Root>\n      <label className={cn('flex flex-col gap-2 text-sm font-medium text-foreground', classes?.label)}>\n        <span className=\"flex items-center justify-between\">\n          <span>{durationLabel}</span>\n          <output aria-live=\"polite\">{value.duration} ms</output>\n        </span>\n        <Slider.Root disabled={disabled} value={value.duration} min={0} max={2000} step={50} onValueChange={(duration) => onValueChange({ ...value, duration: Number(duration) })} className=\"flex w-full flex-col gap-2\">\n          <Slider.Control className=\"flex h-5 items-center\">\n            <Slider.Track className={cn('relative h-2 w-full rounded-full bg-muted', classes?.track)}>\n              <Slider.Indicator className=\"absolute h-full rounded-full bg-primary\"/>\n              <Slider.Thumb aria-label={durationLabel} className={cn('block size-4 rounded-full border border-primary bg-background shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50', classes?.thumb)}/>\n            </Slider.Track>\n          </Slider.Control>\n        </Slider.Root>\n        <span className=\"sr-only\">Default {DEFAULT_DURATION} milliseconds</span>\n      </label>\n    </div>);\n}\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.js",
+      "content": "import { twMerge } from 'tailwind-merge';\nexport function cn(...classes) {\n    return twMerge(classes.filter(Boolean).join(' '));\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "4e7a5d76a371d269ce8f26549f7f2c19726d447271ebe1e630c5523168f12f24",
+      "component": "transition-settings",
+      "framework": "react",
+      "base": "base-ui",
+      "tailwind": 4,
+      "language": "js",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

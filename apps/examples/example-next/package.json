@@ -28,7 +28,8 @@
     "recharts": "^2.15.4",
     "tailwind-merge": "^3.7.0",
     "uitheme-web": "workspace:*",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "@radix-ui/react-toggle": "^1.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

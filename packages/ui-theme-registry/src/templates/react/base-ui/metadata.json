@@ -1,0 +1,73 @@
+{
+  "dependencies": ["tailwind-merge@{{tailwindMergeVersion}}"],
+  "components": {
+    "theme-toggle": {
+      "title": "Theme Toggle",
+      "description": "Toggle between the resolved light and dark themes.",
+      "files": [
+        {
+          "source": "theme-toggle.tsx",
+          "path": "theme-toggle.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "source": "classes.ts",
+          "path": "classes.ts",
+          "type": "registry:lib"
+        }
+      ],
+      "dependencies": ["@base-ui/react@^1.8.0"]
+    },
+    "appearance-selector": {
+      "title": "Appearance Selector",
+      "description": "Choose an available appearance theme.",
+      "files": [
+        {
+          "source": "appearance-selector.tsx",
+          "path": "appearance-selector.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "source": "classes.ts",
+          "path": "classes.ts",
+          "type": "registry:lib"
+        }
+      ],
+      "dependencies": ["@base-ui/react@^1.8.0"]
+    },
+    "color-theme-selector": {
+      "title": "Color Theme Selector",
+      "description": "Choose an available color theme.",
+      "files": [
+        {
+          "source": "color-theme-selector.tsx",
+          "path": "color-theme-selector.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "source": "classes.ts",
+          "path": "classes.ts",
+          "type": "registry:lib"
+        }
+      ],
+      "dependencies": ["@base-ui/react@^1.8.0"]
+    },
+    "transition-settings": {
+      "title": "Transition Settings",
+      "description": "Control the transition animation and duration.",
+      "files": [
+        {
+          "source": "transition-settings.tsx",
+          "path": "transition-settings.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "source": "classes.ts",
+          "path": "classes.ts",
+          "type": "registry:lib"
+        }
+      ],
+      "dependencies": ["@base-ui/react@^1.8.0"]
+    }
+  }
+}

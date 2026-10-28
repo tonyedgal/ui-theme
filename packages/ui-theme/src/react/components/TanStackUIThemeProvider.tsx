@@ -57,9 +57,9 @@ export type TanStackUIThemeProviderProps = ThemeAnimationOptions & {
   /** React children to wrap with theme context */
   children: ReactNode;
   /** Available theme options */
-  themes?: Theme[];
+  themes?: readonly Theme[];
   /** Available color theme options */
-  colorThemes?: ColorTheme[];
+  colorThemes?: readonly ColorTheme[];
   /** Default theme to use */
   defaultTheme?: Theme;
   /** Default color theme to use */
@@ -286,7 +286,7 @@ export const TanStackUIThemeProvider: React.FC<
   themes = ['light', 'dark', 'system'],
   colorThemes = ['default'],
   defaultTheme = 'system',
-  defaultColorTheme = 'default',
+  defaultColorTheme = colorThemes[0] ?? 'default',
   animationType = ThemeAnimationType.CIRCLE,
   clipPathDirection,
   animationPosition,
@@ -427,6 +427,9 @@ export const TanStackUIThemeProvider: React.FC<
 
   if (!isHydrated) {
     const loadingContextValue: TanStackUIThemeContextType = {
+      themes,
+      colorThemes,
+      mounted: false,
       ref: { current: null },
       theme: initialTheme ?? defaultTheme,
       colorTheme: serverColorTheme ?? defaultColorTheme,
@@ -459,10 +462,7 @@ export const TanStackUIThemeProvider: React.FC<
   }
 
   const contextValue: TanStackUIThemeContextType = {
-    ref: themeState.ref,
-    theme: themeState.theme,
-    colorTheme: themeState.colorTheme,
-    resolvedTheme: themeState.resolvedTheme,
+    ...themeState,
     systemTheme,
     isHydrated: true,
     setTheme: setThemeWithServer,
@@ -473,9 +473,6 @@ export const TanStackUIThemeProvider: React.FC<
     toggleTheme: toggleThemeWithHydrationAwareness,
     toggleLightTheme: toggleLightThemeWithHydrationAwareness,
     toggleDarkTheme: toggleDarkThemeWithHydrationAwareness,
-    toggleColorTheme: themeState.toggleColorTheme,
-    createColorThemeToggle: themeState.createColorThemeToggle,
-    isColorThemeActive: themeState.isColorThemeActive,
   };
 
   return (

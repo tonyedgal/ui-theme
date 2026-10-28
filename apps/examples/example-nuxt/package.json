@@ -5,9 +5,9 @@
   "type": "module",
   "dependencies": {
     "@ui-theme/vue-demo": "workspace:*",
-    "uitheme-vue": "workspace:*",
     "vue": "^3.5.44",
-    "nuxt": "^4.6.2"
+    "nuxt": "^4.6.2",
+    "uitheme-web": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

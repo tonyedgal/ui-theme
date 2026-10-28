@@ -41,9 +41,9 @@ export type ViteUIThemeProviderProps = ThemeAnimationOptions & {
   /** React children to wrap with theme context */
   children: ReactNode;
   /** Available theme options */
-  themes?: Theme[];
+  themes?: readonly Theme[];
   /** Available color theme options */
-  colorThemes?: ColorTheme[];
+  colorThemes?: readonly ColorTheme[];
   /** Default theme to use */
   defaultTheme?: Theme;
   /** Default color theme to use */
@@ -82,7 +82,7 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
   themes = ['light', 'dark', 'system'],
   colorThemes = ['default'],
   defaultTheme = 'system',
-  defaultColorTheme = 'default',
+  defaultColorTheme = colorThemes[0] ?? 'default',
   animationType = ThemeAnimationType.CIRCLE,
   clipPathDirection,
   animationPosition,
@@ -202,22 +202,14 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
   const systemTheme = getSystemTheme();
 
   const contextValue: ViteUIThemeContextType = {
-    ref: themeState.ref,
-    theme: themeState.theme,
-    colorTheme: themeState.colorTheme,
-    resolvedTheme: themeState.resolvedTheme,
+    ...themeState,
     systemTheme,
     setTheme: wrappedSetTheme,
-    setColorTheme: themeState.setColorTheme,
     switchTheme: wrappedSwitchTheme,
     switchThemeFromElement,
-    switchColorTheme: themeState.switchColorTheme,
     toggleTheme: wrappedToggleTheme,
     toggleLightTheme: wrappedToggleLightTheme,
     toggleDarkTheme: wrappedToggleDarkTheme,
-    toggleColorTheme: themeState.toggleColorTheme,
-    createColorThemeToggle: themeState.createColorThemeToggle,
-    isColorThemeActive: themeState.isColorThemeActive,
   };
 
   return (

@@ -25,11 +25,11 @@ const requests = new WeakMap<Document, TransitionRequest>();
 
 /** Latest request wins visually; every requested state update still runs once. */
 export const runThemeTransition = async (
-  update: () => void,
+  update: () => void | Promise<void>,
   config: AnimationConfig | null
 ): Promise<void> => {
   if (typeof document === 'undefined') {
-    update();
+    await update();
 
     return;
   }
@@ -66,7 +66,7 @@ export const runThemeTransition = async (
       prefersReducedMotion() ||
       document.visibilityState === 'hidden'
     ) {
-      update();
+      await update();
 
       return;
     }
@@ -83,7 +83,7 @@ export const runThemeTransition = async (
     try {
       transition = document.startViewTransition(update);
     } catch {
-      update();
+      await update();
 
       return;
     }
