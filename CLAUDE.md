@@ -11,7 +11,7 @@ workspace is `ui-theme-web`; these names refer to different packages.
 
 - pnpm workspaces and Turborepo; Node.js >=22.18.0. Use the pnpm version in
   the root `packageManager` field.
-- Library: TypeScript, React, Radix Select, tsup, Vitest, and Playwright.
+- Runtime: TypeScript, optional React/Vue/Nuxt adapters, tsup, Vitest, and Playwright. UI primitives belong to copied registry controls.
 - Website: Next.js App Router, React, Fumadocs with MDX, Tailwind CSS v4,
   shadcn components, and Hugeicons.
 - ESLint uses the root flat configuration. Prettier controls formatting.
@@ -21,12 +21,15 @@ workspace is `ui-theme-web`; these names refer to different packages.
 ```text
 packages/ui-theme/             # Published uitheme-web library
   src/core/                    # Animation, transition, storage, and shared types
-  src/react/                   # Hooks, providers, and React controls
+  src/react/                   # Hooks and providers
+  src/vue/                     # Vue plugin, provider, and composables
+  src/nuxt.ts                  # Nuxt 4 module
   src/tanstack/                # TanStack server helpers
-  src/cli/                     # Migration CLI
+packages/ui-theme-cli/         # Optional installation and migration CLI
+packages/ui-theme-registry/    # Private templates, builder, and immutable release archives
   tests/browser/               # Browser fixture and Playwright tests
   tests/types/                 # Consumer type contracts
-  scripts/smoke-package.mjs     # Packed package verification
+  scripts/smoke-v2-package.mjs     # Packed package verification
 apps/ui-theme-web/             # Website and documentation
   app/(home)/                  # Home page
   app/docs/                    # Documentation routes
@@ -111,17 +114,9 @@ remote CI. Push and publish only within the human's explicit authorization.
 
 ## Local commit checks
 
-`pnpm install` installs the Husky pre-commit hook. Each commit runs ESLint and
-Prettier on staged files, then the library unit tests. Browser tests and full
-workspace type checks remain in CI. There is no pre-push hook.
+Each commit checks the staged snapshot with lint-staged and affected validation.
+Local checks include package tests, reference app builds/types, relevant browser
+suites, and independent release consumers. Normal CI checks affected packages
+and the website without example builds or browser-engine downloads.
 
-`pnpm test:browser:smoke` builds the library and runs a focused Chromium check.
-This local command is optional. Install Chromium with
-`pnpm --filter uitheme-web exec playwright install chromium` first.
-
-The full browser suite covers every case in Chromium, WebKit, and Firefox at
-DPR 2. Extra DPR 1 and mobile DPR 3 runs cover geometry and rasterization.
-PR CI runs browsers for package, example, dependency, and check-configuration
-changes; main always runs them. The CI job still reports success for other PRs
-after its remaining checks pass. Required branch protection must be configured
-in GitHub to enforce that CI result before merging.
+See [the CI guide](docs/ci.md) and `scripts/validation-plan.mjs` for routing.
