@@ -1,45 +1,39 @@
-# ui-theme-web
+# UI-Theme website
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+The website serves v2 framework documentation, canonical component previews,
+and the static UI-Theme registry.
 
-Run development server:
+From the workspace root, build the runtime and registry before the website:
 
-```bash
-npm run dev
-# or
-pnpm dev
-# or
-yarn dev
+```sh
+pnpm --filter uitheme-web build
+pnpm --filter @ui-theme/registry build
+pnpm --filter ui-theme-web build
 ```
 
-Open http://localhost:3000 with your browser to see the result.
+Both website `build` and `dev` stage the registry first. The staging script
+reads `packages/ui-theme-registry/dist`, copies the static artifact to ignored
+`public/r`, and writes ignored `.generated/registry.json` for the source viewer.
+A missing or inconsistent registry artifact stops the build. The website does
+not fetch an upstream registry at runtime. Keep older immutable revisions in
+the registry artifact when producing a later release.
 
-## Explore
+`/r/manifest.json` selects the stable revision. Its index and component URLs
+live under `/r/v1/<revision>/`. Preview source comes from that same artifact.
+React previews import the canonical template files directly for Base UI and
+Radix. They share a provider and controlled transition settings. Vue source is
+shown for Reka; this React website does not render Vue previews.
 
-In the project, you can see:
+```sh
+pnpm --filter ui-theme-web typecheck
+pnpm --filter ui-theme-web test:browser
+```
 
-- `lib/source.ts`: Code for content source adapter, [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
-- `lib/layout.shared.tsx`: Shared options for layouts, optional but preferred to keep.
+Browser tests use an existing production build on port 4290. They cover page
+loading, appearance persistence, local registry graph responses, base/source/
+command consistency, language and Tailwind selection, and migration guidance.
+Playwright retains screenshots and traces for failures. Browser binaries must
+already be installed; routine CI does not download them.
 
-| Route                     | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `app/(home)`              | The route group for your landing page and other pages. |
-| `app/docs`                | The documentation layout and pages.                    |
-| `app/api/search/route.ts` | The Route Handler for search.                          |
-
-### Fumadocs MDX
-
-A `source.config.ts` config file has been included, you can customise different options like frontmatter schema.
-
-Read the [Introduction](https://fumadocs.dev/docs/mdx) for further details.
-
-## Learn More
-
-To learn more about Next.js and Fumadocs, take a look at the following
-resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
-  features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [Fumadocs](https://fumadocs.dev) - learn about Fumadocs
+The homepage and its design assets are maintained separately from this docs
+integration.
