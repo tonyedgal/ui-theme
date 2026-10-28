@@ -3,7 +3,7 @@ title: Components
 description: Install theme controls as editable source files.
 ---
 
-import { RegistryPreview } from '@/components/registry-preview';
+import { ComponentCatalog } from '@/components/component-catalog';
 
 Use an existing app with Tailwind CSS 3.4 or 4 configured.
 Install `uitheme-web@^2` first. Then run the CLI from that app.
@@ -17,16 +17,9 @@ React supports Base UI (the default) and Radix. Vue supports Reka only.
 Choose the base before installation. Each installed file uses one base.
 The installed component does not switch bases at runtime.
 
-<RegistryPreview />
-
 ## Controls
 
-| Component              | Purpose                                                |
-| ---------------------- | ------------------------------------------------------ |
-| `theme-toggle`         | Toggle the resolved appearance between light and dark. |
-| `appearance-selector`  | Choose from the provider's appearance options.         |
-| `color-theme-selector` | Choose from the provider's palette options.            |
-| `transition-settings`  | Set an animation and a duration from 0 to 2000 ms.     |
+<ComponentCatalog />
 
 Wrap React controls in `UIThemeProvider`, `NextUIThemeProvider`,
 `ViteUIThemeProvider`, or `TanStackUIThemeProvider` as appropriate.

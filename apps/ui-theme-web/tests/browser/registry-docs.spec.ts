@@ -33,15 +33,17 @@ test('base selection keeps the preview, installation command and copied source a
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/docs/components');
-  await expect(page.getByLabel('Component base')).toHaveValue('base-ui');
+  await page.goto('/docs/components/base-ui/theme-toggle');
+  await expect(
+    page.getByRole('link', { name: 'Base UI', exact: true })
+  ).toHaveAttribute('aria-current', 'page');
   await expect(page.getByTestId('install-command')).toContainText(
     '--base base-ui'
   );
   await expect(page.getByTestId('registry-source')).toContainText(
     '@base-ui/react'
   );
-  await page.getByLabel('Component base').selectOption('radix');
+  await page.getByRole('link', { name: 'Radix UI', exact: true }).click();
   await expect(page.getByTestId('install-command')).toContainText(
     '--base radix'
   );
@@ -75,9 +77,11 @@ test('base selection keeps the preview, installation command and copied source a
 test('Vue selects only Reka and migration explains the v1 boundary', async ({
   page,
 }) => {
-  await page.goto('/docs/components');
-  await page.getByLabel('Framework').selectOption('vue');
-  await expect(page.getByLabel('Component base')).toHaveValue('reka');
+  await page.goto('/docs/components/base-ui/theme-toggle');
+  await page.getByRole('link', { name: 'Vue / Reka', exact: true }).click();
+  await expect(
+    page.getByRole('link', { name: 'Vue / Reka', exact: true })
+  ).toHaveAttribute('aria-current', 'page');
   await expect(page.getByTestId('install-command')).toContainText(
     '--base reka'
   );
