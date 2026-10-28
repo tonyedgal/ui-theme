@@ -1,0 +1,36 @@
+{
+  "name": "theme-toggle",
+  "type": "registry:ui",
+  "title": "Theme Toggle",
+  "description": "Toggle between the resolved light and dark themes.",
+  "dependencies": [
+    "tailwind-merge@^2.6.0",
+    "@radix-ui/react-toggle@^1.2.1"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "theme-toggle.tsx",
+      "content": "'use client';\n\nimport * as React from 'react';\nimport type { Theme } from 'uitheme-web/react';\nimport { useUITheme } from 'uitheme-web/react';\nimport { cn } from './classes';\nimport * as TogglePrimitive from '@radix-ui/react-toggle';\n\nexport type ThemeToggleClasses = { root?: string; trigger?: string };\n\nexport type ThemeToggleProps = {\n  className?: string;\n  classes?: ThemeToggleClasses;\n  label?: string;\n  disabled?: boolean;\n};\n\nexport const ThemeToggle = React.forwardRef<\n  HTMLButtonElement,\n  ThemeToggleProps\n>(function ThemeToggle(\n  { className, classes, label = 'Toggle appearance', disabled = false },\n  forwardedRef\n) {\n  const { resolvedTheme, switchTheme, mounted } = useUITheme();\n  const target: Theme = resolvedTheme === 'dark' ? 'light' : 'dark';\n\n  return (\n    <div className={cn('inline-flex', classes?.root, className)}>\n      <TogglePrimitive.Root\n        ref={forwardedRef}\n        type=\"button\"\n        aria-label={label}\n        pressed={resolvedTheme === 'dark'}\n        disabled={disabled || !mounted}\n        className={cn(\n          'inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',\n          classes?.trigger\n        )}\n        onClick={(event) =>\n          void switchTheme(target, { element: event.currentTarget })\n        }\n      >\n        {resolvedTheme === 'dark' ? 'Dark' : 'Light'}\n      </TogglePrimitive.Root>\n    </div>\n  );\n});\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.ts",
+      "content": "import { twMerge } from 'tailwind-merge';\n\nexport function cn(...classes: (string | undefined)[]) {\n  return twMerge(classes.filter(Boolean).join(' '));\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "4e7a5d76a371d269ce8f26549f7f2c19726d447271ebe1e630c5523168f12f24",
+      "component": "theme-toggle",
+      "framework": "react",
+      "base": "radix",
+      "tailwind": 3,
+      "language": "ts",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "transition-settings",
+  "type": "registry:ui",
+  "title": "Transition Settings",
+  "description": "Control the transition animation and duration.",
+  "dependencies": [
+    "tailwind-merge@^2.6.0",
+    "@base-ui/react@^1.8.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "transition-settings.tsx",
+      "content": "'use client';\n\nimport { ThemeAnimationType, DEFAULT_DURATION } from 'uitheme-web/react';\nimport { cn } from './classes';\nimport { Slider } from '@base-ui/react/slider';\nimport { Select } from '@base-ui/react/select';\n\nexport type TransitionSettingsValue = {\n  animationType: ThemeAnimationType;\n  duration: number;\n};\n\nexport type TransitionSettingsClasses = {\n  root?: string;\n  trigger?: string;\n  content?: string;\n  item?: string;\n  label?: string;\n  track?: string;\n  thumb?: string;\n};\n\nexport type TransitionSettingsProps = {\n  value: TransitionSettingsValue;\n  onValueChange: (value: TransitionSettingsValue) => void;\n  className?: string;\n  classes?: TransitionSettingsClasses;\n  animationLabel?: string;\n  durationLabel?: string;\n  disabled?: boolean;\n};\n\nconst animationTypes = [\n  ThemeAnimationType.CIRCLE,\n  ThemeAnimationType.BLUR_CIRCLE,\n  ThemeAnimationType.SLIDE,\n  ThemeAnimationType.CLIP_PATH,\n  ThemeAnimationType.POLYGON_GRADIENT,\n  ThemeAnimationType.TRIANGLE,\n];\n\nexport function TransitionSettings({\n  value,\n  onValueChange,\n  className,\n  classes,\n  animationLabel = 'Transition animation',\n  durationLabel = 'Transition duration',\n  disabled = false,\n}: TransitionSettingsProps) {\n  return (\n    <div className={cn('flex flex-col gap-4', classes?.root, className)}>\n      <Select.Root\n        items={animationTypes.map((value) => ({\n          value,\n          label: value.replaceAll('-', ' '),\n        }))}\n        disabled={disabled}\n        value={value.animationType}\n        onValueChange={(animationType) =>\n          animationType &&\n          onValueChange({\n            ...value,\n            animationType:\n              animationTypes.find((type) => type === animationType) ??\n              ThemeAnimationType.CIRCLE,\n          })\n        }\n      >\n        <Select.Label\n          className={cn('text-sm font-medium text-foreground', classes?.label)}\n        >\n          {animationLabel}\n        </Select.Label>\n        <Select.Trigger\n          className={cn(\n            'flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',\n            classes?.trigger\n          )}\n        >\n          <Select.Value />\n          <span aria-hidden=\"true\">⌄</span>\n        </Select.Trigger>\n        <Select.Portal>\n          <Select.Positioner>\n            <Select.Popup\n              className={cn(\n                'z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none',\n                classes?.content\n              )}\n            >\n              <Select.List>\n                {animationTypes.map((type) => (\n                  <Select.Item\n                    key={type}\n                    value={type}\n                    className={cn(\n                      'cursor-default rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',\n                      classes?.item\n                    )}\n                  >\n                    <Select.ItemText>\n                      {type\n                        .replaceAll('-', ' ')\n                        .replace(/\\b\\w/g, (letter) => letter.toUpperCase())}\n                    </Select.ItemText>\n                  </Select.Item>\n                ))}\n              </Select.List>\n            </Select.Popup>\n          </Select.Positioner>\n        </Select.Portal>\n      </Select.Root>\n      <label\n        className={cn(\n          'flex flex-col gap-2 text-sm font-medium text-foreground',\n          classes?.label\n        )}\n      >\n        <span className=\"flex items-center justify-between\">\n          <span>{durationLabel}</span>\n          <output aria-live=\"polite\">{value.duration} ms</output>\n        </span>\n        <Slider.Root\n          disabled={disabled}\n          value={value.duration}\n          min={0}\n          max={2000}\n          step={50}\n          onValueChange={(duration) =>\n            onValueChange({ ...value, duration: Number(duration) })\n          }\n          className=\"flex w-full flex-col gap-2\"\n        >\n          <Slider.Control className=\"flex h-5 items-center\">\n            <Slider.Track\n              className={cn(\n                'relative h-2 w-full rounded-full bg-muted',\n                classes?.track\n              )}\n            >\n              <Slider.Indicator className=\"absolute h-full rounded-full bg-primary\" />\n              <Slider.Thumb\n                aria-label={durationLabel}\n                className={cn(\n                  'block size-4 rounded-full border border-primary bg-background shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',\n                  classes?.thumb\n                )}\n              />\n            </Slider.Track>\n          </Slider.Control>\n        </Slider.Root>\n        <span className=\"sr-only\">Default {DEFAULT_DURATION} milliseconds</span>\n      </label>\n    </div>\n  );\n}\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.ts",
+      "content": "import { twMerge } from 'tailwind-merge';\n\nexport function cn(...classes: (string | undefined)[]) {\n  return twMerge(classes.filter(Boolean).join(' '));\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "4e7a5d76a371d269ce8f26549f7f2c19726d447271ebe1e630c5523168f12f24",
+      "component": "transition-settings",
+      "framework": "react",
+      "base": "base-ui",
+      "tailwind": 3,
+      "language": "ts",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

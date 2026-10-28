@@ -1,0 +1,45 @@
+{
+  "name": "uitheme-cli",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Install UI-Theme controls in an existing application",
+  "license": "MIT",
+  "bin": {
+    "uitheme": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/detection*.test.ts tests/registry*.test.ts && vitest run tests/install.test.ts tests/tailwind.test.ts tests/commands.test.ts tests/migrate.test.ts",
+    "test:package": "node scripts/smoke-package.mjs",
+    "prepublishOnly": "pnpm build && pnpm test:package"
+  },
+  "dependencies": {
+    "semver": "^7.7.3",
+    "typescript": "^5.9.3",
+    "postcss": "^8.5.28"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/semver": "^7.7.1",
+    "tsup": "^8.5.1",
+    "vitest": "^4.1.11"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tonyedgal/ui-theme.git",
+    "directory": "packages/ui-theme-cli"
+  }
+}

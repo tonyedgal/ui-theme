@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import { createUITheme } from 'uitheme-vue';
+import { createUITheme } from 'uitheme-web/vue';
 import { COLOR_THEMES } from '@ui-theme/vue-demo/theme-data';
 import ThemeDemo from '@ui-theme/vue-demo';
 import '@ui-theme/vue-demo/styles.css';

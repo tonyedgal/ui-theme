@@ -1,4 +1,9 @@
-const products = ['uitheme-rn', 'uitheme-vue', 'uitheme-web'];
+const products = [
+  '@ui-theme/registry',
+  'uitheme-cli',
+  'uitheme-rn',
+  'uitheme-web',
+];
 
 const reactExamples = [
   'example-next',
@@ -25,6 +30,7 @@ export function selectChecks(files, { ci = false } = {}) {
 
   function web(shared = false) {
     packages.add('uitheme-web');
+    consumers.add('registry');
     reactExamples.forEach((name) => references.add(name));
     browsers.add('web');
     website = true;
@@ -34,7 +40,8 @@ export function selectChecks(files, { ci = false } = {}) {
   }
 
   function vue() {
-    packages.add('uitheme-vue');
+    packages.add('uitheme-web');
+    consumers.add('registry');
     vueExamples.forEach((name) => references.add(name));
     browsers.add('vue');
   }
@@ -47,6 +54,9 @@ export function selectChecks(files, { ci = false } = {}) {
   function all() {
     web(true);
     native();
+    packages.add('uitheme-cli');
+    packages.add('@ui-theme/registry');
+    browsers.add('registry');
     consumers.add('rn');
     consumers.add('vue');
   }
@@ -63,17 +73,27 @@ export function selectChecks(files, { ci = false } = {}) {
       )
     ) {
       web(true);
+      consumers.add('vue');
+    } else if (/^packages\/ui-theme\/src\/(vue\/|nuxt\.ts)/.test(file)) {
+      vue();
+      website = true;
+      browsers.add('website');
+      consumers.add('vue');
+    } else if (file.startsWith('packages/ui-theme-cli/')) {
+      packages.add('uitheme-cli');
+      consumers.add('registry');
+    } else if (file.startsWith('packages/ui-theme-registry/')) {
+      packages.add('@ui-theme/registry');
+      packages.add('uitheme-cli');
+      consumers.add('registry');
+      website = true;
+      browsers.add('website');
+      browsers.add('registry');
     } else if (file.startsWith('packages/ui-theme/')) {
       web();
     } else if (file.startsWith('packages/ui-theme-vue/')) {
       vue();
-
-      if (
-        /package\.json$|vite\.config|tsconfig|src\/(nuxt|index|types)/.test(
-          file
-        )
-      )
-        consumers.add('vue');
+      consumers.add('vue');
     } else if (file.startsWith('packages/ui-theme-rn/')) {
       native();
 

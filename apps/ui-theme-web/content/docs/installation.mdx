@@ -1,0 +1,122 @@
+---
+title: Installation
+description: Set up the shared runtime for your framework.
+---
+
+```sh
+npm install uitheme-web@^2
+```
+
+The runtime changes theme classes and CSS variables. Supply your own styles.
+The optional [local controls](/docs/components) support Tailwind CSS 3.4 and 4.
+The CLI requires an existing Tailwind setup. It does not create an app or upgrade Tailwind.
+
+## React
+
+```tsx
+import { UIThemeProvider } from 'uitheme-web/react';
+
+export function App() {
+  return (
+    <UIThemeProvider
+      themes={['light', 'dark', 'system']}
+      colorThemes={['default', 'caffeine']}
+    >
+      <YourApp />
+    </UIThemeProvider>
+  );
+}
+```
+
+Read state and call actions with `useUITheme()` from `uitheme-web/react`.
+`setTheme` and `setColorTheme` update immediately.
+`switchTheme` and `switchColorTheme` use an animated transition.
+Pass `{ element: event.currentTarget }` to anchor an animation to a control.
+`theme` stores the preference. `resolvedTheme` reports light or dark after
+resolving the system preference.
+
+## Next.js App Router
+
+Create a client provider wrapper.
+
+```tsx title="app/providers.tsx"
+'use client';
+
+import { NextUIThemeProvider } from 'uitheme-web/next';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <NextUIThemeProvider>{children}</NextUIThemeProvider>;
+}
+```
+
+Render `Providers` inside the root layout's body. Add `suppressHydrationWarning`
+to the `html` element. The provider includes its pre-hydration bootstrap.
+For a custom server bootstrap, import server-safe helpers from
+`uitheme-web/next/server`. Keep browser hooks inside client components.
+
+## TanStack Start 1
+
+Use `TanStackUIThemeProvider` from `uitheme-web/react` for client state.
+Use the stateless helpers from `uitheme-web/tanstack` to read server theme data
+and build the initial HTML attributes and bootstrap script.
+Create server data per request. Pass matching initial state to the provider.
+Connect theme and palette change callbacks to your cookie persistence.
+Keep storage keys and available options identical on the server and client.
+
+## Vue 3
+
+```ts title="src/main.ts"
+import { createApp } from 'vue';
+import { createUITheme } from 'uitheme-web/vue';
+import App from './App.vue';
+
+createApp(App)
+  .use(
+    createUITheme({
+      defaultTheme: 'system',
+      colorThemes: ['default', 'caffeine'],
+    })
+  )
+  .mount('#app');
+```
+
+Use `useUITheme()` from `uitheme-web/vue` in setup.
+A `UIThemeProvider` can define a separate scope.
+For server rendering, create a fresh app and plugin for each request.
+Use `getThemeScript` from `uitheme-web/vue/bootstrap` before hydration.
+Do not share a provider or a theme store between requests.
+
+## Nuxt 4
+
+```ts title="nuxt.config.ts"
+export default defineNuxtConfig({
+  modules: ['uitheme-web/nuxt'],
+  uiTheme: {
+    defaultTheme: 'system',
+    colorThemes: ['default', 'caffeine'],
+  },
+});
+```
+
+The module configures the Vue plugin, server bootstrap, and cookie persistence.
+Use `useUITheme()` or import it from `uitheme-web/vue`.
+Automatic setup supports Nuxt 4. The CLI rejects Nuxt 3 before changing files.
+
+## Tailwind and palettes
+
+Use the dark variant for the `.dark` class in your Tailwind configuration.
+For Tailwind 4, this can be defined in your CSS:
+
+```css
+@custom-variant dark (&:where(.dark, .dark *));
+```
+
+For Tailwind 3.4, set `darkMode: 'class'` in the Tailwind configuration.
+Keep the existing content paths and include the directory for installed controls.
+Define the semantic tokens used by controls, including `background`, `foreground`,
+`primary`, `accent`, `muted`, `border`, `input`, `ring`, and `popover`, with their
+foreground counterparts. Palette classes use the `theme-` prefix by default.
+
+The CLI supports complete CSS colors and HSL channel tokens.
+Review the dry-run before applying CSS changes. Existing imports, variables,
+and plugins must remain intact.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useUITheme, type TransitionOptions } from 'uitheme-vue';
+import { useUITheme, type TransitionOptions } from 'uitheme-web/vue';
 import { THEME_SWATCHES } from '../theme-data';
 
 const props = defineProps<{ settings: TransitionOptions }>();

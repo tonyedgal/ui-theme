@@ -12,6 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { selectChecks } from '../validation-plan.mjs';
+import { selectReleaseVersion } from '../release-version.mjs';
 
 test('native changes do not select browser suites', () => {
   const plan = selectChecks(['packages/ui-theme-rn/src/provider.tsx']);
@@ -22,7 +23,7 @@ test('native changes do not select browser suites', () => {
 
 test('shared core changes protect both bindings and the website', () => {
   const plan = selectChecks(['packages/ui-theme/src/core/animations.ts']);
-  assert.deepEqual(plan.packages, ['uitheme-vue', 'uitheme-web']);
+  assert.deepEqual(plan.packages, ['uitheme-web']);
   assert.deepEqual(plan.browsers, ['vue', 'web', 'website']);
   assert.equal(plan.website, true);
 });
@@ -40,7 +41,7 @@ test('example-only changes select no product CI work', () => {
 
 test('CI global changes protect products without running examples or browsers', () => {
   const plan = selectChecks(['pnpm-lock.yaml'], { ci: true });
-  assert.equal(plan.packages.length, 3);
+  assert.equal(plan.packages.length, 4);
   assert.equal(plan.website, true);
   assert.deepEqual(plan.examples, []);
   assert.deepEqual(plan.browsers, []);
@@ -53,16 +54,16 @@ test('documentation does not select product builds', () => {
 });
 
 test('Nuxt public configuration selects the independent consumer', () => {
-  const plan = selectChecks(['packages/ui-theme-vue/src/nuxt.ts']);
-  assert.deepEqual(plan.consumers, ['vue']);
+  const plan = selectChecks(['packages/ui-theme/src/nuxt.ts']);
+  assert.deepEqual(plan.consumers, ['registry', 'vue']);
   assert.ok(plan.browsers.includes('vue'));
 });
 
 test('unknown runtime paths fail conservatively to full local validation', () => {
   const plan = selectChecks(['new-runtime/bridge.ts']);
-  assert.equal(plan.packages.length, 3);
+  assert.equal(plan.packages.length, 4);
   assert.equal(plan.examples.length, 8);
-  assert.equal(plan.consumers.length, 2);
+  assert.equal(plan.consumers.length, 3);
 });
 
 test('website content selects its production browser smoke', () => {
@@ -131,3 +132,63 @@ function snapshotCheck(staged, working, passes) {
     rmSync(root, { recursive: true, force: true });
   }
 }
+
+test('registry source protects schema, installer and website but no CI examples', () => {
+  const plan = selectChecks(
+    ['packages/ui-theme-registry/src/templates/vue/reka/theme-toggle.vue'],
+    { ci: true }
+  );
+
+  assert.deepEqual(plan.packages, ['@ui-theme/registry', 'uitheme-cli']);
+  assert.equal(plan.website, true);
+  assert.deepEqual(plan.browsers, []);
+  assert.deepEqual(plan.examples, []);
+});
+
+test('CLI source protects installer without rebuilding mobile or website', () => {
+  const plan = selectChecks(['packages/ui-theme-cli/src/registry.ts'], {
+    ci: true,
+  });
+
+  assert.deepEqual(plan.packages, ['uitheme-cli']);
+  assert.equal(plan.website, false);
+});
+
+test('registry variants and CLI changes select the emitted consumer locally', () => {
+  for (const path of [
+    'packages/ui-theme-registry/src/build.ts',
+    'packages/ui-theme-cli/src/install/index.ts',
+  ]) {
+    assert.ok(selectChecks([path]).consumers.includes('registry'));
+    assert.deepEqual(selectChecks([path], { ci: true }).consumers, []);
+  }
+});
+
+test('release consumers use related changesets and retain current versions after release', () => {
+  assert.equal(
+    selectReleaseVersion('uitheme-web', '1.2.0', [
+      { name: 'uitheme-web', type: 'major', newVersion: '2.0.0' },
+    ]),
+    '2.0.0'
+  );
+  assert.equal(selectReleaseVersion('uitheme-web', '2.0.1', []), '2.0.1');
+  assert.equal(
+    selectReleaseVersion('uitheme-web', '2.0.1', [
+      { name: 'uitheme-rn', type: 'major', newVersion: '2.0.0' },
+    ]),
+    '2.0.1'
+  );
+  assert.equal(
+    selectReleaseVersion('uitheme-web', '2.0.1', [
+      { name: 'uitheme-web', type: 'none', newVersion: '9.0.0' },
+    ]),
+    '2.0.1'
+  );
+  assert.throws(
+    () =>
+      selectReleaseVersion('uitheme-web', '2.0.1', [
+        { name: 'uitheme-web', type: 'minor' },
+      ]),
+    /version/i
+  );
+});

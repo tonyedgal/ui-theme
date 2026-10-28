@@ -12,11 +12,13 @@ const slideDirections: SlideDirection[] = [
 import { useRef, useState } from 'react';
 import {
   ThemeAnimationType,
-  UIThemeSwitcher,
   type SlideDirection,
   useTanStackUITheme,
   useTheme,
 } from 'uitheme-web/react';
+
+import { AppearanceSelector } from '../ui/theme/appearance-selector';
+import { ThemeToggle } from '../ui/theme/theme-toggle';
 
 import { Button } from '#/components/ui/button';
 import {
@@ -71,12 +73,12 @@ export function ThemeStudio({ serverNote }: { serverNote: string }) {
         <div className="grid gap-4 xl:grid-cols-4">
           <div className="control-panel">
             <p className="control-label">Default Style</p>
-            <UIThemeSwitcher themes={['light', 'dark', 'system']} />
+            <AppearanceSelector />
           </div>
 
           <div className="control-panel">
             <p className="control-label">Light / Dark</p>
-            <UIThemeSwitcher themes={['light', 'dark']} />
+            <ThemeToggle />
           </div>
 
           <div className="control-panel">

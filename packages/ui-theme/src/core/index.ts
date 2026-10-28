@@ -33,6 +33,21 @@ export {
 
 export { runThemeTransition } from './transitions';
 
+export {
+  createThemeController,
+  type ThemeController,
+  type ThemeControllerOptions,
+  type ThemeControllerSnapshot,
+  type ThemeControllerAdapter,
+  type ThemeTransitionSettings,
+  type ThemeStorage,
+  type SystemThemeMode,
+  type ThemeTransitionOptions,
+  type ThemeTransitionInput,
+  type ColorThemeToggleInput,
+  type ColorThemeToggle,
+} from './controller';
+
 export { preloadThemeLogo } from './logo';
 
 export {

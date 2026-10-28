@@ -1,0 +1,64 @@
+---
+title: Components
+description: Install theme controls as editable source files.
+---
+
+import { RegistryPreview } from '@/components/registry-preview';
+
+Use an existing app with Tailwind CSS 3.4 or 4 configured.
+Install `uitheme-web@^2` first. Then run the CLI from that app.
+
+```sh
+npx uitheme-cli init
+npx uitheme-cli add theme-toggle --base base-ui
+```
+
+React supports Base UI (the default) and Radix. Vue supports Reka only.
+Choose the base before installation. Each installed file uses one base.
+The installed component does not switch bases at runtime.
+
+<RegistryPreview />
+
+## Controls
+
+| Component              | Purpose                                                |
+| ---------------------- | ------------------------------------------------------ |
+| `theme-toggle`         | Toggle the resolved appearance between light and dark. |
+| `appearance-selector`  | Choose from the provider's appearance options.         |
+| `color-theme-selector` | Choose from the provider's palette options.            |
+| `transition-settings`  | Set an animation and a duration from 0 to 2000 ms.     |
+
+Wrap React controls in `UIThemeProvider`, `NextUIThemeProvider`,
+`ViteUIThemeProvider`, or `TanStackUIThemeProvider` as appropriate.
+Vue controls consume `createUITheme` or `UIThemeProvider` from `uitheme-web/vue`.
+
+`TransitionSettings` is controlled. In React, pass `value` and `onValueChange`.
+In Vue, use `v-model`. Keep `{ animationType, duration }` in your app and pass
+those settings to your provider. The component does not save settings itself.
+
+## Customize local source
+
+React controls accept `className`. Vue controls accept `class`.
+Both accept a `classes` object for the parts each component exposes:
+`root`, `trigger`, `content`, `item`, `label`, `track`, and `thumb`.
+User classes override defaults through a local Tailwind merge helper.
+The installer chooses the helper version for Tailwind 3.4 or 4.
+
+Labels use readable English defaults. Pass label props to translate them.
+`ColorThemeSelector` accepts `options` with `{ value, label }` entries.
+Use values that are present in the provider's `colorThemes`.
+
+## Review before changing files
+
+```sh
+npx uitheme-cli add appearance-selector --base radix --tailwind 3 --language ts --dry-run
+npx uitheme-cli diff
+```
+
+Use `--cwd` to select an app inside a workspace. The CLI saves choices in
+`uitheme.json`. Flags override saved settings. `--yes` does not authorize
+replacement of edited files. Review the replacement plan before using `--overwrite`.
+
+The registry manifest is available at [/r/manifest.json](/r/manifest.json).
+Each install resolves one immutable revision for the complete component graph.
+The website serves a registry artifact copied during its build.

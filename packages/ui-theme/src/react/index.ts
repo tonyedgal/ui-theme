@@ -73,31 +73,10 @@ export {
   type UIThemeContextType,
 } from './components/UIThemeProvider';
 
-// React components
-export { UIThemeSwitcher } from './components/UIThemeSwitcher';
-
-export { UIThemeSelector } from './components/UIThemeSelector';
-
-// UI Components
-export {
-  UISelect,
-  UISelectContent,
-  UISelectGroup,
-  UISelectItem,
-  UISelectLabel,
-  UISelectScrollDownButton,
-  UISelectScrollUpButton,
-  UISelectSeparator,
-  UISelectTrigger,
-  UISelectValue,
-} from './components/ui/UISelect';
-
 // Types
 export type {
   UseThemeProps,
   UseThemeReturn,
-  UIThemeSwitcherProps,
-  UIThemeSelectorProps,
   SystemThemeMode,
   ThemeTransitionOptions,
   ThemeTransitionInput,

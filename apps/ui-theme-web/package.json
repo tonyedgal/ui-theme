@@ -3,8 +3,8 @@
   "version": "0.0.5",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "dev": "next dev",
+    "build": "pnpm --filter @ui-theme/registry build && node scripts/stage-registry.mjs && next build",
+    "dev": "pnpm --filter @ui-theme/registry build && node scripts/stage-registry.mjs && next dev",
     "start": "next start",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
@@ -29,7 +29,11 @@
     "react-dom": "^19.3.0",
     "react-use-measure": "^2.1.7",
     "tailwind-merge": "^3.7.0",
-    "uitheme-web": "workspace:*"
+    "uitheme-web": "workspace:*",
+    "@radix-ui/react-select": "^2.3.7",
+    "@radix-ui/react-slider": "^1.6.1",
+    "@radix-ui/react-toggle": "^1.2.1",
+    "@ui-theme/registry": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",

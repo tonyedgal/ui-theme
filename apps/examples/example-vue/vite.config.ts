@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
-import { getThemeScript } from 'uitheme-vue/bootstrap';
+import { getThemeScript } from 'uitheme-web/vue/bootstrap';
 
 export default defineConfig({
   plugins: [

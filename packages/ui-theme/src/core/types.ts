@@ -73,8 +73,8 @@ export interface AnimationConfig extends ThemeAnimationSettings {
 }
 
 export interface ThemeConfig {
-  themes?: Theme[];
-  colorThemes?: ColorTheme[];
+  themes?: readonly Theme[];
+  colorThemes?: readonly ColorTheme[];
   defaultTheme?: Theme;
   defaultColorTheme?: ColorTheme;
   globalClassName?: string;

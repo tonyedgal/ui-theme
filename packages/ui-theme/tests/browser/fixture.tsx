@@ -11,8 +11,6 @@ import {
   useViteUITheme,
   TanStackUIThemeProvider,
   useTanStackUITheme,
-  UIThemeSelector,
-  UIThemeSwitcher,
   TRANSITION_DIRECTIONS,
   preloadThemeLogo,
   type UseThemeProps,
@@ -396,22 +394,6 @@ function Controls({
           <h2>A themed surface</h2>
           <p>Text and cards should stay still as the circle expands.</p>
         </div>
-        {params.has('widgets') && (
-          <>
-            <UIThemeSwitcher
-              currentTheme={state.theme}
-              onThemeChange={state.setTheme}
-            />
-            <UIThemeSelector
-              colorThemes={colorThemes}
-              currentColorTheme={state.colorTheme}
-              onColorThemeChange={(value) => {
-                inspection.callbacks.push(`selector:${value}`);
-                state.setColorTheme(value);
-              }}
-            />
-          </>
-        )}
         <div className="tiles">
           {Array.from({ length: 80 }, (_, i) => (
             <article key={i}>Card {i + 1}</article>

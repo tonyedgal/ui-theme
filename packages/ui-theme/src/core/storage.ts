@@ -12,7 +12,7 @@ const isBrowser = typeof window !== 'undefined';
  */
 export const getStoredTheme = (
   key: string = STORAGE_KEY,
-  validThemes: Theme[] = ['light', 'dark', 'system'],
+  validThemes: readonly Theme[] = ['light', 'dark', 'system'],
   defaultTheme: Theme = 'system'
 ): Theme => {
   if (!isBrowser) return defaultTheme;
@@ -50,7 +50,7 @@ export const setStoredTheme = (
  */
 export const getStoredColorTheme = (
   key: string = COLOR_STORAGE_KEY,
-  validColorThemes: ColorTheme[] = ['default'],
+  validColorThemes: readonly ColorTheme[] = ['default'],
   defaultColorTheme: ColorTheme = 'default'
 ): ColorTheme => {
   if (!isBrowser) return defaultColorTheme;

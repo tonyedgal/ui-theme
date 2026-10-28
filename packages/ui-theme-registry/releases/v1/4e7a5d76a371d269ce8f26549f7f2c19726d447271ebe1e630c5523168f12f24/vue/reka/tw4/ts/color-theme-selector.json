@@ -1,0 +1,36 @@
+{
+  "name": "color-theme-selector",
+  "type": "registry:ui",
+  "title": "Color Theme Selector",
+  "description": "Choose an available color theme.",
+  "dependencies": [
+    "reka-ui@^2.11.0",
+    "tailwind-merge@^3.0.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "color-theme-selector.vue",
+      "content": "<script setup lang=\"ts\">\nimport { computed, useTemplateRef, useId } from 'vue';\nimport {\n  SelectContent,\n  SelectItem,\n  SelectItemText,\n  SelectViewport,\n  SelectPortal,\n  SelectRoot,\n  SelectTrigger,\n  SelectValue,\n} from 'reka-ui';\nimport type { AcceptableValue } from 'reka-ui';\nimport { useUITheme } from 'uitheme-web/vue';\nimport { mergeClasses, type ControlClasses } from './classes';\n\nconst props = withDefaults(\n  defineProps<{\n    class?: string;\n    classes?: ControlClasses;\n    disabled?: boolean;\n    label?: string;\n    options?: readonly { value: string; label: string }[];\n  }>(),\n  {\n    label: 'Color theme',\n    class: undefined,\n    classes: undefined,\n    options: undefined,\n  }\n);\n\nconst theme = useUITheme();\n\nconst trigger = useTemplateRef<InstanceType<typeof SelectTrigger>>('trigger');\n\nconst id = useId();\n\nconst options = computed(\n  () =>\n    props.options ??\n    theme.colorThemes.map((value) => ({\n      value,\n      label: value[0]!.toUpperCase() + value.slice(1),\n    }))\n);\n\nconst rootClass = computed(() =>\n  mergeClasses('inline-flex flex-col gap-1', props.class, props.classes, 'root')\n);\n\nconst triggerClass = computed(() =>\n  mergeClasses(\n    'inline-flex min-w-40 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',\n    undefined,\n    props.classes,\n    'trigger'\n  )\n);\n\nconst contentClass = computed(() =>\n  mergeClasses(\n    'z-50 min-w-40 overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md',\n    undefined,\n    props.classes,\n    'content'\n  )\n);\n\nconst itemClass = computed(() =>\n  mergeClasses(\n    'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',\n    undefined,\n    props.classes,\n    'item'\n  )\n);\n\nfunction select(value: AcceptableValue) {\n  const selected = theme.colorThemes.find((option) => option === value);\n  const element = trigger.value?.$el;\n\n  if (selected)\n    void theme.switchColorTheme(selected, {\n      element: element instanceof HTMLElement ? element : null,\n    });\n}\n</script>\n\n<template>\n  <div :class=\"rootClass\">\n    <label\n      :for=\"id\"\n      :class=\"\n        mergeClasses(\n          'text-sm font-medium text-foreground',\n          undefined,\n          props.classes,\n          'label'\n        )\n      \"\n      >{{ label }}</label\n    >\n    <SelectRoot\n      :model-value=\"theme.colorTheme.value\"\n      :disabled=\"disabled || !theme.mounted.value\"\n      @update:model-value=\"select\"\n    >\n      <SelectTrigger\n        :id=\"id\"\n        ref=\"trigger\"\n        :class=\"triggerClass\"\n        :aria-label=\"label\"\n        ><SelectValue\n      /></SelectTrigger>\n      <SelectPortal>\n        <SelectContent :class=\"contentClass\" position=\"popper\" :side-offset=\"4\">\n          <SelectViewport\n            ><SelectItem\n              v-for=\"option in options\"\n              :key=\"option.value\"\n              :value=\"option.value\"\n              :class=\"itemClass\"\n              ><SelectItemText>{{ option.label }}</SelectItemText></SelectItem\n            ></SelectViewport\n          >\n        </SelectContent>\n      </SelectPortal>\n    </SelectRoot>\n  </div>\n</template>\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.ts",
+      "content": "import { twMerge } from 'tailwind-merge';\n\nexport type ControlClasses = Partial<\n  Record<\n    'root' | 'trigger' | 'content' | 'item' | 'label' | 'track' | 'thumb',\n    string\n  >\n>;\n\nexport function mergeClass(base: string, custom?: string) {\n  return twMerge(base, custom);\n}\n\nexport function mergeClasses(\n  base: string,\n  custom?: string,\n  classes?: ControlClasses,\n  slot?: keyof ControlClasses\n) {\n  return twMerge(base, custom, slot ? classes?.[slot] : undefined);\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "4e7a5d76a371d269ce8f26549f7f2c19726d447271ebe1e630c5523168f12f24",
+      "component": "color-theme-selector",
+      "framework": "vue",
+      "base": "reka",
+      "tailwind": 4,
+      "language": "ts",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

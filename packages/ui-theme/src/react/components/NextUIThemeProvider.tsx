@@ -48,9 +48,9 @@ export type NextUIThemeProviderProps = ThemeAnimationOptions & {
   /** React children to wrap with theme context */
   children: ReactNode;
   /** Available theme options */
-  themes?: Theme[];
+  themes?: readonly Theme[];
   /** Available color theme options */
-  colorThemes?: ColorTheme[];
+  colorThemes?: readonly ColorTheme[];
   /** Default theme to use */
   defaultTheme?: Theme;
   /** Default color theme to use */
@@ -186,7 +186,7 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
   themes = ['light', 'dark', 'system'],
   colorThemes = ['default'],
   defaultTheme = 'system',
-  defaultColorTheme = 'default',
+  defaultColorTheme = colorThemes[0] ?? 'default',
   animationType = ThemeAnimationType.CIRCLE,
   clipPathDirection,
   animationPosition,
@@ -252,6 +252,9 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
 
   if (!mounted) {
     const loadingContextValue: NextUIThemeContextType = {
+      themes,
+      colorThemes,
+      mounted: false,
       ref: { current: null },
       theme: defaultTheme,
       colorTheme: defaultColorTheme,
@@ -292,22 +295,10 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
   }
 
   const contextValue: NextUIThemeContextType = {
-    ref: themeState.ref,
-    theme: themeState.theme,
-    colorTheme: themeState.colorTheme,
-    resolvedTheme: themeState.resolvedTheme,
+    ...themeState,
     systemTheme,
-    setTheme: themeState.setTheme,
-    setColorTheme: themeState.setColorTheme,
     switchTheme: switchThemeWithHydrationAwareness,
     switchThemeFromElement,
-    switchColorTheme: themeState.switchColorTheme,
-    toggleTheme: themeState.toggleTheme,
-    toggleLightTheme: themeState.toggleLightTheme,
-    toggleDarkTheme: themeState.toggleDarkTheme,
-    toggleColorTheme: themeState.toggleColorTheme,
-    createColorThemeToggle: themeState.createColorThemeToggle,
-    isColorThemeActive: themeState.isColorThemeActive,
   };
 
   return (

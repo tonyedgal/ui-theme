@@ -1,0 +1,36 @@
+{
+  "name": "appearance-selector",
+  "type": "registry:ui",
+  "title": "Appearance Selector",
+  "description": "Choose an available appearance theme.",
+  "dependencies": [
+    "tailwind-merge@^2.6.0",
+    "@radix-ui/react-select@^2.3.7"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "appearance-selector.jsx",
+      "content": "'use client';\nimport * as React from 'react';\nimport { useUITheme } from 'uitheme-web/react';\nimport { cn } from './classes';\nimport * as Select from '@radix-ui/react-select';\nexport const AppearanceSelector = React.forwardRef(function AppearanceSelector({ className, classes, label = 'Appearance', disabled = false, }, forwardedRef) {\n    const { theme, themes, mounted, switchTheme } = useUITheme();\n    const triggerRef = React.useRef(null);\n    const id = React.useId();\n    const selected = theme;\n    const options = themes.map((value) => ({\n        value,\n        label: value\n            .replaceAll('-', ' ')\n            .replace(/\\b\\w/g, (letter) => letter.toUpperCase()),\n    }));\n    React.useImperativeHandle(forwardedRef, () => triggerRef.current);\n    const change = (value) => {\n        const next = themes.find((theme) => theme === value);\n        if (next)\n            void switchTheme(next, { element: triggerRef.current });\n    };\n    return (<div className={cn('flex flex-col gap-2', classes?.root, className)}>\n      <Select.Root value={selected} disabled={disabled || !mounted} onValueChange={(next) => void change(next)}>\n        <label htmlFor={id} className={cn('text-sm font-medium text-foreground', classes?.label)}>\n          {label}\n        </label>\n        <Select.Trigger ref={triggerRef} id={id} disabled={disabled || !mounted} className={cn('flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50', classes?.trigger)}>\n          <Select.Value />\n          <Select.Icon aria-hidden=\"true\">⌄</Select.Icon>\n        </Select.Trigger>\n        <Select.Portal>\n          <Select.Content position=\"popper\" className={cn('z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none', classes?.content)}>\n            <Select.Viewport>\n              {options.map((option) => (<Select.Item key={option.value} value={option.value} className={cn('relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50', classes?.item)}>\n                  <Select.ItemText>{option.label}</Select.ItemText>\n                  <Select.ItemIndicator className=\"ml-auto\">\n                    ✓\n                  </Select.ItemIndicator>\n                </Select.Item>))}\n            </Select.Viewport>\n          </Select.Content>\n        </Select.Portal>\n      </Select.Root>\n    </div>);\n});\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.js",
+      "content": "import { twMerge } from 'tailwind-merge';\nexport function cn(...classes) {\n    return twMerge(classes.filter(Boolean).join(' '));\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "4e7a5d76a371d269ce8f26549f7f2c19726d447271ebe1e630c5523168f12f24",
+      "component": "appearance-selector",
+      "framework": "react",
+      "base": "radix",
+      "tailwind": 3,
+      "language": "js",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

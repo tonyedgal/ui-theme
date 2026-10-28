@@ -1,0 +1,36 @@
+{
+  "name": "appearance-selector",
+  "type": "registry:ui",
+  "title": "Appearance Selector",
+  "description": "Choose an available appearance theme.",
+  "dependencies": [
+    "tailwind-merge@^3.0.0",
+    "@base-ui/react@^1.8.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "appearance-selector.jsx",
+      "content": "'use client';\nimport * as React from 'react';\nimport { useUITheme } from 'uitheme-web/react';\nimport { cn } from './classes';\nimport { Select } from '@base-ui/react/select';\nexport const AppearanceSelector = React.forwardRef(function AppearanceSelector({ className, classes, label = 'Appearance', disabled = false, }, forwardedRef) {\n    const { theme, themes, mounted, switchTheme } = useUITheme();\n    const triggerRef = React.useRef(null);\n    const selected = theme;\n    const options = themes.map((value) => ({\n        value,\n        label: value\n            .replaceAll('-', ' ')\n            .replace(/\\b\\w/g, (letter) => letter.toUpperCase()),\n    }));\n    React.useImperativeHandle(forwardedRef, () => triggerRef.current);\n    const change = (value) => {\n        const next = themes.find((theme) => theme === value);\n        if (next)\n            void switchTheme(next, { element: triggerRef.current });\n    };\n    return (<div className={cn('flex flex-col gap-2', classes?.root, className)}>\n      <Select.Root items={options} value={selected} disabled={disabled || !mounted} onValueChange={(next) => next && void change(next)}>\n        <Select.Label className={cn('text-sm font-medium text-foreground', classes?.label)}>\n          {label}\n        </Select.Label>\n        <Select.Trigger ref={triggerRef} disabled={disabled || !mounted} className={cn('flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50', classes?.trigger)}>\n          <Select.Value />\n          <span aria-hidden=\"true\">⌄</span>\n        </Select.Trigger>\n        <Select.Portal>\n          <Select.Positioner>\n            <Select.Popup className={cn('z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none', classes?.content)}>\n              <Select.List>\n                {options.map((option) => (<Select.Item key={option.value} value={option.value} className={cn('relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50', classes?.item)}>\n                    <Select.ItemText>{option.label}</Select.ItemText>\n                  </Select.Item>))}\n              </Select.List>\n            </Select.Popup>\n          </Select.Positioner>\n        </Select.Portal>\n      </Select.Root>\n    </div>);\n});\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.js",
+      "content": "import { twMerge } from 'tailwind-merge';\nexport function cn(...classes) {\n    return twMerge(classes.filter(Boolean).join(' '));\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "447889d4439ec5955a6bc629c9e7da008fb711b964377933cab096d715dec3d1",
+      "component": "appearance-selector",
+      "framework": "react",
+      "base": "base-ui",
+      "tailwind": 4,
+      "language": "js",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}
