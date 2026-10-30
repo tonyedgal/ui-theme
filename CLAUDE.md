@@ -93,6 +93,41 @@ under that app's `node_modules/next/dist/docs/` before changing Next.js code.
 Scope website-only dependencies and rules to the website. Do not expand a
 website task into package or workspace changes without a necessary reason.
 
+## Registry component documentation
+
+Each control has a page at `/docs/components/<base>/<component>`. Keep the base
+switcher, installation command, usage, and copied source aligned. Preserve
+Tailwind and language choices when switching bases. Source comes from the built
+registry; documentation must describe the canonical control's actual contract.
+
+Use the shared section order: Preview, When to use, When not to use,
+Installation, Usage, API reference, Keyboard, Accessibility, Theme behavior,
+AI Agent notes, Source, Customization, and Credits. Keep decision guidance and
+agent instructions specific to each control. Do not add empty or speculative
+capabilities, integrations, or attribution.
+
+Keep existing component previews and registry controls. Documentation references
+inform section organization and writing, not new components or replacement demos.
+Include reduced-motion behavior and provider requirements in the docs.
+
+AI Agent notes explain the supported framework import, local control path,
+provider wiring, controlled state, CSS requirements, and relevant verification.
+They must not imply an MCP service or an integration that is not implemented.
+
+Credits are the final content section. For components we design from a reference,
+credit the source site or product with a direct link and an accurate description
+of its contribution. Keep component inspiration and primitive dependencies
+distinct. Do not apply shared documentation or layout credits to existing controls.
+Reference names belong only in Credits and the metadata that renders them, as
+specified by section 8 of `AGENTS.md`. Adapt examples to UI-Theme rather than
+copying a reference's layout or wording without judgment.
+
+Keep section metadata and guidance in `apps/ui-theme-web/lib/component-guides.ts`.
+Render shared guidance with `components/component-guidance.tsx`; keep interactive
+preview state in `components/registry-preview.tsx`.
+The full-page Markdown copy must include decision guidance, API, AI Agent notes,
+and Credits, matching the visible page.
+
 ## Verification and releases
 
 Use browser tests for rendered theme behavior. Test both transition directions,

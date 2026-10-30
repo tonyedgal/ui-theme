@@ -12,6 +12,7 @@ import {
   componentDocUrl,
 } from '@/lib/component-docs';
 import registry from '@/.generated/registry.json';
+import { componentSections } from '@/lib/component-guides';
 
 export const dynamicParams = false;
 
@@ -53,22 +54,14 @@ export default async function Page({
 }: PageProps<'/docs/components/[base]/[component]'>) {
   const { base, doc } = await resolveDoc(params);
 
-  const sections = [
-    'Preview',
-    'Installation',
-    'Usage',
-    'Source',
-    'Customization',
-  ];
-
   return (
     <DocsPage
       className="max-w-3xl gap-8 xl:pt-10"
       breadcrumb={{ enabled: false }}
       footer={{ enabled: false }}
-      toc={sections.map((title) => ({
+      toc={componentSections.map(({ id, title }) => ({
         title,
-        url: `#${title.toLowerCase()}`,
+        url: `#${id}`,
         depth: 2,
       }))}
     >

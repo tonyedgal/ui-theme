@@ -27,6 +27,16 @@ import { ThemeToggle as RadixThemeToggle } from '../../../packages/ui-theme-regi
 import { AppearanceSelector as RadixAppearanceSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/appearance-selector';
 import { ColorThemeSelector as RadixColorThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/color-theme-selector';
 import { TransitionSettings as RadixTransitionSettings } from '../../../packages/ui-theme-registry/src/templates/react/radix/transition-settings';
+import {
+  ComponentDecisions,
+  ComponentReference,
+  ComponentAgentNotes,
+  ComponentCredits,
+} from './component-guidance';
+import {
+  componentAgentNotes,
+  componentGuidanceMarkdown,
+} from '@/lib/component-guides';
 import './registry-preview.css';
 
 interface RegistryPreviewProps {
@@ -106,13 +116,26 @@ function RegistryContent({
   const usage =
     language === 'js' ? usageSource.replace(' lang="ts"', '') : usageSource;
 
+  const guidance = componentGuidanceMarkdown(doc, base);
+
   const markdown = [
     `# ${doc.title}`,
     doc.description,
+    '## Preview',
+    base === 'reka'
+      ? 'Install the Vue source in your app to preview it with your theme provider.'
+      : 'Use the existing live preview to try the control with your theme provider.',
+    guidance.whenToUse,
+    guidance.whenNotToUse,
     '## Installation',
     `\`\`\`sh\n${command}\n\`\`\``,
     '## Usage',
     `\`\`\`${base === 'reka' ? 'vue' : language === 'js' ? 'jsx' : 'tsx'}\n${usage}\n\`\`\``,
+    guidance.apiReference,
+    guidance.keyboard,
+    guidance.accessibility,
+    guidance.themeBehavior,
+    guidance.agentNotes,
     '## Source',
     ...(selected?.files.map(
       (file) => `### ${file.path}\n\n\`\`\`\n${file.content}\n\`\`\``
@@ -120,6 +143,7 @@ function RegistryContent({
     '## Customization',
     `Edit the installed source, pass ${base === 'reka' ? 'class' : 'className'} to style the root, or use the classes prop to style individual parts. Labels can be changed through props.`,
     `Registry revision: ${revision}`,
+    guidance.credits,
   ].join('\n\n');
 
   function changeVariant(name: 'tailwind' | 'language', value: string) {
@@ -216,6 +240,8 @@ function RegistryContent({
         )}
       </section>
 
+      <ComponentDecisions doc={doc} />
+
       <section aria-labelledby="installation" className="space-y-4">
         <h2
           id="installation"
@@ -305,6 +331,20 @@ function RegistryContent({
         </div>
       </section>
 
+      <ComponentReference doc={doc} base={base} />
+      <ComponentAgentNotes
+        doc={doc}
+        base={base}
+        copyAction={
+          <CopyText
+            label="Copy agent notes"
+            value={componentAgentNotes(doc, base)
+              .map((note) => `- ${note}`)
+              .join('\n')}
+          />
+        }
+      />
+
       <section aria-labelledby="source" className="space-y-4">
         <h2
           id="source"
@@ -364,6 +404,8 @@ function RegistryContent({
           Registry revision: <code>{revision}</code>
         </p>
       </section>
+
+      <ComponentCredits doc={doc} base={base} />
 
       <nav
         aria-label="Component navigation"
