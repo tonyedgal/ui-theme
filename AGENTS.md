@@ -118,3 +118,10 @@ be tested.
 - Stage explicit paths. Preserve unrelated changes and existing stashes.
 - Do not push unless the human has authorized the push. Honor authorization
   already given for the current task and branch.
+
+## 7. Design references
+
+- Use design references to guide the result. Do not carry reference brand or
+  product names into identifiers, comments, UI copy, documentation, commit
+  messages, or verification artifacts unless the human explicitly requests it.
+- Preserve required license and copyright notices.
