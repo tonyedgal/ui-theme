@@ -119,9 +119,25 @@ be tested.
 - Do not push unless the human has authorized the push. Honor authorization
   already given for the current task and branch.
 
-## 7. Design references
+## 7. Comments
 
-- Use design references to guide the result. Do not carry reference brand or
-  product names into identifiers, comments, UI copy, documentation, commit
-  messages, or verification artifacts unless the human explicitly requests it.
+Default to no comment. Write one only where the code cannot say it itself: a decision whose obvious refactor reintroduces a bug, or a non-obvious constraint.
+
+- One line, lowercase. Never a multi-line block.
+- Never restate what the next line does. If the code reads fine, delete the comment.
+- No JSDoc, no section banners, no `// handle X` above a function called `handleX`.
+
+## 8. Imitation is the sincerest form of flattery
+
+- Use design references as a starting point. Adapt them to UI-Theme's purpose,
+  behavior, and visual language instead of copying a layout without judgment.
+- When building a registry component from a referenced site or product, include
+  its name and a direct source link in that component's Credits section. State
+  what it inspired. Distinguish component inspiration from implementation
+  dependencies. Do not invent attribution.
+- Apply inspiration credits to components we design from a reference. Do not add
+  shared documentation or layout references to existing component credits.
+- Keep reference names out of identifiers, comments, other UI copy, filenames,
+  commit messages, and verification artifacts. The Credits section and its
+  underlying credit metadata are the deliberate exceptions.
 - Preserve required license and copyright notices.
