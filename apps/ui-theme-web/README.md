@@ -20,6 +20,13 @@ the registry artifact when producing a later release.
 
 `/r/manifest.json` selects the stable revision. Its index and component URLs
 live under `/r/v1/<revision>/`. Preview source comes from that same artifact.
+
+The canonical registry is `https://www.ui-theme.dev/r`. Registry requests on
+`uitheme.dev`, `www.uitheme.dev`, and `ui-theme.dev` redirect permanently to that
+host. Paths and query strings are preserved. Other website routes are unaffected.
+Attach these domains to the deployed website so the application can receive the
+requests. The CLI default and immutable records keep the canonical URL.
+
 React previews import the canonical template files directly for Base UI and
 Radix. They share a provider and controlled transition settings. Vue source is
 shown for Reka; this React website does not render Vue previews.
