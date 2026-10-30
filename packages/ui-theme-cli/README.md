@@ -35,6 +35,7 @@ Ambiguous supported frameworks require a choice. App configs are not executed.
 
 The hosted registry uses immutable revisions under
 [ui-theme.dev/r](https://www.ui-theme.dev/r/manifest.json).
+The alternate URL `https://uitheme.dev/r` redirects to the canonical host.
 `--revision <revision>` selects a recorded revision. All dependencies in one
 installation use the same revision. The CLI checks versions and source paths
 before writing. It records installed file hashes for later comparison.
