@@ -5,7 +5,7 @@ import { useUITheme } from 'uitheme-web/react';
 import { cn } from './classes';
 import * as Select from '@radix-ui/react-select';
 
-export type AppearanceSelectorClasses = {
+export type ThemeSelectorClasses = {
   root?: string;
   trigger?: string;
   content?: string;
@@ -13,23 +13,18 @@ export type AppearanceSelectorClasses = {
   label?: string;
 };
 
-export type AppearanceSelectorProps = {
+export type ThemeSelectorProps = {
   className?: string;
-  classes?: AppearanceSelectorClasses;
+  classes?: ThemeSelectorClasses;
   label?: string;
   disabled?: boolean;
 };
 
-export const AppearanceSelector = React.forwardRef<
+export const ThemeSelector = React.forwardRef<
   HTMLButtonElement,
-  AppearanceSelectorProps
->(function AppearanceSelector(
-  {
-    className,
-    classes,
-    label = 'Appearance',
-    disabled = false,
-  }: AppearanceSelectorProps,
+  ThemeSelectorProps
+>(function ThemeSelector(
+  { className, classes, label = 'Theme', disabled = false }: ThemeSelectorProps,
   forwardedRef
 ) {
   const { theme, themes, mounted, switchTheme } = useUITheme();

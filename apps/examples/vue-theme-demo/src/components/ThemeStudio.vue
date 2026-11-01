@@ -9,7 +9,7 @@ import {
   type TransitionOptions,
 } from 'uitheme-web/vue';
 
-import AppearanceSelector from './ui/appearance-selector.vue';
+import ThemeSelector from './ui/theme-selector.vue';
 import ThemeToggle from './ui/theme-toggle.vue';
 import ColorThemeSelector from './ui/color-theme-selector.vue';
 
@@ -65,7 +65,7 @@ const effects = Object.values(ThemeAnimationType);
       </button>
     </div>
     <div class="grid gap-6 rounded-xl border p-5 sm:grid-cols-2 lg:grid-cols-3">
-      <AppearanceSelector :disabled="!mounted" />
+      <ThemeSelector :disabled="!mounted" />
       <div class="grid gap-2 text-sm">
         <span>Light / dark only</span>
         <ThemeToggle label="Light or dark" :disabled="!mounted" />

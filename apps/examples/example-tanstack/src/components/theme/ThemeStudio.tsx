@@ -17,7 +17,7 @@ import {
   useTheme,
 } from 'uitheme-web/react';
 
-import { AppearanceSelector } from '../ui/theme/appearance-selector';
+import { ThemeSelector } from '../ui/theme/theme-selector';
 import { ThemeToggle } from '../ui/theme/theme-toggle';
 
 import { Button } from '#/components/ui/button';
@@ -73,7 +73,7 @@ export function ThemeStudio({ serverNote }: { serverNote: string }) {
         <div className="grid gap-4 xl:grid-cols-4">
           <div className="control-panel">
             <p className="control-label">Default Style</p>
-            <AppearanceSelector />
+            <ThemeSelector />
           </div>
 
           <div className="control-panel">
