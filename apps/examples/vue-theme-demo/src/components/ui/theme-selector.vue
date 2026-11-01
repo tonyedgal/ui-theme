@@ -21,7 +21,7 @@ const props = withDefaults(
     disabled?: boolean;
     label?: string;
   }>(),
-  { label: 'Appearance', class: undefined, classes: undefined }
+  { label: 'Theme', class: undefined, classes: undefined }
 );
 
 const theme = useUITheme();

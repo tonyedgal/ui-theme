@@ -29,7 +29,7 @@ for (const [framework, url] of [
       await expect(
         page.getByRole('button', { name: 'Preview transition', exact: true })
       ).toBeEnabled();
-      await selectTheme(page, 'Appearance', 'dark');
+      await selectTheme(page, 'Theme', 'dark');
       await expect(page.locator('html')).toHaveClass(/dark/);
 
       const initialPrimary = await page
@@ -60,7 +60,7 @@ for (const [framework, url] of [
       await expect(page.getByLabel('Color theme', { exact: true })).toHaveText(
         'Caffeine'
       );
-      await selectTheme(page, 'Appearance', 'system');
+      await selectTheme(page, 'Theme', 'system');
       await expect(page.locator('html')).not.toHaveClass(/dark/);
       await page.emulateMedia({ colorScheme: 'dark' });
       await expect(page.locator('html')).toHaveClass(/dark/);
@@ -93,7 +93,7 @@ for (const [framework, url] of [
     }, testInfo) => {
       test.setTimeout(90_000);
       await page.goto(url);
-      await selectTheme(page, 'Appearance', 'light');
+      await selectTheme(page, 'Theme', 'light');
 
       const preview = page.getByRole('button', {
         name: 'Preview transition',
@@ -134,9 +134,9 @@ for (const [framework, url] of [
               });
           }
 
-          await expect(
-            page.getByLabel('Appearance', { exact: true })
-          ).toHaveText(mode[0]!.toUpperCase() + mode.slice(1));
+          await expect(page.getByLabel('Theme', { exact: true })).toHaveText(
+            mode[0]!.toUpperCase() + mode.slice(1)
+          );
           await expect(page.locator('html')).not.toHaveAttribute(
             'data-ui-theme-transition'
           );
@@ -147,7 +147,7 @@ for (const [framework, url] of [
         for (let index = 0; index < 5; index++)
           if (button instanceof HTMLButtonElement) button.click();
       });
-      await expect(page.getByLabel('Appearance', { exact: true })).toHaveText(
+      await expect(page.getByLabel('Theme', { exact: true })).toHaveText(
         'Dark'
       );
       await expect(page.locator('html')).not.toHaveAttribute(
@@ -172,7 +172,7 @@ for (const [framework, url] of [
 
       await expect(preview).toBeEnabled();
       await preview.click();
-      await expect(page.getByLabel('Appearance', { exact: true })).toHaveText(
+      await expect(page.getByLabel('Theme', { exact: true })).toHaveText(
         'Dark'
       );
       await expect(page.locator('html')).not.toHaveAttribute(
@@ -260,10 +260,8 @@ test('Vue synchronizes appearance and palettes between open tabs', async ({
   await expect(
     second.getByRole('button', { name: 'Preview transition', exact: true })
   ).toBeEnabled();
-  await selectTheme(page, 'Appearance', 'dark');
-  await expect(second.getByLabel('Appearance', { exact: true })).toHaveText(
-    'Dark'
-  );
+  await selectTheme(page, 'Theme', 'dark');
+  await expect(second.getByLabel('Theme', { exact: true })).toHaveText('Dark');
   await selectTheme(page, 'Color theme', 'mocha');
   await expect(second.getByLabel('Color theme', { exact: true })).toHaveText(
     'Mocha'
