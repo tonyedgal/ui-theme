@@ -261,8 +261,16 @@ describe('installation plans and transactions', () => {
       await readFile(join(shared.componentsDir, 'theme-toggle.tsx'), 'utf8')
     ).toContain('ThemeToggle');
     expect(calls).toEqual([
-      { cwd: app, dependencies: ['uitheme-web@^2.0.0'] },
-      { cwd: owner, dependencies: ['uitheme-web@^2.0.0', '@base-ui/react'] },
+      { cwd: app, dependencies: ['uitheme-web@latest'] },
+      {
+        cwd: owner,
+        dependencies: [
+          'uitheme-web@latest',
+          'clsx@^2.1.1',
+          'tailwind-merge@^3.0.0',
+          '@base-ui/react',
+        ],
+      },
     ]);
     const again = await planRegistryInstall(shared, graph());
     expect(again.files.every((file) => file.action === 'skip')).toBe(true);

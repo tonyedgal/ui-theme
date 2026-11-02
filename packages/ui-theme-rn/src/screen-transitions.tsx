@@ -6,8 +6,14 @@ import {
   useRef,
   useState,
 } from 'react';
-import type { ReactNode, RefObject } from 'react';
-import { AppState, Platform, StyleSheet, View } from 'react-native';
+import type { ReactNode, RefObject, ComponentRef } from 'react';
+import {
+  AppState,
+  Platform,
+  StyleSheet,
+  View,
+  findNodeHandle,
+} from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import {
   Canvas,
@@ -46,7 +52,8 @@ export type ScreenTransitionType = (typeof screenTransitionTypes)[number];
 export interface ScreenTransitionOptions {
   transition?: ScreenTransitionType;
   duration?: number;
-  origin?: { x: number; y: number } | RefObject<View | null>;
+  origin?:
+    { x: number; y: number } | RefObject<ComponentRef<typeof View> | null>;
   inverted?: boolean;
   direction?: 'left' | 'right' | 'up' | 'down';
   split?: 'left-right' | 'top-bottom';
@@ -145,8 +152,13 @@ half4 main(float2 xy) {
 const frame = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-async function capture(ref: RefObject<View | null>) {
-  const texture = await makeImageFromView(ref);
+async function capture(ref: RefObject<ComponentRef<typeof View> | null>) {
+  const target = findNodeHandle(ref.current);
+
+  if (target === null || target === undefined)
+    throw new Error('Screen capture target is not mounted.');
+
+  const texture = await makeImageFromView({ current: target });
 
   if (!texture) throw new Error('Screen capture returned no image.');
 
@@ -184,7 +196,7 @@ export function UIThemeTransitionProvider({
   onError?: (error: Error) => void;
 }) {
   const reducedMotion = useReducedMotion();
-  const root = useRef<View>(null);
+  const root = useRef<ComponentRef<typeof View>>(null);
   const dimensions = useRef({ width: 0, height: 0 });
   const generation = useRef(0);
   const busy = useRef(false);

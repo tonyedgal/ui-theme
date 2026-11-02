@@ -1,0 +1,60 @@
+---
+title: Vue
+description: Add shared theme state to a Vue 3 application.
+---
+
+## Install
+
+```sh
+npm install uitheme-web@latest
+```
+
+## Register the plugin
+
+```ts title="src/main.ts"
+import { createApp } from 'vue';
+import { createUITheme } from 'uitheme-web/vue';
+import App from './App.vue';
+
+createApp(App)
+  .use(
+    createUITheme({
+      defaultTheme: 'system',
+      colorThemes: ['default', 'caffeine'],
+    })
+  )
+  .mount('#app');
+```
+
+Import your stylesheet from the app entry. Define styles for the registered palette keys and the light and dark appearances.
+
+## Use the composable
+
+```vue
+<script setup lang="ts">
+import { useUITheme } from 'uitheme-web/vue';
+const theme = useUITheme();
+</script>
+
+<template>
+  <button @click="theme.switchTheme('dark', $event)">Use dark mode</button>
+</template>
+```
+
+Call `useUITheme` during setup. Its state values are refs. Pass the click event to use the button as the transition origin. Use `setTheme` for an immediate change.
+
+For a separate scope, wrap a subtree in `UIThemeProvider`. For server rendering, create a fresh app and plugin per request. Use the [Nuxt guide](/docs/guides/nuxt) for automatic Nuxt integration.
+
+## Add editable controls
+
+The Vue registry uses Reka. Set up [Tailwind and palette styles](/docs/installation#tailwind-and-palettes), then preview the CLI changes.
+
+```sh
+npx uitheme-cli init --dry-run
+npx uitheme-cli init
+npx uitheme-cli add theme-toggle theme-selector color-theme-selector --base reka
+```
+
+## Example
+
+Open the [Vue application](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/example-vue). Its shared screens and styles live in the [Vue demo workspace](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/vue-theme-demo).

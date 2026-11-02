@@ -1,6 +1,6 @@
 # UI-Theme v2 implementation contract
 
-Approved scope: one `uitheme-web` runtime; Vue at `/vue`, Nuxt 4 at `/nuxt`; separate `uitheme-cli`; hosted registry at https://www.ui-theme.dev/r. Tailwind 3.4 and 4. React controls support Base UI and Radix through installation selection, Vue uses Reka. One rich control family. No native code changes. Published `uitheme-vue@1` remains available; no bridge package.
+Approved scope: one `uitheme-web` runtime; Vue at `/vue`, Nuxt 4 at `/nuxt`; separate `uitheme-cli`; hosted registry at https://www.ui-theme.dev/r. Tailwind 3.4 and 4. React controls support Base UI and Radix through installation selection, Vue uses Reka. One rich control family. React Native stays separate; its dependency compatibility updates have a separate release note. Published `uitheme-vue@1` remains available; no bridge package.
 
 ## Coordination
 
@@ -19,9 +19,9 @@ One browser controller implementation drives framework adapters; one controller 
 
 ## Components
 
-Names: `theme-toggle`, `appearance-selector`, `color-theme-selector`, `transition-settings`. Framework: `react|vue`; base: `base-ui|radix|reka`; Tailwind: `3|4`; language: `ts|js`. React supports first two bases only; Vue supports reka only. Default React base: base-ui.
+Names in catalog order: `theme-toggle`, `icon-theme-toggle`, `theme-switcher`, `theme-selector`, `color-theme-selector`, `theme-disclosure`, `color-theme-disclosure`. The four groups are Toggles, Switchers, Selectors, and Disclosures. Seven controls produce 84 variants. Framework: `react|vue`; base: `base-ui|radix|reka`; Tailwind: `3|4`; language: `ts|js`. React supports first two bases only; Vue supports reka only. Default React base: base-ui.
 
-Controls consume provider state/actions from `/react` or `/vue`. React className and Vue class extend defaults. A `classes` object customizes root/trigger/content/item/label/track/thumb where applicable. Use a local matching-major tailwind-merge helper, with user classes last. No mandatory icon package or cva/clsx. TransitionSettings is controlled: React `value`/`onValueChange`, Vue `modelValue`/`update:modelValue`, containing `{ animationType, duration }`; it does not persist hidden settings. Default settings use current engine defaults, duration range 0..2000 ms, step 50, including an accessible numerical value. Labels default to human-readable English and remain overridable. Keys for supported palette/appearance options come from provider options; palette options allow value/label metadata.
+Controls consume provider state/actions from `/react` or `/vue`. React className and Vue class extend defaults. A `classes` object customizes root/trigger/content/item/label/track/thumb where applicable. Reuse one shared `cn` utility at the configured utils alias, with user classes last. Create or repair a missing utility, preserve a valid callable export, and check an existing utility before offering replacement. Each control ships one main file. Icon Theme Toggle also installs Theme Toggle. Keep icons and styles in the component; import `ThemeControlTransitionProps` from the runtime. Do not ship local transition, class, border, icon, or disclosure helpers. Selectors contain floating menus only. Install Theme Disclosure or Color Theme Disclosure for inline choices. Support `direction="down"` and `direction="up"`; put the label on the side away from the expanded panel. Reserve enough preview space to keep triggers and frames fixed. Registry controls install their selected icon and primitive dependencies in the consuming app. The runtime and CLI do not install an app icon library by themselves. Theme-changing controls accept `animationType` and `duration` directly. `slideDirection` is accepted only with an explicit slide animation type. Omitted props preserve provider settings. Icon Theme Toggle owns the animated icon-only action; Theme Switcher owns the three-way radio choice. Icon motion is separate from the page transition. Labels default to human-readable English and remain overridable. Keys for supported palette/appearance options come from provider options; palette options allow value/label metadata.
 
 ## Registry protocol
 
@@ -41,6 +41,16 @@ Registry/detection owner defines and tests `src/project.ts`, `src/registry.ts`, 
 
 Dry-run prints all changed files/dependencies without project writes. `--yes` does not imply overwrite. Default rejects edited existing files; unchanged identical files are skipped. Explicit overwrite shows planned replacement. Roll back touched files/manifests/lockfiles on install failure without disturbing pre-existing edits. Record revision and installed file hashes. Repeated operations are idempotent. CSS v3/v4 transformations preserve existing variables/imports/plugins; recognize full CSS colors versus HSL channels.
 
+## Shared utility installation
+
+On the first registry installation, create a shared `cn` utility only when it is
+missing. Reuse the configured utility on later installations and repair it if the
+file has been removed. Check that an existing utility exports `cn` before offering
+to overwrite it. Preserve valid existing utilities. Do not execute the consumer's
+source code during validation. Honor JavaScript projects, custom utils aliases,
+and shared UI workspaces. Components must reuse this utility instead of shipping
+`classes.ts` beside each component. The installer validates exports without executing consumer source.
+
 ## Validation and release
 
-All affected browser/reference checks remain local pre-commit. CI stays affected-product build/types/packed/schema checks and website build. No browser engine downloads in routine CI. Version changes come from web major and new CLI release Changesets only. Native version stays unchanged. No publishing, production deployment, or npm deprecation until separately approved.
+All affected browser/reference checks remain local pre-commit. CI stays affected-product build/types/packed/schema checks and website build. No browser engine downloads in routine CI. Version changes come from web major and new CLI release Changesets only. The web unification changeset does not release React Native. Native dependency maintenance uses its own changeset. No publishing, production deployment, or npm deprecation until separately approved.

@@ -1,0 +1,16 @@
+export const componentSections = [
+  { id: 'preview', title: 'Preview' },
+  { id: 'examples', title: 'Examples' },
+  { id: 'when-to-use', title: 'When to use' },
+  { id: 'when-not-to-use', title: 'When not to use' },
+  { id: 'installation', title: 'Installation' },
+  { id: 'usage', title: 'Usage' },
+  { id: 'api-reference', title: 'API reference' },
+  { id: 'keyboard', title: 'Keyboard' },
+  { id: 'accessibility', title: 'Accessibility' },
+  { id: 'theme-behavior', title: 'Theme behavior' },
+  { id: 'ai-agent-notes', title: 'AI Agent notes' },
+  { id: 'source', title: 'Source' },
+  { id: 'customization', title: 'Customization' },
+  { id: 'credits', title: 'Credits' },
+] as const;

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useUITheme } from 'uitheme-web/react';
-import { cn } from './classes';
+import { cn } from '@/lib/utils';
 import * as Select from '@radix-ui/react-select';
 
 export type ThemeSelectorClasses = {
@@ -32,7 +32,10 @@ export const ThemeSelector = React.forwardRef<
   const id = React.useId();
   const selected = theme;
 
-  const options: { value: string; label: string }[] = themes.map((value) => ({
+  const options: {
+    value: string;
+    label: string;
+  }[] = themes.map((value) => ({
     value,
     label: value
       .replaceAll('-', ' ')

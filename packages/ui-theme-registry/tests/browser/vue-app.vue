@@ -1,27 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { ThemeAnimationType, useUITheme } from 'uitheme-web/vue';
+import { useUITheme } from 'uitheme-web/vue';
 import ThemeToggle from '../../src/templates/vue/reka/theme-toggle.vue';
-import AppearanceSelector from '../../src/templates/vue/reka/appearance-selector.vue';
+import ThemeSelector from '../../src/templates/vue/reka/theme-selector.vue';
 import ColorThemeSelector from '../../src/templates/vue/reka/color-theme-selector.vue';
-import TransitionSettings from '../../src/templates/vue/reka/transition-settings.vue';
+import ThemeSwitcher from '../../src/templates/vue/reka/theme-switcher.vue';
+import IconThemeToggle from '../../src/templates/vue/reka/icon-theme-toggle.vue';
+
+import ThemeDisclosure from '../../src/templates/vue/reka/theme-disclosure.vue';
+import ColorThemeDisclosure from '../../src/templates/vue/reka/color-theme-disclosure.vue';
 
 const state = useUITheme();
-
-const settings = ref({
-  animationType: ThemeAnimationType.CIRCLE,
-  duration: 400,
-});
 </script>
 
 <template>
   <ThemeToggle />
-  <AppearanceSelector />
+  <ThemeSelector />
   <ColorThemeSelector />
-  <TransitionSettings v-model="settings" duration-label="Transition duration" />
+  <IconThemeToggle /><ThemeSwitcher />
+  <ThemeDisclosure label="Inline theme" direction="up" />
+  <ColorThemeDisclosure label="Inline color theme" />
   <output id="state"
-    >{{ state.theme.value }}/{{ state.colorTheme.value }}/{{
-      settings.duration
-    }}</output
+    >{{ state.theme.value }}/{{ state.colorTheme.value }}</output
   >
 </template>

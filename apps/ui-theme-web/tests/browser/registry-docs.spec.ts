@@ -51,10 +51,12 @@ test('base selection keeps the preview, installation command and copied source a
     '@radix-ui/react-toggle'
   );
 
-  const toggle = page.getByRole('button', {
-    name: 'Toggle appearance',
-    exact: true,
-  });
+  const toggle = page
+    .getByRole('region', { name: 'Default preview (Radix)', exact: true })
+    .getByRole('button', {
+      name: 'Toggle appearance',
+      exact: true,
+    });
 
   await expect(toggle).toBeEnabled();
   const previous = await toggle.getAttribute('aria-pressed');

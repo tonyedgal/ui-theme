@@ -1,16 +1,50 @@
 'use client';
 
+import { getDocsNavigation } from '@/lib/docs-navigation';
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import type { Root } from 'fumadocs-core/page-tree';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
-import { baseOptions } from '@/lib/layout.shared';
 import {
-  componentBases,
-  componentDocs,
-  componentDocUrl,
-} from '@/lib/component-docs';
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
+} from 'fumadocs-ui/layouts/docs/slots/sidebar';
+import { useTreeContext } from 'fumadocs-ui/contexts/tree';
+import { componentBases } from '@/lib/component-docs';
+import {
+  DocsMobileNavigation,
+  DocsSearch,
+  DocsThemeToggle,
+  SidebarNav,
+} from './docs/navigation';
+import { SitePaletteSelector } from './site-theme';
+import Icon, { IconNames } from './shared/icon';
+
+function navigationSections(tree: Root, pathname: string) {
+  const activeBase =
+    componentBases.find((base) =>
+      pathname.startsWith(`/docs/components/${base.name}/`)
+    )?.name ?? 'base-ui';
+
+  return getDocsNavigation(tree, activeBase);
+}
+
+function DocsSidebar() {
+  const { full: tree } = useTreeContext();
+  const pathname = usePathname();
+  const sections = navigationSections(tree, pathname);
+
+  return (
+    <aside
+      id="nd-sidebar"
+      className="fixed top-15 bottom-0 left-0 z-20 hidden w-62 overflow-y-auto bg-background text-sidebar-foreground md:block 2xl:left-[max(0px,calc((100vw-87.5rem)/2))]"
+    >
+      <SidebarNav sections={sections} pathname={pathname} />
+    </aside>
+  );
+}
 
 export function DocsShell({
   tree,
@@ -21,71 +55,56 @@ export function DocsShell({
 }) {
   const pathname = usePathname();
 
-  const activeBase =
-    componentBases.find((base) =>
-      pathname.startsWith(`/docs/components/${base.name}/`)
-    )?.name ?? 'base-ui';
-
-  const navigation: Root = {
-    ...tree,
-    children: [
-      { type: 'separator', name: 'Getting started' },
-      ...tree.children.filter(
-        (node) => node.type !== 'page' || node.url !== '/docs/components'
-      ),
-      { type: 'separator', name: 'Components' },
-      { type: 'page', name: 'Overview', url: '/docs/components' },
-      ...componentDocs.map((doc) => ({
-        type: 'page' as const,
-        name: doc.title,
-        url: componentDocUrl(activeBase, doc.name),
-      })),
-    ],
-  };
+  const sections = navigationSections(tree, pathname);
 
   return (
     <>
-      <header className="sticky top-0 z-40 hidden h-14 shrink-0 items-center gap-10 border-b bg-fd-background px-6 md:flex">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
-          UI-Theme
-        </Link>
-        <nav
-          aria-label="Documentation navigation"
-          className="flex items-center gap-6 text-sm"
-        >
+      <header className="sticky top-0 z-40 w-full bg-background">
+        <div className="mx-auto flex max-w-350 items-center justify-between gap-3 px-4 py-4 sm:px-8">
           <Link
-            href="/docs"
-            className="text-muted-foreground transition-colors hover:text-foreground"
+            href="/"
+            prefetch={false}
+            className="flex shrink-0 items-center gap-2 font-semibold whitespace-nowrap"
           >
-            Documentation
+            UI-Theme
           </Link>
-          <Link
-            href="/docs/components"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Components
-          </Link>
-        </nav>
-        <a
-          href="https://github.com/tonyedgal/ui-theme"
-          className="ml-auto text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          GitHub
-        </a>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1">
+            <a
+              href="https://github.com/tonyedgal/ui-theme"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub"
+              className="inline-flex h-7 items-center justify-center rounded-md px-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <Icon name={IconNames.github} w={14} h={14} />
+            </a>
+            <DocsSearch />
+            <SitePaletteSelector />
+            <DocsThemeToggle />
+            <DocsMobileNavigation sections={sections} pathname={pathname} />
+          </div>
+        </div>
       </header>
       <DocsLayout
-        tree={navigation}
-        {...baseOptions()}
-        nav={{ title: <span className="md:hidden">UI-Theme</span> }}
+        tree={tree}
+        nav={{ enabled: false }}
+        searchToggle={{ enabled: false }}
+        themeSwitch={{ enabled: false }}
         sidebar={{
           collapsible: false,
           prefetch: false,
-          className: 'bg-transparent',
-          tabs: false,
+        }}
+        slots={{
+          sidebar: {
+            provider: SidebarProvider,
+            root: DocsSidebar,
+            trigger: SidebarTrigger,
+            useSidebar,
+          },
         }}
         containerProps={{
           className:
-            'md:[--fd-sidebar-width:240px] [--radius:0.625rem] md:[--fd-banner-height:3.5rem]',
+            'mx-auto w-full max-w-350 md:[--fd-sidebar-width:15.5rem] [--fd-toc-width:12rem] [--fd-banner-height:3.75rem]',
         }}
       >
         {children}

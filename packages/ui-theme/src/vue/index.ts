@@ -12,11 +12,13 @@ export {
 
 export type {
   Theme,
+  ThemeConfig,
   ColorTheme,
   SlideDirection,
   TransitionDirection,
   AnimationPosition,
   ThemeAnimationOptions,
+  ThemeControlTransitionProps,
   ThemeLogoOptions,
 } from '../core/types';
 

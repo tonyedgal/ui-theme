@@ -41,7 +41,7 @@ export type SystemThemeMode = 'css' | 'js';
 export type ThemeTransitionSettings = ThemeAnimationOptions & {
   duration?: number;
   easing?: string;
-  animationType?: ThemeAnimationType;
+  animationType?: ThemeAnimationType | `${ThemeAnimationType}`;
   blurAmount?: number;
   styleId?: string;
   slideDirection?: SlideDirection;
@@ -361,7 +361,12 @@ export const createThemeController = (
       call.logoLight !== undefined ||
       call.logoDark !== undefined;
 
-    const settings = { ...options, ...call };
+    const settings = {
+      ...options,
+      ...Object.fromEntries(
+        Object.entries(call).filter(([, value]) => value !== undefined)
+      ),
+    };
 
     if (hasLogo)
       Object.assign(settings, {
@@ -376,7 +381,11 @@ export const createThemeController = (
 
     if (call.animationOff || duration <= 0 || typeof window === 'undefined')
       return null;
-    const animationType = settings.animationType ?? ThemeAnimationType.CIRCLE;
+
+    const animationType =
+      Object.values(ThemeAnimationType).find(
+        (value) => value === settings.animationType
+      ) ?? ThemeAnimationType.CIRCLE;
 
     const shared = {
       duration,

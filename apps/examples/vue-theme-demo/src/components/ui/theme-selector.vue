@@ -12,12 +12,17 @@ import {
 } from 'reka-ui';
 import type { AcceptableValue } from 'reka-ui';
 import { useUITheme } from 'uitheme-web/vue';
-import { mergeClasses, type ControlClasses } from './classes';
+import { cn } from '../../lib/utils';
 
 const props = withDefaults(
   defineProps<{
     class?: string;
-    classes?: ControlClasses;
+    classes?: Partial<
+      Record<
+        'root' | 'trigger' | 'content' | 'item' | 'label' | 'track' | 'thumb',
+        string
+      >
+    >;
     disabled?: boolean;
     label?: string;
   }>(),
@@ -31,33 +36,27 @@ const trigger = useTemplateRef<InstanceType<typeof SelectTrigger>>('trigger');
 const id = useId();
 
 const rootClass = computed(() =>
-  mergeClasses('inline-flex flex-col gap-1', props.class, props.classes, 'root')
+  cn('inline-flex flex-col gap-1', props.class, props.classes?.['root'])
 );
 
 const triggerClass = computed(() =>
-  mergeClasses(
+  cn(
     'inline-flex min-w-40 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
-    undefined,
-    props.classes,
-    'trigger'
+    props.classes?.['trigger']
   )
 );
 
 const contentClass = computed(() =>
-  mergeClasses(
+  cn(
     'z-50 min-w-40 overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md',
-    undefined,
-    props.classes,
-    'content'
+    props.classes?.['content']
   )
 );
 
 const itemClass = computed(() =>
-  mergeClasses(
+  cn(
     'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-    undefined,
-    props.classes,
-    'item'
+    props.classes?.['item']
   )
 );
 
@@ -77,12 +76,7 @@ function select(value: AcceptableValue) {
     <label
       :for="id"
       :class="
-        mergeClasses(
-          'text-sm font-medium text-foreground',
-          undefined,
-          props.classes,
-          'label'
-        )
+        cn('text-sm font-medium text-foreground', props.classes?.['label'])
       "
       >{{ label }}</label
     >

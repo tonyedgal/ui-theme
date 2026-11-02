@@ -1,18 +1,32 @@
+import { docsTree } from '@/lib/docs-tree';
+import { getDocsNavigation } from '@/lib/docs-navigation';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { DocsPage } from 'fumadocs-ui/layouts/docs/page';
 import {
-  DocsDescription,
-  DocsPage,
-  DocsTitle,
-} from 'fumadocs-ui/layouts/docs/page';
-import { RegistryPreview } from '@/components/registry-preview';
+  RegistryPreview,
+  RegistryLivePreview,
+  RegistryExamples,
+  RegistryInstallation,
+  RegistryUsage,
+  RegistryApi,
+  RegistryReact,
+  RegistryVue,
+  RegistryAgentCopy,
+  RegistrySource,
+} from '@/components/registry-preview';
+import { componentContent } from 'fumadocs-mdx:collections/server';
+import { getMDXComponents } from '@/mdx-components';
 import {
   componentBases,
   componentDocs,
   componentDocUrl,
 } from '@/lib/component-docs';
 import registry from '@/.generated/registry.json';
-import { componentSections } from '@/lib/component-guides';
+import { highlightCode } from '@/lib/highlight-code';
+import { componentUsage, componentExamples } from '@/lib/component-docs';
+import { packageManagers, packageCommand } from '@/lib/docs-commands';
+import { TableOfContents } from '@/components/docs/table-of-contents';
 
 export const dynamicParams = false;
 
@@ -34,7 +48,17 @@ async function resolveDoc(
 
   if (!base || !doc) notFound();
 
-  return { base, doc };
+  const content = componentContent.find(
+    (entry) => entry.info.path === `${doc.name}.mdx`
+  );
+
+  if (!content) throw new Error(`Missing MDX documentation for ${doc.name}.`);
+
+  return {
+    base,
+    doc: { ...doc, title: content.title, description: content.description },
+    content,
+  };
 }
 
 export async function generateMetadata({
@@ -52,35 +76,104 @@ export async function generateMetadata({
 export default async function Page({
   params,
 }: PageProps<'/docs/components/[base]/[component]'>) {
-  const { base, doc } = await resolveDoc(params);
+  const { base, doc, content } = await resolveDoc(params);
+  const MDX = content.body;
+
+  const markdown = (await content.getText('raw')).replace(
+    /^---[\s\S]*?---\s*/,
+    ''
+  );
+
+  const records = await Promise.all(
+    registry.records
+      .filter(
+        (record) => record.base === base.name && record.component === doc.name
+      )
+      .map(async (record) => ({
+        ...record,
+        files: await Promise.all(
+          record.files.map(async (file) => ({
+            ...file,
+            html: await highlightCode(file.content, file.path.split('.').pop()),
+          }))
+        ),
+      }))
+  );
+
+  const usageHtml = Object.fromEntries(
+    await Promise.all(
+      ['ts', 'js'].flatMap((language) =>
+        [undefined, ...componentExamples(doc)].map(async (example) => {
+          const source = componentUsage(doc, base.name, example);
+
+          return [
+            `${language}:${example?.id ?? 'default'}`,
+            await highlightCode(
+              language === 'js' ? source.replace(' lang="ts"', '') : source,
+              base.name === 'reka' ? 'vue' : language === 'js' ? 'jsx' : 'tsx'
+            ),
+          ];
+        })
+      )
+    )
+  );
+
+  const commands = Object.fromEntries(
+    await Promise.all(
+      records.map(async (record) => {
+        const command = `npx uitheme-cli add ${doc.name} --base ${base.name} --tailwind ${record.tailwind} --language ${record.language}`;
+
+        return [
+          `${record.tailwind}:${record.language}`,
+          Object.fromEntries(
+            await Promise.all(
+              packageManagers.map(async (pm) => [
+                pm,
+                await highlightCode(packageCommand(command, pm), 'bash'),
+              ])
+            )
+          ),
+        ];
+      })
+    )
+  );
+
+  const toc = content.toc;
 
   return (
     <DocsPage
-      className="max-w-3xl gap-8 xl:pt-10"
+      className="max-w-3xl gap-12 px-8 pt-6 pb-12 md:px-8 md:pt-6 xl:px-12 xl:pt-6"
       breadcrumb={{ enabled: false }}
       footer={{ enabled: false }}
-      toc={componentSections.map(({ id, title }) => ({
-        title,
-        url: `#${id}`,
-        depth: 2,
-      }))}
+      toc={toc}
+      tableOfContent={{ component: <TableOfContents items={toc} /> }}
+      tableOfContentPopover={{ enabled: false }}
     >
-      <header className="space-y-3">
-        <DocsTitle className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          {doc.title}
-        </DocsTitle>
-        <DocsDescription className="mb-0 text-base leading-relaxed">
-          {doc.description}
-        </DocsDescription>
-      </header>
       <RegistryPreview
+        navigation={getDocsNavigation(docsTree, base.name)}
         base={base.name}
         component={doc.name}
-        revision={registry.revision}
-        records={registry.records.filter(
-          (record) => record.base === base.name && record.component === doc.name
-        )}
-      />
+        title={doc.title}
+        description={doc.description}
+        records={records}
+        usageHtml={usageHtml}
+        commands={commands}
+        markdown={markdown}
+      >
+        <MDX
+          components={getMDXComponents({
+            RegistryLivePreview,
+            RegistryExamples,
+            RegistryInstallation,
+            RegistryUsage,
+            RegistryApi,
+            RegistryReact,
+            RegistryVue,
+            RegistryAgentCopy,
+            RegistrySource,
+          })}
+        />
+      </RegistryPreview>
     </DocsPage>
   );
 }

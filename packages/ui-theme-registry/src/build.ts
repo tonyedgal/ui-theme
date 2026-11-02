@@ -8,9 +8,12 @@ import { transform } from '@unovue/detypes';
 
 const controls = [
   'theme-toggle',
-  'appearance-selector',
+  'icon-theme-toggle',
+  'theme-switcher',
+  'theme-selector',
   'color-theme-selector',
-  'transition-settings',
+  'theme-disclosure',
+  'color-theme-disclosure',
 ];
 
 const variants = [
@@ -235,7 +238,10 @@ export async function buildRegistry(
                   : path;
 
               if (language === 'js')
-                content = await javascriptSource(content, file.path);
+                content = await javascriptSource(
+                  content,
+                  join(sourceDir, root, file.source)
+                );
 
               if (/\{\{\w+\}\}/.test(content))
                 throw new Error('Unresolved registry template substitution');

@@ -10,6 +10,7 @@ import {
 import { resolve, relative, dirname, isAbsolute, join } from 'node:path';
 import { spawn } from 'node:child_process';
 import semver from 'semver';
+import { planSharedUtils } from './shared-utils.ts';
 import { readConfig } from '../config.ts';
 import { assertSafePath } from '../registry.ts';
 import type { ProjectProfile, RegistryGraph, SavedConfig } from '../types.ts';
@@ -111,6 +112,12 @@ async function assertProfileDestination(
     return profile.cwd;
   }
 
+  if (path === profile.utilsFile) {
+    await assertDestination(profile.workspaceRoot, path);
+
+    return profile.workspaceRoot;
+  }
+
   if (!contains(profile.componentsDir, path))
     throw new Error(`Unsafe destination path: ${path}`);
   await assertDestination(profile.workspaceRoot, path);
@@ -118,7 +125,7 @@ async function assertProfileDestination(
   return profile.workspaceRoot;
 }
 
-async function componentOwner(
+export async function componentOwner(
   profile: ProjectProfile
 ): Promise<ProjectProfile> {
   if (contains(profile.cwd, profile.componentsDir)) return profile;
@@ -195,10 +202,12 @@ function dependencySpec(spec: string) {
       spec
     );
 
-  if (!match || (match[2] && !semver.validRange(match[2])))
+  const version = spec === 'uitheme-web@latest' ? '^2.0.0' : match?.[2];
+
+  if (!match || (version && !semver.validRange(version)))
     throw new Error(`Unsafe registry dependency: ${spec}`);
 
-  return { name: match[1], version: match[2] };
+  return { name: match[1], version };
 }
 
 export async function missingDependencies(
@@ -265,8 +274,12 @@ export async function planRegistryInstall(
   const saved = await readConfig(profile.cwd);
   const installed = { ...saved?.installed };
   const files = new Map<string, PlannedFile>();
-  const dependencies: string[] = ['uitheme-web@^2.0.0'];
-  const owner = await componentOwner(profile);
+  const dependencies: string[] = ['uitheme-web@latest'];
+  const utility = await planSharedUtils(profile, options);
+  const owner = utility.owner;
+  profile = utility.profile;
+  files.set(utility.file.path, utility.file);
+  dependencies.push(...utility.dependencies);
 
   const expectedFramework =
     profile.framework === 'nuxt' || profile.framework === 'vite-vue'
@@ -308,7 +321,15 @@ export async function planRegistryInstall(
         file.target ?? file.path
       );
 
-      const planned = await planFile(profile, destination, file.content);
+      const content =
+        utility.importPath === '@/lib/utils'
+          ? file.content
+          : file.content.replace(
+              /(['"])@\/lib\/utils\1/g,
+              JSON.stringify(utility.importPath)
+            );
+
+      const planned = await planFile(profile, destination, content);
       const local = relative(profile.cwd, destination).replaceAll('\\', '/');
 
       const tracked = Object.values(saved?.installed ?? {})
@@ -329,7 +350,7 @@ export async function planRegistryInstall(
       if (prior && prior.content !== planned.content)
         throw new Error(`Conflicting registry destination: ${local}`);
       files.set(destination, planned);
-      installedFiles.push({ path: local, hash: hashContent(file.content) });
+      installedFiles.push({ path: local, hash: hashContent(content) });
     }
 
     if (!/^[a-z][a-z0-9-]*$/.test(meta.component))
@@ -356,7 +377,7 @@ export async function planRegistryInstall(
     files: [...files.values()],
     dependencies: await missingDependencies(
       profile,
-      owner.cwd === profile.cwd ? dependencies : ['uitheme-web@^2.0.0']
+      owner.cwd === profile.cwd ? dependencies : ['uitheme-web@latest']
     ),
     manualSteps: [],
     revision: graph.manifest.stable.revision,

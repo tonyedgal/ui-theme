@@ -1,27 +1,52 @@
 {
-  "dependencies": [
-    "reka-ui@^2.11.0",
-    "tailwind-merge@{{tailwindMergeVersion}}"
-  ],
+  "dependencies": [],
   "components": {
     "theme-toggle": {
       "title": "Theme Toggle",
       "description": "Toggle between the resolved light and dark themes.",
       "files": [
-        { "source": "theme-toggle.vue", "path": "theme-toggle.vue" },
-        { "source": "classes.ts", "path": "classes.ts", "type": "registry:lib" }
-      ]
+        {
+          "source": "theme-toggle.vue",
+          "path": "theme-toggle.vue"
+        }
+      ],
+      "dependencies": ["reka-ui@^2.11.0", "@lucide/vue@^1.61.0"]
     },
-    "appearance-selector": {
-      "title": "Appearance Selector",
+    "icon-theme-toggle": {
+      "title": "Icon Theme Toggle",
+      "description": "Animate between sun and moon icons while changing the UI theme.",
+      "files": [
+        {
+          "source": "icon-theme-toggle.vue",
+          "path": "icon-theme-toggle.vue",
+          "type": "registry:ui"
+        }
+      ],
+      "dependencies": ["@lucide/vue@^1.61.0"],
+      "registryDependencies": ["theme-toggle"]
+    },
+    "theme-switcher": {
+      "title": "Theme Switcher",
+      "description": "Choose system, light, or dark with a sliding selection surface.",
+      "files": [
+        {
+          "source": "theme-switcher.vue",
+          "path": "theme-switcher.vue",
+          "type": "registry:ui"
+        }
+      ],
+      "dependencies": ["@lucide/vue@^1.61.0"]
+    },
+    "theme-selector": {
+      "title": "Theme Selector",
       "description": "Choose an available appearance theme.",
       "files": [
         {
-          "source": "appearance-selector.vue",
-          "path": "appearance-selector.vue"
-        },
-        { "source": "classes.ts", "path": "classes.ts", "type": "registry:lib" }
-      ]
+          "source": "theme-selector.vue",
+          "path": "theme-selector.vue"
+        }
+      ],
+      "dependencies": ["reka-ui@^2.11.0", "@lucide/vue@^1.61.0"]
     },
     "color-theme-selector": {
       "title": "Color Theme Selector",
@@ -30,20 +55,33 @@
         {
           "source": "color-theme-selector.vue",
           "path": "color-theme-selector.vue"
-        },
-        { "source": "classes.ts", "path": "classes.ts", "type": "registry:lib" }
-      ]
+        }
+      ],
+      "dependencies": ["reka-ui@^2.11.0", "@lucide/vue@^1.61.0"]
     },
-    "transition-settings": {
-      "title": "Transition Settings",
-      "description": "Control the transition animation and duration.",
+    "theme-disclosure": {
+      "title": "Theme Disclosure",
+      "description": "Expand appearance choices inside the page layout.",
       "files": [
         {
-          "source": "transition-settings.vue",
-          "path": "transition-settings.vue"
-        },
-        { "source": "classes.ts", "path": "classes.ts", "type": "registry:lib" }
-      ]
+          "source": "theme-disclosure.vue",
+          "path": "theme-disclosure.vue",
+          "type": "registry:ui"
+        }
+      ],
+      "dependencies": ["@lucide/vue@^1.61.0"]
+    },
+    "color-theme-disclosure": {
+      "title": "Color Theme Disclosure",
+      "description": "Expand palette choices inside the page layout.",
+      "files": [
+        {
+          "source": "color-theme-disclosure.vue",
+          "path": "color-theme-disclosure.vue",
+          "type": "registry:ui"
+        }
+      ],
+      "dependencies": ["@lucide/vue@^1.61.0"]
     }
   }
 }

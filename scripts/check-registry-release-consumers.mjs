@@ -40,9 +40,7 @@ const cliRequire = createRequire(
 
 const webRequire = createRequire(join(root, 'packages/ui-theme/package.json'));
 
-const cssRequire = createRequire(
-  join(root, 'apps/examples/example-next/package.json')
-);
+const cssRequire = createRequire(join(root, 'apps/ui-theme-web/package.json'));
 
 const results = [];
 
@@ -95,7 +93,12 @@ async function asynchronousCommand(folder, args, label) {
     const { stdout, stderr } = await promisify(execFile)(
       process.execPath,
       args,
-      { cwd: folder, encoding: 'utf8', timeout: 180_000 }
+      {
+        cwd: folder,
+        encoding: 'utf8',
+        timeout: 180_000,
+        env: { ...process.env, NODE_ENV: 'development' },
+      }
     );
 
     write(evidence, `${label}.log`, stdout + stderr);
@@ -304,7 +307,7 @@ try {
             );
           });
 
-          assert.equal(selected.length, 4);
+          assert.equal(selected.length, 7);
 
           const dependencies = Object.fromEntries(
             selected
@@ -318,8 +321,13 @@ try {
 
           const frameworkDependencies =
             framework === 'react'
-              ? { react: '19.3.0', 'react-dom': '19.3.0' }
-              : { vue: '3.5.44' };
+              ? Object.fromEntries(
+                  ['react', 'react-dom'].map((name) => [
+                    name,
+                    registryRequire(`${name}/package.json`).version,
+                  ])
+                )
+              : { vue: registryRequire('vue/package.json').version };
 
           write(
             folder,
@@ -328,11 +336,20 @@ try {
               name: label,
               private: true,
               type: 'module',
+              devDependencies:
+                framework === 'react'
+                  ? Object.fromEntries(
+                      ['@types/react', '@types/react-dom'].map((name) => [
+                        name,
+                        registryRequire(`${name}/package.json`).version,
+                      ])
+                    )
+                  : {},
               dependencies: {
                 ...dependencies,
                 ...frameworkDependencies,
                 'uitheme-web': webVersion,
-                vite: '7.3.7',
+                vite: registryRequire('vite/package.json').version,
                 tailwindcss:
                   tailwind === 3
                     ? legacyRequire('tailwindcss/package.json').version
@@ -406,7 +423,7 @@ try {
             write(
               folder,
               `src/main.${extension}`,
-              `import React, { useState } from 'react'; import { createRoot } from 'react-dom/client'; import { UIThemeProvider, ThemeAnimationType, useUITheme } from 'uitheme-web/react'; import {ThemeToggle} from './components/ui/theme-toggle'; import {AppearanceSelector} from './components/ui/appearance-selector'; import {ColorThemeSelector} from './components/ui/color-theme-selector'; import {TransitionSettings} from './components/ui/transition-settings'; function Controls(){const state=useUITheme(); const [settings,setSettings]=useState({animationType:ThemeAnimationType.CIRCLE,duration:400}); return <div data-ready={state.mounted}><ThemeToggle/><AppearanceSelector/><ColorThemeSelector/><TransitionSettings value={settings} onValueChange={setSettings}/><output id="state">{state.theme}/{state.colorTheme}/{settings.duration}</output></div>;} createRoot(document.getElementById('root')${language === 'ts' ? '!' : ''}).render(<UIThemeProvider defaultTheme="light" colorThemes={['default','ocean']} duration={0}><Controls/></UIThemeProvider>);`
+              `import React from 'react'; import { createRoot } from 'react-dom/client'; import { UIThemeProvider, useUITheme } from 'uitheme-web/react'; import {ThemeToggle} from './components/ui/theme-toggle'; import {ThemeSelector} from './components/ui/theme-selector'; import {ColorThemeSelector} from './components/ui/color-theme-selector'; import {IconThemeToggle} from './components/ui/icon-theme-toggle'; import {ThemeSwitcher} from './components/ui/theme-switcher'; import {ThemeDisclosure} from './components/ui/theme-disclosure'; import {ColorThemeDisclosure} from './components/ui/color-theme-disclosure'; function Controls(){const state=useUITheme(); return <div data-ready={state.mounted}><ThemeToggle/><ThemeSelector/><ColorThemeSelector/><IconThemeToggle/><ThemeSwitcher/><ThemeDisclosure label="Inline theme"/><ColorThemeDisclosure label="Inline color theme"/><output id="state">{state.theme}/{state.colorTheme}</output></div>;} createRoot(document.getElementById('root')${language === 'ts' ? '!' : ''}).render(<UIThemeProvider defaultTheme="light" colorThemes={['default','ocean']} duration={0}><Controls/></UIThemeProvider>);`
             );
           } else {
             write(
@@ -417,7 +434,7 @@ try {
             write(
               folder,
               'src/App.vue',
-              `<script setup${language === 'ts' ? ' lang="ts"' : ''}>import {ref} from 'vue'; import {ThemeAnimationType,useUITheme} from 'uitheme-web/vue'; import ThemeToggle from './components/ui/theme-toggle.vue'; import AppearanceSelector from './components/ui/appearance-selector.vue'; import ColorThemeSelector from './components/ui/color-theme-selector.vue'; import TransitionSettings from './components/ui/transition-settings.vue'; const state=useUITheme(); const settings=ref({animationType:ThemeAnimationType.CIRCLE,duration:400});</script><template><div :data-ready="state.mounted.value"><ThemeToggle/><AppearanceSelector/><ColorThemeSelector/><TransitionSettings v-model="settings"/><output id="state">{{state.theme.value}}/{{state.colorTheme.value}}/{{settings.duration}}</output></div></template>`
+              `<script setup${language === 'ts' ? ' lang="ts"' : ''}>import {useUITheme} from 'uitheme-web/vue'; import ThemeToggle from './components/ui/theme-toggle.vue'; import ThemeSelector from './components/ui/theme-selector.vue'; import ColorThemeSelector from './components/ui/color-theme-selector.vue'; import IconThemeToggle from './components/ui/icon-theme-toggle.vue'; import ThemeSwitcher from './components/ui/theme-switcher.vue'; import ThemeDisclosure from './components/ui/theme-disclosure.vue'; import ColorThemeDisclosure from './components/ui/color-theme-disclosure.vue'; const state=useUITheme();</script><template><div :data-ready="state.mounted.value"><ThemeToggle/><ThemeSelector/><ColorThemeSelector/><IconThemeToggle/><ThemeSwitcher/><ThemeDisclosure label="Inline theme"/><ColorThemeDisclosure label="Inline color theme"/><output id="state">{{state.theme.value}}/{{state.colorTheme.value}}</output></div></template>`
             );
           }
 
@@ -482,7 +499,10 @@ try {
             { framework, base, tailwind, language }
           );
 
-          assert.deepEqual(graph.items, selected);
+          assert.deepEqual(
+            graph.items.toSorted((a, b) => a.name.localeCompare(b.name)),
+            selected.toSorted((a, b) => a.name.localeCompare(b.name))
+          );
           await asynchronousCommand(
             folder,
             [join(cli, 'dist/index.js'), 'init', '--cwd', folder, '--yes'],
@@ -563,8 +583,8 @@ try {
             `${label}: missing text-foreground CSS`
           );
           assert.ok(
-            /\.border-input\s*\{/.test(compiled.css),
-            `${label}: missing border-input CSS`
+            /\.border-border\s*\{/.test(compiled.css),
+            `${label}: missing border-border CSS`
           );
           assert.match(compiled.css, /\.dark/);
           write(evidence, `${label}.css`, compiled.css);
@@ -573,6 +593,10 @@ try {
           const config = {
             root: folder,
             configFile: false,
+            resolve: {
+              alias: { '@': join(folder, 'src') },
+              dedupe: ['react', 'react-dom', 'vue'],
+            },
             plugins: framework === 'vue' ? [vuePlugin()] : [],
             esbuild: { jsx: 'automatic' },
             build: { outDir: 'dist', minify: false },
@@ -592,8 +616,7 @@ try {
           await page.waitForSelector('[data-ready="true"]');
           await page.waitForFunction(
             () =>
-              document.querySelector('#state')?.textContent ===
-              'light/default/400'
+              document.querySelector('#state')?.textContent === 'light/default'
           );
 
           const toggle = page.getByRole('button', {
@@ -613,8 +636,7 @@ try {
           await toggle.click();
           await page.waitForFunction(
             () =>
-              document.querySelector('#state')?.textContent ===
-              'dark/default/400'
+              document.querySelector('#state')?.textContent === 'dark/default'
           );
 
           await page.waitForFunction(
@@ -646,12 +668,11 @@ try {
           await toggle.click();
           await page.waitForFunction(
             () =>
-              document.querySelector('#state')?.textContent ===
-              'light/default/400'
+              document.querySelector('#state')?.textContent === 'light/default'
           );
 
           const appearance = page.getByRole('combobox', {
-            name: 'Appearance',
+            name: 'Theme',
             exact: true,
           });
 
@@ -659,8 +680,7 @@ try {
           await page.getByRole('option', { name: 'Dark', exact: true }).click();
           await page.waitForFunction(
             () =>
-              document.querySelector('#state')?.textContent ===
-              'dark/default/400'
+              document.querySelector('#state')?.textContent === 'dark/default'
           );
 
           const palette = page.getByRole('combobox', {
@@ -672,12 +692,17 @@ try {
           await page
             .getByRole('option', { name: 'Ocean', exact: true })
             .click();
-          const slider = page.getByRole('slider');
-          await slider.focus();
+
+          const light = page.getByRole('radio', {
+            name: 'Light theme',
+            exact: true,
+          });
+
+          await light.check();
+          await light.focus();
           await page.keyboard.press('ArrowRight');
           await page.waitForFunction(
-            () =>
-              document.querySelector('#state')?.textContent === 'dark/ocean/450'
+            () => document.querySelector('#state')?.textContent === 'dark/ocean'
           );
           await page.screenshot({ path: join(evidence, `${label}.png`) });
           assert.deepEqual(errors, []);
@@ -722,7 +747,7 @@ try {
         }
 
   assert.equal(results.length, 12);
-  console.log(`All 48 emitted controls passed. Evidence: ${evidence}`);
+  console.log(`All 84 emitted components passed. Evidence: ${evidence}`);
 } finally {
   await browser?.close();
 

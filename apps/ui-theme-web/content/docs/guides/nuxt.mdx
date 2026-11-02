@@ -1,0 +1,48 @@
+---
+title: Nuxt
+description: Use the UITheme module in a Nuxt 4 application.
+---
+
+## Install
+
+The module supports Nuxt 4. The CLI rejects Nuxt 3 automatic setup before changing files.
+
+```sh
+npm install uitheme-web@latest
+```
+
+## Register the module
+
+```ts title="nuxt.config.ts"
+export default defineNuxtConfig({
+  modules: ['uitheme-web/nuxt'],
+  uiTheme: {
+    defaultTheme: 'system',
+    colorThemes: ['default', 'caffeine'],
+  },
+});
+```
+
+The module supplies the theme integration. Keep palette styles in your application CSS. Do not add a second app-wide plugin or provider around the module's setup.
+
+## Use theme state
+
+Use `useUITheme` from `uitheme-web/vue` in a component's setup. The [Vue composable example](/docs/guides/vue#use-the-composable) also applies to Nuxt.
+
+Use a fresh state for each server request. Check the initial appearance before hydration and the saved preference after reload. Keep the registered palette keys consistent with your CSS.
+
+## Install controls
+
+With Tailwind configured, preview the changes before applying them:
+
+```sh
+npx uitheme-cli init --dry-run
+npx uitheme-cli init
+npx uitheme-cli add theme-toggle theme-selector color-theme-selector --base reka
+```
+
+Keep controls under the app's configured component alias. Nuxt 4 normally places application code under `app/`.
+
+## Example
+
+Open the [Nuxt example](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/example-nuxt). Review `nuxt.config.ts` and the [shared Vue screens](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/vue-theme-demo).

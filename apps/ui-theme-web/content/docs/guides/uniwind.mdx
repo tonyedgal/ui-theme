@@ -1,0 +1,41 @@
+---
+title: Uniwind
+description: Connect UITheme native state to Uniwind and Tailwind 4.
+---
+
+## Start with the native provider
+
+Complete the [Expo provider setup](/docs/guides/expo). Install Uniwind and Tailwind 4 using the versions supported by your Expo SDK.
+
+## Configure Metro and CSS
+
+Register your global CSS entry with `withUniwindConfig` from `uniwind/metro`. Include the named theme scopes in `extraThemes`. Import the stylesheet from the app entry.
+
+Use the same scope names in your CSS, Metro configuration, and UITheme adapter map:
+
+```tsx
+import { UIThemeProvider } from 'uitheme-rn';
+import { UniwindTheme, type ThemeStyleScopes } from 'uitheme-rn/uniwind';
+
+const scopes: ThemeStyleScopes = {
+  default: { light: 'default-light', dark: 'default-dark' },
+};
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <UIThemeProvider>
+      <UniwindTheme themes={scopes}>{children}</UniwindTheme>
+    </UIThemeProvider>
+  );
+}
+```
+
+## Use the adapter
+
+Read preferences and change themes with `useUITheme` from `uitheme-rn`. The adapter keeps Uniwind synchronized with the selected appearance and palette. Register custom palette keys with the provider and add their scopes to the map.
+
+Use semantic utility classes for your controls. Keep their colors, radii, and other supported values in the active theme. Check both appearances, palette changes, persistence after reload, and reduced motion.
+
+## Example
+
+Open the [Uniwind example](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/example-uniwind). Review `metro.config.cjs`, `src/global.css`, `src/theme.ts`, and `src/app/_layout.tsx` together.

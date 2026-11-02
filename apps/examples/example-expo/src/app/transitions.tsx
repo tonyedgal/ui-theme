@@ -1,3 +1,4 @@
+import type { ComponentRef } from 'react';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +17,7 @@ export default function TransitionsScreen() {
   const theme = useAnimatedUITheme();
   const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
-  const origin = useRef<View>(null);
+  const origin = useRef<ComponentRef<typeof View>>(null);
 
   const [transition, setTransition] =
     useState<ScreenTransitionType>('circularReveal');

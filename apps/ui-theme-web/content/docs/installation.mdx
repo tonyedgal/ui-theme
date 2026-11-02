@@ -4,7 +4,7 @@ description: Set up the shared runtime for your framework.
 ---
 
 ```sh
-npm install uitheme-web@^2
+npm install uitheme-web@latest
 ```
 
 The runtime changes theme classes and CSS variables. Supply your own styles.
@@ -12,6 +12,8 @@ The optional [local controls](/docs/components) support Tailwind CSS 3.4 and 4.
 The CLI requires an existing Tailwind setup. It does not create an app or upgrade Tailwind.
 
 ## React
+
+[Follow the React guide](/docs/guides/react).
 
 ```tsx
 import { UIThemeProvider } from 'uitheme-web/react';
@@ -37,6 +39,8 @@ resolving the system preference.
 
 ## Next.js App Router
 
+[Follow the Next.js guide](/docs/guides/nextjs).
+
 Create a client provider wrapper.
 
 ```tsx title="app/providers.tsx"
@@ -56,6 +60,8 @@ For a custom server bootstrap, import server-safe helpers from
 
 ## TanStack Start 1
 
+[Follow the TanStack Start guide](/docs/guides/tanstack-start).
+
 Use `TanStackUIThemeProvider` from `uitheme-web/react` for client state.
 Use the stateless helpers from `uitheme-web/tanstack` to read server theme data
 and build the initial HTML attributes and bootstrap script.
@@ -64,6 +70,8 @@ Connect theme and palette change callbacks to your cookie persistence.
 Keep storage keys and available options identical on the server and client.
 
 ## Vue 3
+
+[Follow the Vue guide](/docs/guides/vue).
 
 ```ts title="src/main.ts"
 import { createApp } from 'vue';
@@ -87,6 +95,8 @@ Use `getThemeScript` from `uitheme-web/vue/bootstrap` before hydration.
 Do not share a provider or a theme store between requests.
 
 ## Nuxt 4
+
+[Follow the Nuxt guide](/docs/guides/nuxt).
 
 ```ts title="nuxt.config.ts"
 export default defineNuxtConfig({
@@ -120,3 +130,22 @@ foreground counterparts. Palette classes use the `theme-` prefix by default.
 The CLI supports complete CSS colors and HSL channel tokens.
 Review the dry-run before applying CSS changes. Existing imports, variables,
 and plugins must remain intact.
+
+## Install components
+
+Use the [component catalog](/docs/components) to choose a control. The CLI copies
+editable source into your app. Set up the runtime, provider, and Tailwind first.
+React supports Base UI (the default) and Radix. Vue supports Reka only.
+Each installed component uses one base. It does not switch bases at runtime.
+
+```sh
+npx uitheme-cli init
+npx uitheme-cli add theme-toggle --base base-ui
+```
+
+See the [CLI guide](/docs/cli) for commands, flags, workspace paths, and previews.
+Review the plan before you replace edited component files.
+
+## Native applications
+
+For Expo and React Native, install `uitheme-rn`. Follow the [Expo guide](/docs/guides/expo), [NativeWind guide](/docs/guides/nativewind), or [Uniwind guide](/docs/guides/uniwind). Each guide links to its example application.

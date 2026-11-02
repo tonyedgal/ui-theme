@@ -73,7 +73,7 @@ async function localControls(root: string): Promise<LocalControls> {
   const controls: LocalControls = {};
 
   for (const [old, component, exported] of [
-    ['UIThemeSwitcher', 'appearance-selector', 'AppearanceSelector'],
+    ['UIThemeSwitcher', 'theme-selector', 'ThemeSelector'],
     ['UIThemeSelector', 'color-theme-selector', 'ColorThemeSelector'],
   ]) {
     const record = saved?.installed?.[component];
@@ -206,7 +206,7 @@ export async function runMigration(
         after: change.after,
       })),
       dependencies: changes.some((change) => change.file === manifestFile)
-        ? ['uitheme-web@^2.0.0']
+        ? ['uitheme-web@latest']
         : [],
       diagnostics,
     };
@@ -222,7 +222,7 @@ export async function runMigration(
             ),
             ...(report.dependencies.length
               ? [
-                  'Dependency: uitheme-web@^2.0.0. Run your package manager after migration to update the lockfile.',
+                  'Dependency: uitheme-web@latest. Run your package manager after migration to update the lockfile.',
                 ]
               : []),
           ].join('\n')
@@ -230,7 +230,7 @@ export async function runMigration(
 
     if (diagnostics.length) {
       stderr(
-        `Migration status: manual-required. No files changed.\n${diagnostics.join('\n')}\nUpgrade uitheme-web to ^2.0.0 with your package manager on a migration branch before running uitheme add appearance-selector color-theme-selector. Then review custom props and provider setup, and run migrate again. Complete the source migration before building or deploying the app.`
+        `Migration status: manual-required. No files changed.\n${diagnostics.join('\n')}\nInstall uitheme-web@latest with your package manager on a migration branch before running uitheme add theme-selector color-theme-selector. Then review custom props and provider setup, and run migrate again. Complete the source migration before building or deploying the app.`
       );
 
       return 2;
