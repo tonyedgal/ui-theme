@@ -2,13 +2,18 @@
 import { Toggle } from 'reka-ui';
 import { computed } from 'vue';
 import { useUITheme } from 'uitheme-web/vue';
-import { mergeClasses, type ControlClasses } from './classes';
+import { cn } from '../../lib/utils';
 
 const props = withDefaults(
   defineProps<{
     disabled?: boolean;
     class?: string;
-    classes?: ControlClasses;
+    classes?: Partial<
+      Record<
+        'root' | 'trigger' | 'content' | 'item' | 'label' | 'track' | 'thumb',
+        string
+      >
+    >;
     label?: string;
     lightLabel?: string;
     darkLabel?: string;
@@ -33,15 +38,13 @@ const text = computed(() =>
 );
 
 const rootClass = computed(() =>
-  mergeClasses('inline-flex', props.class, props.classes, 'root')
+  cn('inline-flex', props.class, props.classes?.['root'])
 );
 
 const triggerClass = computed(() =>
-  mergeClasses(
+  cn(
     'inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
-    undefined,
-    props.classes,
-    'trigger'
+    props.classes?.['trigger']
   )
 );
 </script>

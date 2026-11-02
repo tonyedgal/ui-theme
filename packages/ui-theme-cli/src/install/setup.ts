@@ -1,5 +1,6 @@
 import { dirname, join, relative, isAbsolute } from 'node:path';
 import ts from 'typescript';
+import { planSharedUtils } from './shared-utils.ts';
 import { readConfig } from '../config.ts';
 import type { ProjectProfile } from '../types.ts';
 import {
@@ -509,6 +510,10 @@ export async function planInit(
   const files: PlannedFile[] = [],
     manualSteps: string[] = [];
 
+  const utility = await planSharedUtils(profile, options);
+  profile = utility.profile;
+  files.push(utility.file);
+
   const original = await readOptional(profile.cssFile);
 
   if (original === undefined)
@@ -553,14 +558,30 @@ export async function planInit(
     )
   );
 
-  return {
+  const plan: InstallPlan = {
     profile,
     files,
     manualSteps,
     dependencies: await missingDependencies(
       profile,
-      ['uitheme-web@^2.0.0'],
+      [
+        'uitheme-web@latest',
+        ...(utility.owner.cwd === profile.cwd ? utility.dependencies : []),
+      ],
       ['uitheme-web']
     ),
   };
+
+  if (utility.owner.cwd !== profile.cwd)
+    plan.dependencyInstalls = [
+      {
+        profile: utility.owner,
+        dependencies: await missingDependencies(
+          utility.owner,
+          utility.dependencies
+        ),
+      },
+    ];
+
+  return plan;
 }

@@ -2,10 +2,13 @@
 
 import * as React from 'react';
 import { useUITheme } from 'uitheme-web/react';
-import { cn } from './classes';
+import { cn } from '@/lib/utils';
 import * as Select from '@radix-ui/react-select';
 
-export type ColorThemeOption = { value: string; label: string };
+export type ColorThemeOption = {
+  value: string;
+  label: string;
+};
 
 export type ColorThemeSelectorClasses = {
   root?: string;
@@ -41,7 +44,10 @@ export const ColorThemeSelector = React.forwardRef<
   const id = React.useId();
   const selected = colorTheme;
 
-  const options: { value: string; label: string }[] =
+  const options: {
+    value: string;
+    label: string;
+  }[] =
     optionOverrides ??
     colorThemes.map((value) => ({
       value,

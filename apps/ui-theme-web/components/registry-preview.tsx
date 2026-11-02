@@ -1,150 +1,102 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { ColorThemeDisclosure as RadixColorThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/radix/color-theme-disclosure';
+import { ThemeDisclosure as RadixThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/radix/theme-disclosure';
+import { ColorThemeDisclosure as BaseColorThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/color-theme-disclosure';
+import { ThemeDisclosure as BaseThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/theme-disclosure';
+import { createContext, Suspense, useContext, type ReactNode } from 'react';
 import Link from 'next/link';
+import { ThemeAnimationType } from 'uitheme-web/react';
+import { SourceDisclosure } from './docs/source-disclosure';
+import {
+  getDocsPagination,
+  type NavigationSection,
+} from '@/lib/docs-navigation';
 import { useSearchParams } from 'next/navigation';
-import { Check, Copy } from 'lucide-react';
-import { useCopyButton } from 'fumadocs-ui/utils/use-copy-button';
 import {
   componentBases,
   componentDocs,
   componentDocUrl,
   componentUsage,
+  componentExamples,
   type ComponentBase,
   type ComponentDoc,
   type ComponentSource,
+  type ComponentExample,
 } from '@/lib/component-docs';
-import {
-  UIThemeProvider,
-  DEFAULT_DURATION,
-  ThemeAnimationType,
-} from 'uitheme-web/react';
 import { ThemeToggle as BaseThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/theme-toggle';
-import { AppearanceSelector as BaseAppearanceSelector } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/appearance-selector';
+import { IconThemeToggle as BaseIconThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/icon-theme-toggle';
+import { ThemeSwitcher as BaseThemeSwitcher } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/theme-switcher';
+import { ThemeSelector as BaseThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/theme-selector';
 import { ColorThemeSelector as BaseColorThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/color-theme-selector';
-import { TransitionSettings as BaseTransitionSettings } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/transition-settings';
 import { ThemeToggle as RadixThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/radix/theme-toggle';
-import { AppearanceSelector as RadixAppearanceSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/appearance-selector';
+import { IconThemeToggle as RadixIconThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/radix/icon-theme-toggle';
+import { ThemeSwitcher as RadixThemeSwitcher } from '../../../packages/ui-theme-registry/src/templates/react/radix/theme-switcher';
+import { ThemeSelector as RadixThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/theme-selector';
 import { ColorThemeSelector as RadixColorThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/color-theme-selector';
-import { TransitionSettings as RadixTransitionSettings } from '../../../packages/ui-theme-registry/src/templates/react/radix/transition-settings';
-import {
-  ComponentDecisions,
-  ComponentReference,
-  ComponentAgentNotes,
-  ComponentCredits,
-} from './component-guidance';
-import {
-  componentAgentNotes,
-  componentGuidanceMarkdown,
-} from '@/lib/component-guides';
+import { componentMarkdown } from '@/lib/component-markdown';
+import { componentApi } from '@/lib/component-guides';
+import { Prose } from './docs/prose';
+import { CopyButton as CopyText } from './docs/copy-button';
+import { CopyPageButton } from './docs/copy-page-button';
+import { CodeBlock } from './docs/code-block';
+import { ComponentPreview } from './docs/component-preview';
+import { InstallTabs } from './docs/install-tabs';
+import { DocsPagination, PaginationArrows } from './docs/pagination';
+import type { PackageManager } from '@/lib/docs-commands';
 import './registry-preview.css';
 
 interface RegistryPreviewProps {
-  base: ComponentBase;
   component: ComponentDoc['name'];
-  revision: string;
+  navigation: NavigationSection[];
+  base: ComponentBase;
+  title: string;
+  description: string;
   records: ComponentSource[];
-}
-
-const palettes = [
-  'default',
-  'caffeine',
-  'mono',
-  'supabase',
-  'mocha',
-  'perpetuity',
-];
-
-function CopyText({
-  value,
-  label = 'Copy',
-}: {
-  value: string;
-  label?: string;
-}) {
-  const [copied, copy] = useCopyButton(() =>
-    navigator.clipboard.writeText(value)
-  );
-
-  return (
-    <button
-      type="button"
-      onClick={copy}
-      className="inline-flex h-8 shrink-0 items-center justify-center gap-2 rounded-md px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      aria-label={copied ? `${label}: copied` : label}
-    >
-      {copied ? (
-        <Check className="size-3.5" aria-hidden="true" />
-      ) : (
-        <Copy className="size-3.5" aria-hidden="true" />
-      )}
-      {copied ? 'Copied' : label}
-    </button>
-  );
+  usageHtml: Record<string, string>;
+  commands: Record<string, Partial<Record<PackageManager, string>>>;
+  children: ReactNode;
+  markdown: string;
 }
 
 function RegistryContent({
   base,
   component,
-  revision,
   records,
+  usageHtml,
+  commands,
+  children,
+  markdown: authoredMarkdown,
+  navigation,
+  title,
+  description,
   tailwind,
   language,
 }: RegistryPreviewProps & { tailwind: string; language: string }) {
-  const [settings, setSettings] = useState({
-    animationType: ThemeAnimationType.CIRCLE,
-    duration: DEFAULT_DURATION,
-  });
-
-  const doc = componentDocs.find((item) => item.name === component)!;
+  const doc = {
+    ...componentDocs.find((item) => item.name === component)!,
+    title,
+    description,
+  };
 
   const selected = records.find(
     (record) =>
       String(record.tailwind) === tailwind && record.language === language
   );
 
-  const activeIndex = componentDocs.findIndex(
-    (item) => item.name === component
+  const sourceQuery = new URLSearchParams({ tailwind, language });
+
+  const { previous, next } = getDocsPagination(
+    navigation,
+    componentDocUrl(base, component),
+    sourceQuery
   );
 
-  const previous = componentDocs[activeIndex - 1];
-  const next = componentDocs[activeIndex + 1];
-  const sourceQuery = new URLSearchParams({ tailwind, language });
   const command = `npx uitheme-cli add ${component} --base ${base} --tailwind ${tailwind} --language ${language}`;
   const usageSource = componentUsage(doc, base);
 
   const usage =
     language === 'js' ? usageSource.replace(' lang="ts"', '') : usageSource;
-
-  const guidance = componentGuidanceMarkdown(doc, base);
-
-  const markdown = [
-    `# ${doc.title}`,
-    doc.description,
-    '## Preview',
-    base === 'reka'
-      ? 'Install the Vue source in your app to preview it with your theme provider.'
-      : 'Use the existing live preview to try the control with your theme provider.',
-    guidance.whenToUse,
-    guidance.whenNotToUse,
-    '## Installation',
-    `\`\`\`sh\n${command}\n\`\`\``,
-    '## Usage',
-    `\`\`\`${base === 'reka' ? 'vue' : language === 'js' ? 'jsx' : 'tsx'}\n${usage}\n\`\`\``,
-    guidance.apiReference,
-    guidance.keyboard,
-    guidance.accessibility,
-    guidance.themeBehavior,
-    guidance.agentNotes,
-    '## Source',
-    ...(selected?.files.map(
-      (file) => `### ${file.path}\n\n\`\`\`\n${file.content}\n\`\`\``
-    ) ?? []),
-    '## Customization',
-    `Edit the installed source, pass ${base === 'reka' ? 'class' : 'className'} to style the root, or use the classes prop to style individual parts. Labels can be changed through props.`,
-    `Registry revision: ${revision}`,
-    guidance.credits,
-  ].join('\n\n');
 
   function changeVariant(name: 'tailwind' | 'language', value: string) {
     const query = new URLSearchParams(window.location.search);
@@ -154,25 +106,146 @@ function RegistryContent({
       '',
       `?${query.toString()}${window.location.hash}`
     );
+    window.dispatchEvent(new Event('docs-navigation-change'));
   }
 
   const ThemeToggle = base === 'radix' ? RadixThemeToggle : BaseThemeToggle;
 
-  const AppearanceSelector =
-    base === 'radix' ? RadixAppearanceSelector : BaseAppearanceSelector;
+  const ThemeSelector =
+    base === 'radix' ? RadixThemeSelector : BaseThemeSelector;
 
   const ColorThemeSelector =
     base === 'radix' ? RadixColorThemeSelector : BaseColorThemeSelector;
 
-  const TransitionSettings =
-    base === 'radix' ? RadixTransitionSettings : BaseTransitionSettings;
+  const IconThemeToggle =
+    base === 'radix' ? RadixIconThemeToggle : BaseIconThemeToggle;
+
+  const ThemeSwitcher =
+    base === 'radix' ? RadixThemeSwitcher : BaseThemeSwitcher;
+
+  const ThemeDisclosure =
+    base === 'radix' ? RadixThemeDisclosure : BaseThemeDisclosure;
+
+  const ColorThemeDisclosure =
+    base === 'radix' ? RadixColorThemeDisclosure : BaseColorThemeDisclosure;
+
+  const api = componentApi(doc, base);
+
+  const markdown = componentMarkdown({
+    doc,
+    base,
+    tailwind,
+    language,
+    markdownSource: authoredMarkdown,
+    selected,
+  });
+
+  const agentNotes =
+    markdown.split('## AI Agent notes\n')[1]?.split('\n## Source')[0]?.trim() ??
+    '';
+
+  function renderPreview(previewName: string, example?: ComponentExample) {
+    const previewBorderStyle = example?.borderStyle ?? 'solid';
+    const previewDisplay = example?.display ?? 'text';
+
+    const transition = example?.animationType
+      ? {
+          animationType: ThemeAnimationType.SLIDE as const,
+          duration: example.duration,
+          slideDirection: example.slideDirection,
+        }
+      : {};
+
+    return base === 'reka' ? (
+      <div className="rounded-lg border border-border px-6 py-10 text-sm leading-[1.75] text-muted-foreground">
+        This component uses Vue and Reka. Install the source below in your Vue
+        or Nuxt app to try it with your theme provider.
+      </div>
+    ) : (
+      <div
+        role="region"
+        aria-label={`${previewName} (${base === 'radix' ? 'Radix' : 'Base UI'})`}
+        className="w-full"
+      >
+        <div
+          className={`w-full max-w-sm${doc.category === 'disclosures' ? ` flex h-96 flex-col ${example?.direction === 'up' ? 'justify-end' : 'justify-start'}` : ''}`}
+        >
+          {component === 'theme-toggle' && (
+            <div className="flex justify-center">
+              <ThemeToggle
+                {...transition}
+                borderStyle={previewBorderStyle}
+
+                display={previewDisplay}
+              />
+            </div>
+          )}
+          {component === 'theme-selector' && (
+            <ThemeSelector
+              {...transition}
+              borderStyle={previewBorderStyle}
+
+              display={previewDisplay}
+            />
+          )}
+          {component === 'color-theme-selector' && (
+            <ColorThemeSelector
+              {...transition}
+              borderStyle={previewBorderStyle}
+            />
+          )}
+          {component === 'theme-disclosure' && (
+            <ThemeDisclosure
+              {...transition}
+              display={previewDisplay}
+              direction={example?.direction}
+            />
+          )}
+          {component === 'color-theme-disclosure' && (
+            <ColorThemeDisclosure
+              {...transition}
+              direction={example?.direction}
+            />
+          )}
+          {component === 'icon-theme-toggle' && (
+            <div className="flex justify-center">
+              <IconThemeToggle
+                {...transition}
+                borderStyle={previewBorderStyle}
+                effect={example?.effect}
+              />
+            </div>
+          )}
+          {component === 'theme-switcher' && (
+            <div className="flex justify-center">
+              <ThemeSwitcher {...transition} borderStyle={previewBorderStyle} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-10" aria-label="Registry components">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-3">
+    <div className="min-w-0 space-y-12" aria-label="Registry components">
+      <header>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-base font-semibold tracking-tight sm:text-lg md:text-xl lg:text-2xl">
+            {doc.title}
+          </h1>
+          <div className="flex shrink-0 items-center gap-2">
+            <CopyPageButton markdown={markdown} />
+            <PaginationArrows previous={previous} next={next} />
+          </div>
+        </div>
+        <p className="mt-4 text-base text-pretty text-muted-foreground lg:text-balance">
+          {doc.description}
+        </p>
+      </header>
+      <div className="not-prose">
         <nav
           aria-label="Component base"
-          className="flex flex-wrap items-center gap-6"
+          className="flex flex-wrap items-center gap-1"
         >
           {componentBases.map((item) => (
             <Link
@@ -181,257 +254,158 @@ function RegistryContent({
               prefetch={false}
               scroll={false}
               aria-current={base === item.name ? 'page' : undefined}
-              className="relative py-2 text-sm font-medium text-muted-foreground transition-colors after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 after:bg-foreground after:opacity-0 hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:after:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:bg-muted aria-[current=page]:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
             >
               {item.title}
             </Link>
           ))}
         </nav>
-        <CopyText label="Copy page" value={markdown} />
       </div>
 
-      <section aria-labelledby="preview" className="space-y-4">
-        <h2
-          id="preview"
-          className="scroll-mt-24 text-xl font-semibold tracking-tight"
-        >
-          Preview
-        </h2>
-        {base === 'reka' ? (
-          <div className="rounded-lg border border-border px-6 py-10 text-sm leading-relaxed text-muted-foreground">
-            This component uses Vue and Reka. Install the source below in your
-            Vue or Nuxt app to try it with your theme provider.
-          </div>
-        ) : (
-          <UIThemeProvider
-            colorThemes={palettes}
-            animationType={settings.animationType}
-            duration={settings.duration}
-          >
-            <div
-              aria-label={`${base === 'radix' ? 'Radix' : 'Base UI'} live preview`}
-              className="flex min-h-64 items-center justify-center rounded-lg border border-border bg-background p-8 sm:p-12"
-            >
-              <div className="w-full max-w-sm">
-                {component === 'theme-toggle' && (
-                  <div className="flex justify-center">
-                    <ThemeToggle />
-                  </div>
-                )}
-                {component === 'appearance-selector' && <AppearanceSelector />}
-                {component === 'color-theme-selector' && <ColorThemeSelector />}
-                {component === 'transition-settings' && (
-                  <div className="space-y-6">
-                    <TransitionSettings
-                      value={settings}
-                      onValueChange={setSettings}
-                    />
-                    <div className="flex items-center justify-between gap-4 border-t pt-4">
-                      <span className="text-sm text-muted-foreground">
-                        Try the transition
-                      </span>
-                      <ThemeToggle />
-                    </div>
-                  </div>
-                )}
-              </div>
+      <RegistryBlocks.Provider
+        value={{
+          live: (
+            <div className="not-prose">
+              {' '}
+              <ComponentPreview
+                code={usage}
+                html={usageHtml[`${language}:default`]}
+              >
+                {renderPreview('Default preview')}
+              </ComponentPreview>
             </div>
-          </UIThemeProvider>
-        )}
-      </section>
+          ),
+          examples: (
+            <div className="not-prose space-y-10">
+              {componentExamples(doc).map((example) => {
+                const source = componentUsage(doc, base, example);
 
-      <ComponentDecisions doc={doc} />
+                const code =
+                  language === 'js' ? source.replace(' lang="ts"', '') : source;
 
-      <section aria-labelledby="installation" className="space-y-4">
-        <h2
-          id="installation"
-          className="scroll-mt-24 text-xl font-semibold tracking-tight"
-        >
-          Installation
-        </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Set up{' '}
-          <Link
-            href="/docs/installation"
-            className="text-foreground underline underline-offset-4"
-          >
-            uitheme-web
-          </Link>{' '}
-          in an existing Tailwind app. Then install the component.
-        </p>
-        <div className="flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            Tailwind version
-            <select
-              aria-label="Tailwind version"
-              value={tailwind}
-              onChange={(event) =>
-                changeVariant('tailwind', event.target.value)
-              }
-              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="4">4</option>
-              <option value="3">3.4</option>
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            Source language
-            <select
-              aria-label="Source language"
-              value={language}
-              onChange={(event) =>
-                changeVariant('language', event.target.value)
-              }
-              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="ts">TypeScript</option>
-              <option value="js">JavaScript</option>
-            </select>
-          </label>
-        </div>
-        <div className="overflow-hidden rounded-lg border bg-muted/40">
-          <div className="flex items-center justify-between border-b px-4 py-1.5">
-            <span className="text-xs text-muted-foreground">Terminal</span>
-            <CopyText value={command} label="Copy command" />
-          </div>
-          <pre
-            data-testid="install-command"
-            className="overflow-x-auto p-4 text-sm leading-relaxed"
-          >
-            <code>{command}</code>
-          </pre>
-        </div>
-      </section>
-
-      <section aria-labelledby="usage" className="space-y-4">
-        <h2
-          id="usage"
-          className="scroll-mt-24 text-xl font-semibold tracking-tight"
-        >
-          Usage
-        </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Use the component inside your theme provider. Import paths follow your
-          app’s component directory.
-        </p>
-        <div className="overflow-hidden rounded-lg border">
-          <div className="flex items-center justify-between border-b px-4 py-1.5">
-            <span className="font-mono text-xs text-muted-foreground">
-              {base === 'reka'
-                ? 'example.vue'
-                : language === 'js'
-                  ? 'example.jsx'
-                  : 'example.tsx'}
-            </span>
-            <CopyText value={usage} label="Copy usage" />
-          </div>
-          <pre className="overflow-x-auto bg-muted/40 p-4 text-xs leading-6">
-            <code>{usage}</code>
-          </pre>
-        </div>
-      </section>
-
-      <ComponentReference doc={doc} base={base} />
-      <ComponentAgentNotes
-        doc={doc}
-        base={base}
-        copyAction={
-          <CopyText
-            label="Copy agent notes"
-            value={componentAgentNotes(doc, base)
-              .map((note) => `- ${note}`)
-              .join('\n')}
-          />
-        }
-      />
-
-      <section aria-labelledby="source" className="space-y-4">
-        <h2
-          id="source"
-          className="scroll-mt-24 text-xl font-semibold tracking-tight"
-        >
-          Source
-        </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          These are the files the CLI installs. The component and its helper
-          stay in your app.
-        </p>
-        <div data-testid="registry-source" className="space-y-3">
-          {selected?.files.map((file) => (
-            <details
-              key={file.path}
-              open={file.type === 'registry:ui'}
-              className="overflow-hidden rounded-lg border"
-            >
-              <summary className="cursor-pointer px-4 py-3 font-mono text-xs">
-                {file.path}
-              </summary>
-              <div className="flex justify-end border-t px-2 py-1">
-                <CopyText value={file.content} label={`Copy ${file.path}`} />
+                return (
+                  <section
+                    key={example.title}
+                    aria-label={example.title}
+                    className="space-y-4"
+                  >
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold tracking-tight">
+                        {example.title}
+                      </h3>
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        {example.description}
+                      </p>
+                    </div>
+                    <ComponentPreview
+                      label={`${example.title} example`}
+                      code={code}
+                      html={usageHtml[`${language}:${example.id}`]}
+                    >
+                      {renderPreview(example.title, example)}
+                    </ComponentPreview>
+                  </section>
+                );
+              })}
+            </div>
+          ),
+          installation: (
+            <div className="not-prose space-y-4">
+              {' '}
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  Tailwind version
+                  <select
+                    aria-label="Tailwind version"
+                    value={tailwind}
+                    onChange={(event) =>
+                      changeVariant('tailwind', event.target.value)
+                    }
+                    className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    <option value="4">4</option>
+                    <option value="3">3.4</option>
+                  </select>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  Source language
+                  <select
+                    aria-label="Source language"
+                    value={language}
+                    onChange={(event) =>
+                      changeVariant('language', event.target.value)
+                    }
+                    className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    <option value="ts">TypeScript</option>
+                    <option value="js">JavaScript</option>
+                  </select>
+                </label>
               </div>
-              <pre className="max-h-96 overflow-auto bg-muted/40 p-4 text-xs leading-6">
-                <code>{file.content}</code>
-              </pre>
-            </details>
-          ))}
-        </div>
-        <p className="break-words text-xs leading-relaxed text-muted-foreground">
-          Dependencies: {selected?.dependencies.join(', ')}
-        </p>
-      </section>
-
-      <section aria-labelledby="customization" className="space-y-4">
-        <h2
-          id="customization"
-          className="scroll-mt-24 text-xl font-semibold tracking-tight"
-        >
-          Customization
-        </h2>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Edit the installed source, pass{' '}
-          {base === 'reka' ? 'class' : 'className'} to style the root, or use
-          the classes prop to style individual parts. Labels can be changed
-          through props.
-        </p>
-        {component === 'transition-settings' && (
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            Settings are controlled by your app. Pass the selected animationType
-            and duration to the provider. Duration ranges from 0 to 2000 ms in
-            steps of 50 ms.
-          </p>
-        )}
-        <p className="break-all text-xs text-muted-foreground">
-          Registry revision: <code>{revision}</code>
-        </p>
-      </section>
-
-      <ComponentCredits doc={doc} base={base} />
-
-      <nav
-        aria-label="Component navigation"
-        className="flex items-center justify-between gap-4 border-t pt-6 text-sm"
+              <InstallTabs
+                command={command}
+                highlighted={commands[`${tailwind}:${language}`]}
+              />
+            </div>
+          ),
+          usage: (
+            <div className="not-prose">
+              {' '}
+              <CodeBlock
+                code={usage}
+                html={usageHtml[`${language}:default`]}
+                title={
+                  base === 'reka'
+                    ? 'example.vue'
+                    : language === 'js'
+                      ? 'example.jsx'
+                      : 'example.tsx'
+                }
+              />
+            </div>
+          ),
+          source: (
+            <div className="not-prose space-y-3">
+              {' '}
+              <div data-testid="registry-source" className="space-y-3">
+                {selected?.files.map((file) => (
+                  <SourceDisclosure
+                    key={file.path}
+                    defaultOpen={file.path === selected?.files[0]?.path}
+                    title={
+                      <span className="font-mono text-xs">{file.path}</span>
+                    }
+                    classes={{ content: 'p-0' }}
+                  >
+                    <CodeBlock
+                      code={file.content}
+                      html={file.html}
+                      className="rounded-none"
+                    />
+                  </SourceDisclosure>
+                ))}
+              </div>
+              <p className="break-words text-xs leading-[1.75] text-muted-foreground">
+                Dependencies:{' '}
+                {selected?.dependencies
+                  .map((dependency) =>
+                    dependency.replace(/^(@?[^@]+)@.*$/, '$1')
+                  )
+                  .join(', ')}
+              </p>
+            </div>
+          ),
+          api,
+          base,
+          agentNotes,
+        }}
       >
-        {previous ? (
-          <Link
-            prefetch={false}
-            href={`${componentDocUrl(base, previous.name)}?${sourceQuery}`}
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            ← {previous.title}
-          </Link>
-        ) : (
-          <span />
-        )}
-        {next && (
-          <Link
-            prefetch={false}
-            href={`${componentDocUrl(base, next.name)}?${sourceQuery}`}
-            className="ml-auto text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {next.title} →
-          </Link>
-        )}
-      </nav>
+        <Prose className="[&_h2:not(:where(.not-prose,.not-prose_*))]:mt-12 [&_h2_a]:no-underline">
+          {children}
+        </Prose>
+      </RegistryBlocks.Provider>
+
+      <DocsPagination previous={previous} next={next} />
     </div>
   );
 }
@@ -455,5 +429,95 @@ export function RegistryPreview(props: RegistryPreviewProps) {
     >
       <RegistryVariant {...props} />
     </Suspense>
+  );
+}
+
+interface RegistryBlockValues {
+  live: ReactNode;
+  examples: ReactNode;
+  installation: ReactNode;
+  usage: ReactNode;
+  source: ReactNode;
+  api: ReturnType<typeof componentApi>;
+  base: ComponentBase;
+  agentNotes: string;
+}
+
+const RegistryBlocks = createContext<RegistryBlockValues | null>(null);
+
+function useRegistryBlocks() {
+  const value = useContext(RegistryBlocks);
+
+  if (!value)
+    throw new Error('Registry documentation blocks need RegistryPreview.');
+
+  return value;
+}
+
+export function RegistryLivePreview() {
+  return useRegistryBlocks().live;
+}
+
+export function RegistryExamples() {
+  return useRegistryBlocks().examples;
+}
+
+export function RegistryInstallation() {
+  return useRegistryBlocks().installation;
+}
+
+export function RegistryUsage() {
+  return useRegistryBlocks().usage;
+}
+
+export function RegistrySource() {
+  return useRegistryBlocks().source;
+}
+
+export function RegistryApi() {
+  const { api } = useRegistryBlocks();
+
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Prop</th>
+          <th>Type</th>
+          <th>Behavior</th>
+        </tr>
+      </thead>
+      <tbody>
+        {api.map((row) => (
+          <tr key={row.name}>
+            <td>
+              <code>{row.name}</code>
+            </td>
+            <td>
+              <code>{row.type}</code>
+            </td>
+            <td>{row.description}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+export function RegistryReact({ children }: { children: ReactNode }) {
+  return useRegistryBlocks().base === 'reka' ? null : children;
+}
+
+export function RegistryVue({ children }: { children: ReactNode }) {
+  return useRegistryBlocks().base === 'reka' ? children : null;
+}
+
+export function RegistryAgentCopy() {
+  return (
+    <div className="not-prose mt-4">
+      <CopyText
+        label="Copy agent notes"
+        value={useRegistryBlocks().agentNotes}
+      />
+    </div>
   );
 }

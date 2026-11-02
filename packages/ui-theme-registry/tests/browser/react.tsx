@@ -1,21 +1,22 @@
-import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   UIThemeProvider,
   NextUIThemeProvider,
   ViteUIThemeProvider,
   TanStackUIThemeProvider,
-  ThemeAnimationType,
   useUITheme,
 } from 'uitheme-web/react';
 import * as base from '../../src/templates/react/base-ui/theme-toggle';
-import { AppearanceSelector as BaseAppearance } from '../../src/templates/react/base-ui/appearance-selector';
+import { ThemeSelector as BaseAppearance } from '../../src/templates/react/base-ui/theme-selector';
 import { ColorThemeSelector as BasePalette } from '../../src/templates/react/base-ui/color-theme-selector';
-import { TransitionSettings as BaseSettings } from '../../src/templates/react/base-ui/transition-settings';
 import { ThemeToggle as RadixToggle } from '../../src/templates/react/radix/theme-toggle';
-import { AppearanceSelector as RadixAppearance } from '../../src/templates/react/radix/appearance-selector';
+import { ThemeSelector as RadixAppearance } from '../../src/templates/react/radix/theme-selector';
 import { ColorThemeSelector as RadixPalette } from '../../src/templates/react/radix/color-theme-selector';
-import { TransitionSettings as RadixSettings } from '../../src/templates/react/radix/transition-settings';
+
+import { ThemeDisclosure as BaseDisclosure } from '../../src/templates/react/base-ui/theme-disclosure';
+import { ThemeDisclosure as RadixDisclosure } from '../../src/templates/react/radix/theme-disclosure';
+import { ColorThemeDisclosure as BaseColorDisclosure } from '../../src/templates/react/base-ui/color-theme-disclosure';
+import { ColorThemeDisclosure as RadixColorDisclosure } from '../../src/templates/react/radix/color-theme-disclosure';
 
 const params = new URLSearchParams(location.search);
 
@@ -34,24 +35,33 @@ const Appearance = radix ? RadixAppearance : BaseAppearance;
 
 const Palette = radix ? RadixPalette : BasePalette;
 
-const Settings = radix ? RadixSettings : BaseSettings;
+import { ThemeSwitcher as BaseSwitcher } from '../../src/templates/react/base-ui/theme-switcher';
+import { ThemeSwitcher as RadixSwitcher } from '../../src/templates/react/radix/theme-switcher';
+import { IconThemeToggle as BaseIconToggle } from '../../src/templates/react/base-ui/icon-theme-toggle';
+import { IconThemeToggle as RadixIconToggle } from '../../src/templates/react/radix/icon-theme-toggle';
+
+const Switcher = radix ? RadixSwitcher : BaseSwitcher;
+
+const IconToggle = radix ? RadixIconToggle : BaseIconToggle;
+
+const Disclosure = radix ? RadixDisclosure : BaseDisclosure;
+
+const ColorDisclosure = radix ? RadixColorDisclosure : BaseColorDisclosure;
 
 function Controls() {
   const state = useUITheme();
-
-  const [settings, setSettings] = useState({
-    animationType: ThemeAnimationType.CIRCLE,
-    duration: 400,
-  });
 
   return (
     <>
       <Toggle />
       <Appearance />
       <Palette />
-      <Settings value={settings} onValueChange={setSettings} />
+      <IconToggle />
+      <Switcher />
+      <Disclosure label="Inline theme" direction="up" />
+      <ColorDisclosure label="Inline color theme" />
       <output id="state">
-        {state.theme}/{state.colorTheme}/{settings.duration}
+        {state.theme}/{state.colorTheme}
       </output>
     </>
   );

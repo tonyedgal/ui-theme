@@ -18,6 +18,7 @@ export interface ProjectProfile {
   cssFile: string;
   tailwindConfigFile?: string;
   componentsDir: string;
+  utilsFile?: string;
   aliasPrefix: string;
   base: Base;
   colorFormat: 'css' | 'hsl-channels';

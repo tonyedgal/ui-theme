@@ -1,0 +1,57 @@
+---
+title: NativeWind
+description: Connect UITheme native state to a NativeWind app.
+---
+
+## Start with the native provider
+
+Complete the [Expo provider setup](/docs/guides/expo). Install and configure the NativeWind version supported by your app and Expo SDK. This adapter uses the NativeWind 5 release candidate with Tailwind 4. Use the compatible versions and Metro configuration from the example below.
+
+## Keep the CSS compiler compatible
+
+With NativeWind `5.0.0-rc.0` and Expo 58, pin Metro's Lightning CSS dependency to
+`1.30.1`. The native compiler loads this copy. A newer copy can fail with a
+`failed to deserialize` error.
+
+For pnpm, add this override to the workspace root `pnpm-workspace.yaml`:
+
+```yaml
+overrides:
+  '@expo/metro-config@58>lightningcss': 1.30.1
+```
+
+Keep the web Tailwind compiler on its own supported version. See the repository's
+workspace configuration and NativeWind example for the tested setup.
+
+## Map your theme scopes
+
+Create a scope name for each light and dark palette in your stylesheet. Use the same names in the adapter map:
+
+```tsx
+import { UIThemeProvider } from 'uitheme-rn';
+import { NativeWindTheme, type ThemeStyleScopes } from 'uitheme-rn/nativewind';
+
+const scopes: ThemeStyleScopes = {
+  default: { light: 'default-light', dark: 'default-dark' },
+};
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <UIThemeProvider>
+      <NativeWindTheme themes={scopes}>{children}</NativeWindTheme>
+    </UIThemeProvider>
+  );
+}
+```
+
+Import your global CSS through the app entry. Start from the example's CSS and theme map below. Keep semantic colors in theme variables rather than adding separate light and dark colors to every control.
+
+## Use one source of state
+
+Read preferences and change themes with `useUITheme` from `uitheme-rn`. Let `NativeWindTheme` synchronize the class-based appearance. Add custom palette keys to both the provider and scope map.
+
+Check the selected appearance, registered palette, saved preference after reload, and reduced motion. Keep your Expo-compatible versions of React Native and Reanimated.
+
+## Example
+
+Open the [NativeWind example](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/example-nativewind). Copy the relevant setup from `src/global.css`, `src/theme.ts`, and `src/app/_layout.tsx`.

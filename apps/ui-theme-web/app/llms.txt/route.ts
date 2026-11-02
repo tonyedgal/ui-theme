@@ -1,15 +1,28 @@
-import { source } from '@/lib/source';
+import { getLLMPages } from '@/lib/llm-docs';
 
 export const revalidate = false;
 
-export async function GET() {
-  const lines: string[] = [];
-  lines.push('# Documentation');
-  lines.push('');
+export function GET() {
+  const lines = [
+    '# UI-Theme',
+    '',
+    '> Documentation for the UI-Theme runtime and local theme controls.',
+    '',
+    'Use the Markdown links below for individual guides. Component guides include installation commands, usage, API details, and source.',
+    '',
+    '## Documentation',
+    '',
+    ...getLLMPages().map(
+      (page) =>
+        `- [${page.title}](/llms.mdx${page.href}): ${page.description ?? ''}`
+    ),
+    '',
+    '## Full documentation',
+    '',
+    '- [Complete text](/llms-full.txt): All guides and component variants in one file.',
+  ];
 
-  for (const page of source.getPages()) {
-    lines.push(`- [${page.data.title}](${page.url}): ${page.data.description}`);
-  }
-
-  return new Response(lines.join('\n'));
+  return new Response(lines.join('\n'), {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
 }

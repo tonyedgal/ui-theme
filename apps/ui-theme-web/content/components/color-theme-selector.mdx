@@ -1,0 +1,117 @@
+---
+title: Color Theme Selector
+description: Choose a color palette without changing the appearance.
+---
+
+## Preview
+
+<RegistryLivePreview />
+
+## Examples
+
+<RegistryExamples />
+
+## When to use
+
+- Let people choose an app palette without changing light or dark appearance.
+- Show readable labels for the palette keys configured on the provider.
+
+- Use the floating menu in headers, toolbars, and compact layouts.
+
+## When not to use
+
+- People are choosing light, dark, or system. Use Theme Selector.
+- You need a free-form color picker. This control selects registered palette keys.
+
+## Installation
+
+Set up [uitheme-web](/docs/installation) in an existing Tailwind app.
+Then install the component.
+
+<RegistryInstallation />
+
+## Usage
+
+Use the component inside your theme provider. Use import paths that match your
+app’s component directory.
+
+<RegistryUsage />
+
+For inline choices, install [Color Theme Disclosure](/docs/components/base-ui/color-theme-disclosure).
+The floating selector does not install disclosure code.
+
+## API reference
+
+These props belong to the installed local control. Configure theme
+options on the provider.
+
+<RegistryApi />
+
+## Keyboard
+
+| Key             | Action                                            |
+| --------------- | ------------------------------------------------- |
+| `Enter / Space` | Open the selector or confirm the focused palette. |
+| `Arrow keys`    | Move between palette options.                     |
+| `Escape`        | Close the menu and return focus to the trigger.   |
+
+## Accessibility
+
+- Use readable option labels instead of relying on color swatches alone.
+- Use option values from `colorThemes`. Custom labels do not register new palettes.
+
+## Theme behavior
+
+- The control calls `switchColorTheme`. The appearance preference does not change.
+- Register each palette key on the provider. Define its light and dark CSS variables. Selecting a key does not create its colors.
+
+## AI Agent notes
+
+Use this checklist when a coding agent adds the control.
+
+<RegistryReact>
+
+- Use `uitheme-web/react` for the runtime. Import the control from its installed local file. The runtime does not export styled controls.
+- For Next.js, use `NextUIThemeProvider` from `uitheme-web/next`. For TanStack Start, follow the server bootstrap guide. Create server state for each request.
+
+</RegistryReact>
+
+<RegistryVue>
+
+- Use `uitheme-web/vue` for the runtime. Import the control from its installed local file. The runtime does not export styled controls.
+- Use `createUITheme` or `UIThemeProvider` for Vue. In Nuxt 4, use the `uitheme-web/nuxt` module. Follow the provider setup in the installation guide.
+
+</RegistryVue>
+
+- Before installation, select the framework, primitive base, Tailwind major version, and language. Run the CLI inside the app or pass `--cwd`.
+- Preview changes with `--dry-run`. Keep edited local files. Review the differences before using `--overwrite`.
+- Keep appearance and `colorTheme` separate. Use the palette action to change colors.
+- Check that the selected palette changes the computed semantic colors in light and dark appearance. A changed label alone does not confirm this.
+- Check keyboard controls in the running app. Check that appearance and palette choices survive a reload. Check reduced motion.
+
+<RegistryAgentCopy />
+
+## Source
+
+The CLI reuses your shared `cn` utility. If it is missing, installation creates it
+at the configured utils path. Existing utilities are checked before a replacement
+is offered.
+
+These are the files the CLI installs. The component source stays in your app.
+
+<RegistrySource />
+
+## Customization
+
+Use `borderStyle="shadow"` in React or `border-style="shadow"` in Vue for prominent shadow borders. The default is `solid`.
+
+Use `slideDirection` only when `animationType` is `ThemeAnimationType.SLIDE`. Set both props on the control when you need a slide direction override.
+
+Pass `animationType`, `duration`, and `slideDirection` to set this control's palette transition.
+These props override the provider settings for this action only.
+
+Keyboard focus shows the theme’s focus ring.
+
+Edit the installed source. Use `className` in React or `class` in Vue to style
+the root. Use the `classes` prop to style individual parts. Use label props to change the
+visible text.

@@ -1,4 +1,12 @@
 {
   "title": "UI-Theme",
-  "pages": ["index", "installation", "components", "migration"]
+  "pages": [
+    "index",
+    "installation",
+    "cli",
+    "migration",
+    "llms",
+    "guides",
+    "components"
+  ]
 }

@@ -41,9 +41,7 @@
       [
         "expo-build-properties",
         {
-          "ios": {
-            "enableSceneSupport": true
-          }
+          "ios": {}
         }
       ]
     ],

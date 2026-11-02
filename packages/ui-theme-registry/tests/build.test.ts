@@ -31,7 +31,7 @@ test('builder rejects incomplete sources instead of emitting placeholders', asyn
   }
 });
 
-test('builds all 48 variants reproducibly from sources with only selected base dependencies', async () => {
+test('builds all 84 variants reproducibly from sources with only selected base dependencies', async () => {
   const root = await mkdtemp(join(tmpdir(), 'uitheme-registry-all-'));
 
   try {
@@ -49,9 +49,12 @@ test('builds all 48 variants reproducibly from sources with only selected base d
       const components = Object.fromEntries(
         [
           'theme-toggle',
-          'appearance-selector',
+          'theme-selector',
           'color-theme-selector',
-          'transition-settings',
+          'icon-theme-toggle',
+          'theme-switcher',
+          'theme-disclosure',
+          'color-theme-disclosure',
         ].map((name) => [
           name,
           {
@@ -85,7 +88,7 @@ test('builds all 48 variants reproducibly from sources with only selected base d
       second = await buildRegistry({ sourceDir, outDir });
 
     assert.equal(first.revision, second.revision);
-    assert.equal(first.index.items.length, 48);
+    assert.equal(first.index.items.length, 84);
 
     const react = first.index.items.find(
       (i) =>

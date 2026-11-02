@@ -1,0 +1,195 @@
+---
+title: CLI
+description: Set up your app, install component source, and review changes from the terminal.
+---
+
+The `uitheme-cli` package provides the `uitheme` command. Run it with your package
+runner. Use Node.js 22.18 or later and an existing app with Tailwind CSS 3.4 or 4.
+See [Installation](/docs/installation) for runtime and provider setup.
+
+The CLI supports Next.js App Router, TanStack Start 1, Vite React, Vite Vue, and
+Nuxt 4. Registry controls require `uitheme-web` 2.x. Install the current runtime
+with `npm install uitheme-web@latest`.
+
+## info
+
+Show the detected framework, language, package manager, Tailwind version,
+component base, and file paths. This command prints JSON and does not change files.
+
+```sh
+npx uitheme-cli info
+npx uitheme-cli info --cwd apps/web
+```
+
+Use the [project options](#project-options) to resolve an ambiguous result.
+The CLI reads app configuration without executing it.
+
+## init
+
+Set up the framework provider, theme CSS, and `uitheme.json` configuration.
+The first installation creates a shared `cn` utility when it is missing. The CLI
+reuses the utils alias in `components.json`, or uses `lib/utils` in the source
+folder. Later installs reuse it and repair a missing file. A valid callable `cn`
+export is preserved, including when `--overwrite` is set. If validation cannot
+resolve an import, fix that import before replacing the file.
+
+Review the plan before applying changes.
+
+```sh
+npx uitheme-cli init --dry-run
+npx uitheme-cli init
+```
+
+React uses Base UI by default. Choose Radix with `--base radix`. Vue uses Reka.
+Interactive runs can ask for a framework or component base when a choice is needed.
+For unattended runs, provide explicit choices and `--yes`.
+
+```sh
+npx uitheme-cli init --cwd apps/web --base radix --yes
+```
+
+The CLI does not create an app or upgrade Tailwind. It preserves existing source
+and reports setup steps that need manual changes.
+
+## list
+
+List the available components for the detected or selected base, Tailwind major,
+and source language. This command reads the registry and does not install files.
+
+```sh
+npx uitheme-cli list
+npx uitheme-cli list --base radix --language js --json
+```
+
+JSON output contains each component's name, title, and description.
+Use `--revision` to inspect a recorded registry revision.
+
+## add
+
+Install one or more components and their required helpers and dependencies.
+The source belongs to your app after installation.
+
+```sh
+npx uitheme-cli add theme-toggle theme-selector --dry-run
+npx uitheme-cli add theme-toggle theme-selector
+```
+
+Select the output when the detected defaults do not match your app:
+
+```sh
+npx uitheme-cli add color-theme-selector --base radix --tailwind 4 --language ts
+```
+
+The CLI uses one immutable registry revision for the component and its dependencies.
+It records file hashes in `uitheme.json` to detect later local edits.
+`--yes` skips confirmation. It does not permit replacement of edited source.
+Use `--overwrite` only after reviewing the replacement plan.
+
+```sh
+npx uitheme-cli add theme-toggle --overwrite --dry-run
+npx uitheme-cli add theme-toggle --overwrite --yes
+```
+
+If dependency installation fails, the CLI restores the touched source files,
+package manifests, and lockfiles.
+
+## diff
+
+Show source differences without writing files or installing dependencies.
+Pass component names or omit them to review the components recorded in `uitheme.json`.
+
+```sh
+npx uitheme-cli diff theme-toggle
+npx uitheme-cli diff
+npx uitheme-cli diff --json
+```
+
+This command stays read-only with `--yes` or `--overwrite`.
+JSON output contains the installation plan rather than the text diff.
+
+## migrate
+
+Preview supported legacy imports and dependency declarations before moving to v2.
+Migration previews changes by default. Add `--yes` to apply a safe plan.
+
+```sh
+npx uitheme-cli migrate
+npx uitheme-cli migrate --cwd apps/web --json
+npx uitheme-cli migrate --yes
+```
+
+Custom control props and unknown provider contexts require manual changes.
+When migration reports these cases, it does not write files. Follow the
+[migration guide](/docs/migration) before replacing legacy controls.
+Migration does not run the package manager. Update the lockfile after applying
+its dependency changes.
+
+Migration has its own options. Project and registry options from other commands
+do not apply.
+
+| Option                    | Behavior                                                                         |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `--cwd <app>`, `-c <app>` | Select the app to migrate. Defaults to the current directory.                    |
+| `--dry-run`, `--preview`  | Show the migration plan without applying it. This overrides `--yes`.             |
+| `--yes`, `-y`             | Apply a safe migration plan. Without this flag, migration stays in preview mode. |
+| `--json`                  | Print a structured migration report. This does not authorize writes.             |
+| `--help`, `-h`            | Show migration help.                                                             |
+
+## Project options
+
+These options apply to `info`, `init`, `list`, `add`, and `diff`.
+Values can use `--option value` or `--option=value`.
+
+Explicit flags override saved `uitheme.json` choices. Saved choices override
+compatible component configuration, then automatic detection.
+
+| Option                              | Values and behavior                                                                                                                            |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--cwd <app>`                       | Select an existing app. Defaults to the current directory. The `-c` alias is available only for `migrate`.                                     |
+| `--framework <name>`                | `vite-react`, `vite-vue`, `next`, `tanstack`, or `nuxt`. Select a supported framework installed in the app.                                    |
+| `--base <name>`                     | `base-ui` or `radix` for React; `reka` for Vue.                                                                                                |
+| `--language <name>`                 | `ts` or `js`. Select the language of the installed component source.                                                                           |
+| `--tailwind <major>`                | `3` or `4`. Match the Tailwind major already installed in the app.                                                                             |
+| `--package-manager <name>`          | `npm`, `pnpm`, `yarn`, or `bun`. Select the package manager for dependency installation.                                                       |
+| `--css <file>`, `--css-file <file>` | Select the global theme stylesheet. Both names set the same option.                                                                            |
+| `--tailwind-config <file>`          | Select the Tailwind configuration file, such as the config used by Tailwind 3.4.                                                               |
+| `--components-dir <dir>`            | Select where the CLI writes component source. Shared destinations must stay inside the detected workspace and have an owning package manifest. |
+| `--alias-prefix <alias>`            | Set the import prefix used for installed controls.                                                                                             |
+| `--color-format <format>`           | `css` for complete CSS colors; `hsl-channels` for HSL channel tokens.                                                                          |
+
+## Registry and output options
+
+| Option                   | Behavior                                                                                                                                       |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--revision <revision>`  | Select an immutable registry revision for `list`, `add`, or `diff`. Omit it to use the registry's current stable revision.                     |
+| `--dry-run`, `--preview` | Preview `init` or `add` without writing files or installing packages. `diff` is always read-only.                                              |
+| `--yes`, `-y`            | Apply an `init` or `add` plan without a confirmation prompt. This does not authorize replacement of edited source.                             |
+| `--overwrite`            | Allow `add` to replace edited registry files. Inspect the plan first.                                                                          |
+| `--json`                 | Print structured output for `list` or a plan for `init`, `add`, and `diff`. `info` always prints JSON. This flag does not enable preview mode. |
+| `--help`, `-h`           | Show help without running the selected command.                                                                                                |
+
+Combine JSON output with a preview when you need a plan without writes:
+
+```sh
+npx uitheme-cli add theme-toggle --json --dry-run
+```
+
+## Help and version
+
+```sh
+npx uitheme-cli --help
+npx uitheme-cli add --help
+npx uitheme-cli migrate --help
+npx uitheme-cli --version
+```
+
+`-h` is an alias for `--help`. `-v` is an alias for the top-level `--version`.
+Version flags are top-level commands, not options for `add` or other commands.
+
+## Exit codes
+
+| Code | Meaning                                                                                                           |
+| ---- | ----------------------------------------------------------------------------------------------------------------- |
+| `0`  | The command completed, or a preview completed without errors.                                                     |
+| `1`  | The command failed. Read the error before retrying.                                                               |
+| `2`  | Manual steps remain. Setup may have applied safe changes. Migration with manual diagnostics does not write files. |

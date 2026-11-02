@@ -37,7 +37,49 @@ for (const item of index.items) {
     ...meta,
     files: record.files,
     dependencies: record.dependencies,
+    registryDependencies: record.registryDependencies ?? [],
   });
+}
+
+for (const record of records) {
+  const files = new Map(record.files.map((file) => [file.path, file]));
+  const visited = new Set();
+
+  function collect(entry) {
+    if (visited.has(entry.component)) return;
+    visited.add(entry.component);
+
+    for (const url of entry.registryDependencies) {
+      const name = url
+        .split('/')
+        .at(-1)
+        .replace(/\.json$/, '');
+
+      const dependency = records.find(
+        (item) =>
+          item.component === name &&
+          item.base === entry.base &&
+          item.framework === entry.framework &&
+          item.tailwind === entry.tailwind &&
+          item.language === entry.language
+      );
+
+      if (!dependency) throw new Error(`Missing registry dependency: ${name}`);
+
+      for (const file of dependency.files) {
+        const existing = files.get(file.path);
+
+        if (existing && existing.content !== file.content)
+          throw new Error(`Conflicting registry source: ${file.path}`);
+        files.set(file.path, file);
+      }
+
+      collect(dependency);
+    }
+  }
+
+  collect(record);
+  record.files = [...files.values()];
 }
 
 const target = join(app, 'public/r');

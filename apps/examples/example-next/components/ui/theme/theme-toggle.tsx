@@ -3,10 +3,13 @@
 import * as React from 'react';
 import type { Theme } from 'uitheme-web/react';
 import { useUITheme } from 'uitheme-web/react';
-import { cn } from './classes';
+import { cn } from '@/lib/utils';
 import * as TogglePrimitive from '@radix-ui/react-toggle';
 
-export type ThemeToggleClasses = { root?: string; trigger?: string };
+export type ThemeToggleClasses = {
+  root?: string;
+  trigger?: string;
+};
 
 export type ThemeToggleProps = {
   className?: string;

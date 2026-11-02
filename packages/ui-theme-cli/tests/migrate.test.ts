@@ -91,27 +91,27 @@ test('missing local controls and custom props stop all writes with actionable ma
   ).toBe(2);
   expect(errors.join('\n')).toMatch(/manual-required/);
   expect(errors.join('\n')).toMatch(/UIThemeSwitcher/);
-  expect(errors.join('\n')).toMatch(/upgrade uitheme-web to \^2\.0\.0/i);
+  expect(errors.join('\n')).toMatch(/install uitheme-web@latest/i);
   expect(await readFile(join(root, 'package.json'), 'utf8')).toBe(manifest);
   expect(await readFile(join(root, 'App.tsx'), 'utf8')).toBe(source);
 });
 
 test('bare controls use verified installed controls and preserve local identifiers', async () => {
-  const local = `export function AppearanceSelector() { return null; }\n`;
+  const local = `export function ThemeSelector() { return null; }\n`;
   const source = `import { UIThemeProvider, UIThemeSwitcher as Switcher } from 'uitheme-web/react';\nexport const App = () => <UIThemeProvider><Switcher /></UIThemeProvider>;\n`;
 
   const root = await fixture({
     'package.json': '{"dependencies":{"uitheme-web":"^1.0.0"}}',
     'App.tsx': source,
-    'components/ui/appearance-selector.tsx': local,
+    'components/ui/theme-selector.tsx': local,
     'uitheme.json': JSON.stringify({
       schemaVersion: 1,
       installed: {
-        'appearance-selector': {
+        'theme-selector': {
           revision: 'a'.repeat(64),
           files: [
             {
-              path: 'components/ui/appearance-selector.tsx',
+              path: 'components/ui/theme-selector.tsx',
               hash: hash(local),
             },
           ],
@@ -123,12 +123,12 @@ test('bare controls use verified installed controls and preserve local identifie
   expect(await runMigration(['--cwd', root, '--yes'], {})).toBe(0);
   const migrated = await readFile(join(root, 'App.tsx'), 'utf8');
   expect(migrated).toContain(
-    `import { AppearanceSelector as Switcher } from './components/ui/appearance-selector';`
+    `import { ThemeSelector as Switcher } from './components/ui/theme-selector';`
   );
   expect(migrated).toContain('<Switcher />');
   expect(migrated).not.toContain('UIThemeSwitcher');
   expect(
-    await readFile(join(root, 'components/ui/appearance-selector.tsx'), 'utf8')
+    await readFile(join(root, 'components/ui/theme-selector.tsx'), 'utf8')
   ).toBe(local);
 });
 
@@ -138,15 +138,15 @@ test('--yes never accepts a modified installed control as a known mapping', asyn
   const root = await fixture({
     'package.json': '{}',
     'App.tsx': source,
-    'components/ui/appearance-selector.tsx': 'edited',
+    'components/ui/theme-selector.tsx': 'edited',
     'uitheme.json': JSON.stringify({
       schemaVersion: 1,
       installed: {
-        'appearance-selector': {
+        'theme-selector': {
           revision: 'a'.repeat(64),
           files: [
             {
-              path: 'components/ui/appearance-selector.tsx',
+              path: 'components/ui/theme-selector.tsx',
               hash: hash('original'),
             },
           ],

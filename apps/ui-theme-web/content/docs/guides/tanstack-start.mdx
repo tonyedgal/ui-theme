@@ -1,0 +1,50 @@
+---
+title: TanStack Start
+description: Choose client bootstrap or cookie-based rendering in TanStack Start 1.
+---
+
+## Install
+
+Use an existing TanStack Start 1 application.
+
+```sh
+npm install uitheme-web@latest
+```
+
+## Apply the appearance before hydration
+
+Put the theme script in your root document's head. Keep your existing `HeadContent`, `Scripts`, and route setup.
+
+```tsx
+import { TanStackStartThemeScript } from 'uitheme-web/react';
+
+<head>
+  <TanStackStartThemeScript defaultTheme="system" />
+  <HeadContent />
+</head>;
+```
+
+Add `suppressHydrationWarning` to the root `html` element. Wrap your route content in the matching provider:
+
+```tsx
+import { TanStackUIThemeProvider } from 'uitheme-web/react';
+
+<TanStackUIThemeProvider defaultTheme="system">
+  <Outlet />
+</TanStackUIThemeProvider>;
+```
+
+Use the same theme options and storage keys for the script and provider. Add your appearance and palette CSS, then use the [React controls](/docs/guides/react#add-styles-and-controls).
+
+## Render from a saved cookie
+
+Choose cookie-based rendering when the server must know the saved preference. The helpers in `uitheme-web/tanstack` build the initial theme data, HTML attributes, and bootstrap script.
+
+Create theme data separately for each request. Read and write cookies through your server functions. Pass the returned initial values to the provider and connect preference-change callbacks to your persistence code.
+
+Start from the working server example below rather than sharing mutable theme state between requests. Check two requests with different cookies and reload each appearance.
+
+## Examples
+
+- [Client bootstrap example](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/example-tanstack): root document script and client provider.
+- [Cookie-based server example](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/example-tanstack-ssr): request-specific theme state and cookie persistence.

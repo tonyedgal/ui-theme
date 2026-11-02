@@ -4,6 +4,7 @@ export {
   type TransitionDirection,
   type AnimationPosition,
   type ThemeAnimationOptions,
+  type ThemeControlTransitionProps,
   type ThemeLogoOptions,
   type Theme,
   type ColorTheme,

@@ -18,7 +18,7 @@ export type ThemeTransitionInput =
 export type ThemeTrigger = ThemeTransitionInput | MouseEvent;
 
 export type TransitionOptions = ThemeAnimationOptions & {
-  animationType?: ThemeAnimationType;
+  animationType?: ThemeAnimationType | `${ThemeAnimationType}`;
   duration?: number;
   easing?: string;
   blurAmount?: number;

@@ -1,0 +1,35 @@
+---
+title: LLM documentation
+description: Read UI-Theme documentation as plain text or Markdown.
+---
+
+Use these routes when a coding agent needs documentation without the website layout.
+The text comes from the same MDX files as the visible pages.
+
+## Documentation index
+
+Open [`/llms.txt`](/llms.txt) for a list of guides and links to their Markdown versions.
+The index includes Getting Started and all component pages for Base UI, Radix, and Reka.
+
+## Full documentation
+
+Open [`/llms-full.txt`](/llms-full.txt) for all guides in one text file.
+Component guides include installation commands, usage examples, API details, and source files.
+These component examples use Tailwind 4 and TypeScript.
+
+## Individual guides
+
+Append `.mdx` to a documentation URL to read its Markdown version.
+For example, open [the installation guide as Markdown](/docs/installation.mdx).
+
+Component pages also have Markdown versions.
+Open [Theme Toggle for Base UI as Markdown](/docs/components/base-ui/theme-toggle.mdx) for an example.
+
+## Instructions for coding agents
+
+- Read the installation guide for the app’s framework before changing files.
+- Use the runtime import that matches the framework.
+- Import styled controls from installed local files.
+- Keep appearance, color palette, and transition settings separate.
+- Review CLI changes with `--dry-run` before applying them.
+- Check behavior in the running app. Documentation alone does not confirm that an integration works.

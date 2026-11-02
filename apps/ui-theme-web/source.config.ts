@@ -1,5 +1,10 @@
+import { z } from 'zod';
+import { remarkComponentSections } from './lib/remark-component-sections';
+import { codeThemes } from './lib/code-themes';
 import {
+  applyMdxPreset,
   defineConfig,
+  defineCollections,
   defineDocs,
   frontmatterSchema,
   metaSchema,
@@ -20,8 +25,25 @@ export const docs = defineDocs({
   },
 });
 
+export const componentContent = defineCollections({
+  type: 'doc',
+  dir: 'content/components',
+  schema: frontmatterSchema.extend({ description: z.string().min(1) }),
+  postprocess: { includeProcessedMarkdown: true },
+  mdxOptions: applyMdxPreset({
+    remarkPlugins: [remarkComponentSections],
+    rehypeCodeOptions: {
+      themes: codeThemes,
+      defaultColor: false,
+    },
+  }),
+});
+
 export default defineConfig({
   mdxOptions: {
-    // MDX options
+    rehypeCodeOptions: {
+      themes: codeThemes,
+      defaultColor: false,
+    },
   },
 });

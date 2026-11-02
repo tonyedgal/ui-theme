@@ -1,0 +1,57 @@
+---
+title: Expo and React Native
+description: Use UITheme with native StyleSheet controls and Expo Router.
+---
+
+## Install
+
+Use `uitheme-rn` for native apps. The web runtime and web registry controls are separate.
+
+```sh
+npx expo install uitheme-rn
+```
+
+## Add the provider
+
+Wrap the root layout or application in `UIThemeProvider`. With Expo Router, keep the router inside the provider.
+
+```tsx title="src/app/_layout.tsx"
+import { Stack } from 'expo-router';
+import { UIThemeProvider } from 'uitheme-rn';
+
+export default function RootLayout() {
+  return (
+    <UIThemeProvider>
+      <Stack />
+    </UIThemeProvider>
+  );
+}
+```
+
+## Use native colors
+
+```tsx
+import { Text, View } from 'react-native';
+import { useUITheme } from 'uitheme-rn';
+
+export function Screen() {
+  const { colors } = useUITheme();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Text style={{ color: colors.text }}>Appearance</Text>
+    </View>
+  );
+}
+```
+
+Use `StyleSheet` or normal native style props. Pass custom palettes through the provider when needed. Configure a storage adapter to persist preferences, and wait for `isHydrated` before hiding a launch splash screen when your app uses saved theme state.
+
+For snapshot-based screen transitions, follow the example's transition provider and native dependency setup. Keep native navigation transitions coordinated with theme transitions.
+
+## Styling adapters
+
+Use the [NativeWind guide](/docs/guides/nativewind) or [Uniwind guide](/docs/guides/uniwind) when your app uses utility classes. The native examples own their controls; the web registry does not install native components.
+
+## Example
+
+Open the [Expo example](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/example-expo). Review `src/app/_layout.tsx`, `src/storage.ts`, and `src/theme/` for navigation, persistence, and custom palettes.

@@ -23,15 +23,15 @@
     "prepublishOnly": "pnpm build && pnpm test:package"
   },
   "dependencies": {
-    "semver": "^7.7.3",
-    "typescript": "^5.9.3",
-    "postcss": "^8.5.28"
+    "semver": "^7.8.5",
+    "typescript": "^6.0.3",
+    "postcss": "^8.5.31"
   },
   "devDependencies": {
-    "@types/node": "^22.20.5",
-    "@types/semver": "^7.7.1",
-    "tsup": "^8.5.1",
-    "vitest": "^4.1.11"
+    "@types/node": "^26.6.5",
+    "@types/semver": "^7.8.0",
+    "tsup": "^9.0.0",
+    "vitest": "^5.0.5"
   },
   "publishConfig": {
     "access": "public",
