@@ -141,3 +141,23 @@ Default to no comment. Write one only where the code cannot say it itself: a dec
   commit messages, and verification artifacts. The Credits section and its
   underlying credit metadata are the deliberate exceptions.
 - Preserve required license and copyright notices.
+
+## 9. Documentation language
+
+- Use ASD-STE-inspired clear English for about 80% of documentation prose.
+  Preserve technical terms and exact API names, commands, paths, and versions.
+  This is a style target, not a formal compliance score.
+- Use short sentences, active voice, and one main fact or instruction per sentence.
+  Remove filler. Keep requirements, actions, and results distinct.
+- Follow [the writing guide](docs/writing-guide.md) for new documentation and when
+  reviewing existing documentation. Preserve code examples, legal notices,
+  generated content, and historical verification facts.
+- Use Outfit for prose and Geist Mono for inline code and code blocks on the website.
+
+- Write documentation for library consumers. Explain what helps them install,
+  configure, use, customize, or troubleshoot UI-Theme. Keep internal build
+  metadata and maintenance details out of component guides unless they support
+  a specific consumer task.
+- When unsure whether content belongs in the docs, consult comparable framework
+  or component documentation. Adapt the useful pattern to UI-Theme. Do not add
+  implementation details merely because they are available.

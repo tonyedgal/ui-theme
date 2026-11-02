@@ -1,0 +1,85 @@
+---
+title: Component Name
+description: Describe what the control does.
+---
+
+## Preview
+
+<RegistryLivePreview />
+
+## Examples
+
+<RegistryExamples />
+
+## When to use
+
+Describe this section for the component.
+
+## When not to use
+
+Describe this section for the component.
+
+## Installation
+
+Describe this section for the component.
+
+<RegistryInstallation />
+
+## Usage
+
+Describe this section for the component.
+
+<RegistryUsage />
+
+## API reference
+
+Describe this section for the component.
+
+<RegistryApi />
+
+## Keyboard
+
+Describe this section for the component.
+
+## Accessibility
+
+Describe this section for the component.
+
+## Theme behavior
+
+Describe this section for the component.
+
+## AI Agent notes
+
+Describe this section for the component.
+
+<RegistryReact>
+
+Describe React integration requirements.
+
+</RegistryReact>
+
+<RegistryVue>
+
+Describe Vue integration requirements.
+
+</RegistryVue>
+
+Describe this section for the component.
+
+<RegistryAgentCopy />
+
+## Source
+
+Describe this section for the component.
+
+<RegistrySource />
+
+## Customization
+
+Describe this section for the component.
+
+
+## Credits
+
+Add a source link and describe its contribution when the component uses a reference.

@@ -110,7 +110,7 @@ Controls are editable app source. They are not runtime exports.
 ```sh
 npx uitheme-cli init --dry-run
 npx uitheme-cli init
-npx uitheme-cli add theme-toggle appearance-selector color-theme-selector transition-settings
+npx uitheme-cli add theme-toggle theme-selector color-theme-selector
 ```
 
 The CLI requires an existing Tailwind 3.4 or 4 app. Choose Base UI or Radix for

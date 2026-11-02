@@ -20,7 +20,7 @@ They require an existing Tailwind 3.4 or 4 setup.
 ```sh
 npx uitheme-cli init --dry-run
 npx uitheme-cli init
-npx uitheme-cli add theme-toggle appearance-selector color-theme-selector
+npx uitheme-cli add theme-toggle theme-selector color-theme-selector
 ```
 
 Select Base UI or Radix for React. The copied controls import only the selected
