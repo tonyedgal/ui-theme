@@ -20,7 +20,7 @@ They require an existing Tailwind 3.4 or 4 setup.
 ```sh
 npx uitheme-cli init --dry-run
 npx uitheme-cli init
-npx uitheme-cli add theme-toggle appearance-selector color-theme-selector
+npx uitheme-cli add theme-toggle theme-selector color-theme-selector
 ```
 
 Select Base UI or Radix for React. The copied controls import only the selected
@@ -74,13 +74,13 @@ export const getThemeServerFn = createServerFn().handler((): ServerThemeData =>
 );
 
 export const setThemeServerFn = createServerFn()
-  .inputValidator(z.string())
+  .validator(z.string())
   .handler(({ data }) => {
     setCookie(STORAGE_KEY, data);
   });
 
 export const setColorThemeServerFn = createServerFn()
-  .inputValidator(z.string())
+  .validator(z.string())
   .handler(({ data }) => {
     setCookie(COLOR_STORAGE_KEY, data);
   });

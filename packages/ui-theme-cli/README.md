@@ -8,11 +8,11 @@ npx uitheme-cli info
 npx uitheme-cli init --dry-run
 npx uitheme-cli init
 npx uitheme-cli list
-npx uitheme-cli add theme-toggle appearance-selector color-theme-selector transition-settings
+npx uitheme-cli add theme-toggle theme-selector color-theme-selector
 ```
 
 Requires Node.js 22.18 or later, an existing Tailwind 3.4 or 4 app, and
-`uitheme-web@^2` for registry controls. Supports Next App Router, TanStack Start 1,
+`uitheme-web` 2.x for registry controls. Supports Next App Router, TanStack Start 1,
 Vite React, Vite Vue, and Nuxt 4. It does not scaffold an app or upgrade Tailwind.
 
 | Command        | Purpose                                           |

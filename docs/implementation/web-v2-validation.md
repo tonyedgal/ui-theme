@@ -1,5 +1,15 @@
 # Web v2 implementation and validation
 
+> Historical verification snapshot. The results below describe the earlier
+> implementation, before the later documentation and component revisions.
+> Preserve these results as historical evidence, not as a current release check.
+
+The current catalog has seven controls and 84 generated variants. It uses one
+shared `cn` utility and separate theme disclosure controls. Current validation
+artifacts are recorded under `test-results/`. The later changes also include
+home-page links, framework guides, documentation rules, and the updated agent
+instructions.
+
 Implementation branch: `feat/unified-web-v2`.
 
 The work lives in the isolated `worktrees/ui-theme-v2` checkout. The original
