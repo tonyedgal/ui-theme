@@ -6,6 +6,35 @@ import { Tooltip } from '@base-ui/react/tooltip';
 import { useCopyButton } from 'fumadocs-ui/utils/use-copy-button';
 import { cn } from '@/lib/utils';
 
+function copyForLocalPreview(text: string) {
+  const focus = document.activeElement;
+  const field = document.createElement('textarea');
+  field.value = text;
+  field.readOnly = true;
+  Object.assign(field.style, {
+    position: 'fixed',
+    top: '0',
+    left: '0',
+    width: '1px',
+    height: '1px',
+    opacity: '0',
+    fontSize: '16px',
+  });
+  document.body.append(field);
+
+  try {
+    field.focus({ preventScroll: true });
+    field.select();
+    field.setSelectionRange(0, text.length);
+
+    if (!document.execCommand('copy')) throw new Error('Copy unavailable');
+  } finally {
+    field.remove();
+
+    if (focus instanceof HTMLElement) focus.focus({ preventScroll: true });
+  }
+}
+
 export function CopyButton({
   value,
   loadValue,
@@ -23,9 +52,28 @@ export function CopyButton({
 
   const [copied, copy] = useCopyButton(async () => {
     try {
-      await navigator.clipboard.writeText(
-        loadValue ? await loadValue() : (value ?? '')
-      );
+      if (
+        loadValue &&
+        navigator.clipboard?.write &&
+        typeof ClipboardItem !== 'undefined'
+      ) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/plain': loadValue().then(
+              (text) => new Blob([text], { type: 'text/plain' })
+            ),
+          }),
+        ]);
+      } else {
+        const text = loadValue ? await loadValue() : (value ?? '');
+
+        if (navigator.clipboard?.writeText)
+          await navigator.clipboard.writeText(text);
+        else if (process.env.NODE_ENV === 'development')
+          copyForLocalPreview(text);
+        else throw new Error('Copy unavailable');
+      }
+
       setError(false);
     } catch {
       setError(true);

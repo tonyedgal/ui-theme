@@ -36,12 +36,13 @@ import { ThemeSelector as RadixThemeSelector } from '../../../packages/ui-theme-
 import { ColorThemeSelector as RadixColorThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/color-theme-selector';
 import { componentMarkdown } from '@/lib/component-markdown';
 import { componentApi } from '@/lib/component-guides';
-import { Prose } from './docs/prose';
+import { Prose, ScrollableTable } from './docs/prose';
 import { CopyButton as CopyText } from './docs/copy-button';
 import { CopyPageButton } from './docs/copy-page-button';
 import { CodeBlock } from './docs/code-block';
 import { ComponentPreview } from './docs/component-preview';
 import { InstallTabs } from './docs/install-tabs';
+import { DocsSelect } from './docs/select';
 import { DocsPagination, PaginationArrows } from './docs/pagination';
 import type { PackageManager } from '@/lib/docs-commands';
 import './registry-preview.css';
@@ -229,11 +230,11 @@ function RegistryContent({
   return (
     <div className="min-w-0 space-y-12" aria-label="Registry components">
       <header>
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-base font-semibold tracking-tight sm:text-lg md:text-xl lg:text-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="min-w-0 max-w-full text-base font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-lg md:text-xl lg:text-2xl">
             {doc.title}
           </h1>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <CopyPageButton markdown={markdown} />
             <PaginationArrows previous={previous} next={next} />
           </div>
@@ -313,34 +314,24 @@ function RegistryContent({
             <div className="not-prose space-y-4">
               {' '}
               <div className="flex flex-wrap gap-4">
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  Tailwind version
-                  <select
-                    aria-label="Tailwind version"
-                    value={tailwind}
-                    onChange={(event) =>
-                      changeVariant('tailwind', event.target.value)
-                    }
-                    className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  >
-                    <option value="4">4</option>
-                    <option value="3">3.4</option>
-                  </select>
-                </label>
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  Source language
-                  <select
-                    aria-label="Source language"
-                    value={language}
-                    onChange={(event) =>
-                      changeVariant('language', event.target.value)
-                    }
-                    className="rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  >
-                    <option value="ts">TypeScript</option>
-                    <option value="js">JavaScript</option>
-                  </select>
-                </label>
+                <DocsSelect
+                  label="Tailwind version"
+                  value={tailwind}
+                  onValueChange={(next) => changeVariant('tailwind', next)}
+                  options={[
+                    { value: '4', label: '4' },
+                    { value: '3', label: '3.4' },
+                  ]}
+                />
+                <DocsSelect
+                  label="Source language"
+                  value={language}
+                  onValueChange={(next) => changeVariant('language', next)}
+                  options={[
+                    { value: 'ts', label: 'TypeScript' },
+                    { value: 'js', label: 'JavaScript' },
+                  ]}
+                />
               </div>
               <InstallTabs
                 command={command}
@@ -478,7 +469,7 @@ export function RegistryApi() {
   const { api } = useRegistryBlocks();
 
   return (
-    <table>
+    <ScrollableTable className="min-w-[40rem]">
       <thead>
         <tr>
           <th>Prop</th>
@@ -499,7 +490,7 @@ export function RegistryApi() {
           </tr>
         ))}
       </tbody>
-    </table>
+    </ScrollableTable>
   );
 }
 

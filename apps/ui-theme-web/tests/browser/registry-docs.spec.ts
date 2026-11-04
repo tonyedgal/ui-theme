@@ -65,8 +65,10 @@ test('base selection keeps the preview, installation command and copied source a
     'aria-pressed',
     previous === 'true' ? 'false' : 'true'
   );
-  await page.getByLabel('Tailwind version').selectOption('3');
-  await page.getByLabel('Source language').selectOption('js');
+  await page.getByRole('combobox', { name: 'Tailwind version' }).click();
+  await page.getByRole('option', { name: '3.4', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Source language' }).click();
+  await page.getByRole('option', { name: 'JavaScript', exact: true }).click();
   await expect(page.getByTestId('install-command')).toContainText(
     '--tailwind 3 --language js'
   );

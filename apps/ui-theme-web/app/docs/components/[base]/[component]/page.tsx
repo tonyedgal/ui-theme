@@ -142,7 +142,9 @@ export default async function Page({
 
   return (
     <DocsPage
-      className="max-w-3xl gap-12 px-8 pt-6 pb-12 md:px-8 md:pt-6 xl:px-12 xl:pt-6"
+      id="main-content"
+      tabIndex={-1}
+      className="max-w-3xl gap-12 px-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] pt-6 pb-[max(3rem,env(safe-area-inset-bottom))] sm:px-8 md:pt-6 xl:px-12 xl:pt-6"
       breadcrumb={{ enabled: false }}
       footer={{ enabled: false }}
       toc={toc}

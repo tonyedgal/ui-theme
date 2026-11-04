@@ -75,7 +75,7 @@ export const SourceDisclosure = React.forwardRef<
           classes?.trigger
         )}
       >
-        <span className="min-w-0 break-words">{title}</span>
+        <span className="min-w-0 [overflow-wrap:anywhere]">{title}</span>
         <svg
           aria-hidden="true"
           viewBox="0 0 16 16"
