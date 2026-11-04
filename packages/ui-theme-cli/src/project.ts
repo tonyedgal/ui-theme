@@ -173,7 +173,7 @@ export async function detectProject(
     framework === 'tanstack' &&
     semver.minVersion(frameworkVersion)?.major !== 1
   )
-    throw new Error('TanStack Start 1 is required');
+    throw new Error('Unsupported TanStack Start version');
 
   if (
     framework === 'next' &&
