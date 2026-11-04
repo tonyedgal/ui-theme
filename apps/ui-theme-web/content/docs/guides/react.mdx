@@ -1,0 +1,72 @@
+---
+title: React
+description: Add theme state and controls to a client-rendered React app.
+---
+
+## Install
+
+Install the runtime in your existing React app. Keep your current styling system.
+
+```sh
+npm install uitheme-web@latest
+```
+
+## Add the provider
+
+Wrap the part of your app that needs theme state. Register every palette key that your CSS defines.
+
+```tsx
+import { UIThemeProvider } from 'uitheme-web/react';
+
+export function App() {
+  return (
+    <UIThemeProvider
+      defaultTheme="system"
+      colorThemes={['default', 'caffeine']}
+    >
+      <YourApp />
+    </UIThemeProvider>
+  );
+}
+```
+
+## Change the theme
+
+Call the hook inside the provider. Pass the clicked element to anchor an animated transition.
+
+```tsx
+import { useUITheme } from 'uitheme-web/react';
+
+export function DarkModeButton() {
+  const { switchTheme } = useUITheme();
+  return (
+    <button
+      onClick={(event) =>
+        void switchTheme('dark', { element: event.currentTarget })
+      }
+    >
+      Use dark mode
+    </button>
+  );
+}
+```
+
+Use `setTheme` for an immediate change. Use `switchColorTheme` to change a registered palette. `theme` stores the preference; `resolvedTheme` is light or dark.
+
+## Add styles and controls
+
+Define your light, `.dark`, and `.theme-caffeine` styles. Follow [Tailwind and palette setup](/docs/installation#tailwind-and-palettes) when using registry controls.
+
+For editable controls, preview the installation first:
+
+```sh
+npx uitheme-cli init --dry-run
+npx uitheme-cli init
+npx uitheme-cli add theme-toggle theme-selector color-theme-selector
+```
+
+For Vite, place the provider around your root app in `src/main.tsx`. For server rendering, use the [Next.js](/docs/guides/nextjs) or [TanStack Start](/docs/guides/tanstack-start) guide.
+
+## Example
+
+See the [React controls in the Next.js example](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/example-next/components/theme). These controls use the same React hook. The complete app uses the Next.js provider described in its guide.

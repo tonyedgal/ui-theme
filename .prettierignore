@@ -23,3 +23,9 @@ apps/examples/example-*/android/
 apps/examples/example-uniwind/src/uniwind-types.d.ts
 
 **/.nuxt/
+
+# Immutable generated registry releases
+packages/ui-theme-registry/releases/
+apps/ui-theme-web/public/r/
+
+apps/ui-theme-web/.generated/

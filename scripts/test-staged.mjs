@@ -33,6 +33,16 @@ if (!files.length) process.exit(0);
 
 const snapshot = mkdtempSync(join(tmpdir(), 'uitheme-staged-'));
 
+const snapshotEnv = { ...process.env, CI: '1' };
+
+for (const name of execFileSync('git', ['rev-parse', '--local-env-vars'], {
+  cwd: root,
+  encoding: 'utf8',
+})
+  .trim()
+  .split('\n'))
+  delete snapshotEnv[name];
+
 let failed = false;
 
 try {
@@ -48,13 +58,13 @@ try {
     {
       cwd: snapshot,
       stdio: 'inherit',
-      env: { ...process.env, CI: '1' },
+      env: snapshotEnv,
     }
   );
   execFileSync(process.execPath, ['scripts/validate.mjs', '--files', list], {
     cwd: snapshot,
     stdio: 'inherit',
-    env: { ...process.env, CI: '1' },
+    env: snapshotEnv,
   });
 } catch (error) {
   failed = true;
@@ -71,8 +81,10 @@ try {
   for (const path of [
     'test-results',
     'packages/ui-theme/test-results',
-    'packages/ui-theme-vue/test-results',
-    'packages/ui-theme-vue/playwright-report',
+    'packages/ui-theme/playwright-report',
+    'packages/ui-theme/tests/vue-browser/test-results',
+    'packages/ui-theme/tests/vue-browser/playwright-report',
+    'packages/ui-theme-registry/test-results',
     'apps/ui-theme-web/test-results',
   ]) {
     const source = join(snapshot, path);

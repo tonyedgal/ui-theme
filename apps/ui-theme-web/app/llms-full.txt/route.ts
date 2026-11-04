@@ -1,10 +1,13 @@
-import { getLLMText, source } from '@/lib/source';
+import { getLLMPage, getLLMPages } from '@/lib/llm-docs';
 
 export const revalidate = false;
 
 export async function GET() {
-  const scan = source.getPages().map(getLLMText);
-  const scanned = await Promise.all(scan);
+  const pages = await Promise.all(
+    getLLMPages().map((page) => getLLMPage(page.href))
+  );
 
-  return new Response(scanned.join('\n\n'));
+  return new Response(pages.join('\n\n'), {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
 }

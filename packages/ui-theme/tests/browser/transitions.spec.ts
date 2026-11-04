@@ -742,38 +742,6 @@ for (const provider of ['ui', 'next', 'vite', 'tanstack']) {
   });
 }
 
-test('standalone switcher reveals from the clicked option rather than the active option', async ({
-  page,
-}) => {
-  await open(page, 'widgets');
-  const button = page.getByRole('radio', { name: 'Switch to dark theme' });
-  const rect = await button.boundingBox();
-  await button.click();
-  await expectOrigin(page, {
-    x: rect!.x + rect!.width / 2,
-    y: rect!.y + rect!.height / 2,
-  });
-  await settle(page);
-});
-
-test('selector animates from its own trigger and fires its callback once', async ({
-  page,
-}) => {
-  await open(page, 'widgets');
-  const selector = page.getByRole('combobox');
-  await selector.click();
-  // Opening the menu can scroll the trigger into view on mobile. The library
-  // reads its current viewport rectangle when the selection is made.
-  const origin = await center(page, '[role="combobox"]');
-  await page.getByRole('option', { name: 'ocean' }).click();
-  await expectOrigin(page, origin);
-  await expect(page.locator('html')).toHaveClass(/theme-ocean/);
-  expect(
-    await page.evaluate(() => window.themeFixture.inspection.callbacks)
-  ).toEqual(['selector:ocean']);
-  await settle(page);
-});
-
 test('CSS zoom keeps element origin and explicit short duration in CSS pixels', async ({
   page,
 }) => {
@@ -795,7 +763,7 @@ test('CSS zoom keeps element origin and explicit short duration in CSS pixels', 
 test('direct palette helpers use the clicked element and keyboard controls skip movement', async ({
   page,
 }) => {
-  await open(page, 'widgets');
+  await open(page);
   const origin = await center(page, '#target-palette');
   await page.locator('#target-palette').click();
   await expectOrigin(page, origin);
@@ -803,24 +771,9 @@ test('direct palette helpers use the clicked element and keyboard controls skip 
   await page.evaluate(() => {
     window.themeFixture.inspection.transitions.length = 0;
   });
-  await page.getByRole('radio', { name: 'Switch to dark theme' }).focus();
-  await page.keyboard.press('Enter');
-  await expect(page.locator('html')).toHaveClass(/dark/);
-  await page.getByRole('combobox').focus();
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('Home');
-  await expect(
-    page.getByRole('option', { name: 'default', exact: true })
-  ).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(
-    page.getByRole('option', { name: 'ocean', exact: true })
-  ).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(page.locator('html')).toHaveClass(/theme-ocean/);
   await page.locator('#cycle').focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('html')).toHaveClass(/theme-rose/);
+  await expect(page.locator('html')).toHaveClass(/theme-default/);
   expect(
     await page.evaluate(() => window.themeFixture.inspection.transitions.length)
   ).toBe(0);
@@ -995,54 +948,6 @@ test('gallery activates light and dark uploads only after both are supplied', as
     await settle(page);
   }
 });
-
-for (const provider of ['ui', 'next', 'vite', 'tanstack']) {
-  test(`${provider} built-in controls share provider state and portal keyboard input`, async ({
-    page,
-  }) => {
-    await open(page, `provider=${provider}&widgets&duration=6000`);
-    await page.getByRole('radio', { name: 'Switch to dark theme' }).click();
-    await expect(page.locator('html')).toHaveClass(/dark/);
-    await page.evaluate(() =>
-      window.themeFixture.inspection.transitions.at(-1)?.skipTransition()
-    );
-    await settle(page);
-    await expect(
-      page.getByRole('radio', { name: 'Switch to dark theme' })
-    ).toHaveAttribute('aria-checked', 'true');
-    const trigger = page.getByRole('combobox');
-    await trigger.click();
-    await page.getByRole('option', { name: 'default', exact: true }).focus();
-    await expect(
-      page.getByRole('option', { name: 'default', exact: true })
-    ).toBeFocused();
-    await page.keyboard.press('ArrowDown');
-    await expect(
-      page.getByRole('option', { name: 'ocean', exact: true })
-    ).toBeFocused();
-    await page.keyboard.press('Enter');
-    await expect(page.locator('html')).toHaveClass(/theme-ocean/);
-    await expect(page.locator('html')).toHaveClass(/dark/);
-
-    const count = await page.evaluate(
-      () => window.themeFixture.inspection.transitions.length
-    );
-
-    expect(count).toBe(1);
-    await trigger.click();
-    await page.getByRole('option', { name: 'rose', exact: true }).click();
-    await expect(page.locator('html')).toHaveClass(/theme-rose/);
-    expect(
-      await page.evaluate(
-        () => window.themeFixture.inspection.transitions.length
-      )
-    ).toBe(2);
-    await page.evaluate(() =>
-      window.themeFixture.inspection.transitions.at(-1)?.skipTransition()
-    );
-    await settle(page);
-  });
-}
 
 test('a failed storage write can retry the same destination', async ({
   page,

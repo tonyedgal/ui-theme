@@ -118,3 +118,46 @@ be tested.
 - Stage explicit paths. Preserve unrelated changes and existing stashes.
 - Do not push unless the human has authorized the push. Honor authorization
   already given for the current task and branch.
+
+## 7. Comments
+
+Default to no comment. Write one only where the code cannot say it itself: a decision whose obvious refactor reintroduces a bug, or a non-obvious constraint.
+
+- One line, lowercase. Never a multi-line block.
+- Never restate what the next line does. If the code reads fine, delete the comment.
+- No JSDoc, no section banners, no `// handle X` above a function called `handleX`.
+
+## 8. Imitation is the sincerest form of flattery
+
+- Use design references as a starting point. Adapt them to UI-Theme's purpose,
+  behavior, and visual language instead of copying a layout without judgment.
+- When building a registry component from a referenced site or product, include
+  its name and a direct source link in that component's Credits section. State
+  what it inspired. Distinguish component inspiration from implementation
+  dependencies. Do not invent attribution.
+- Apply inspiration credits to components we design from a reference. Do not add
+  shared documentation or layout references to existing component credits.
+- Keep reference names out of identifiers, comments, other UI copy, filenames,
+  commit messages, and verification artifacts. The Credits section and its
+  underlying credit metadata are the deliberate exceptions.
+- Preserve required license and copyright notices.
+
+## 9. Documentation language
+
+- Use ASD-STE-inspired clear English for about 80% of documentation prose.
+  Preserve technical terms and exact API names, commands, paths, and versions.
+  This is a style target, not a formal compliance score.
+- Use short sentences, active voice, and one main fact or instruction per sentence.
+  Remove filler. Keep requirements, actions, and results distinct.
+- Follow [the writing guide](docs/writing-guide.md) for new documentation and when
+  reviewing existing documentation. Preserve code examples, legal notices,
+  generated content, and historical verification facts.
+- Use Outfit for prose and Geist Mono for inline code and code blocks on the website.
+
+- Write documentation for library consumers. Explain what helps them install,
+  configure, use, customize, or troubleshoot UI-Theme. Keep internal build
+  metadata and maintenance details out of component guides unless they support
+  a specific consumer task.
+- When unsure whether content belongs in the docs, consult comparable framework
+  or component documentation. Adapt the useful pattern to UI-Theme. Do not add
+  implementation details merely because they are available.

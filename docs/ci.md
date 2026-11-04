@@ -26,9 +26,11 @@ artifacts are copied to `test-results/staged-validation/` before cleanup.
 | Staged change                                                                | Local checks                                                                                  |
 | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Web/React implementation                                                     | Web build/types, unit/declaration/packed checks, full browser matrix, website, React examples |
-| Shared web core                                                              | Web and Vue package checks, both browser matrices, website, React/Vue/Nuxt examples           |
+| Shared web core                                                              | Unified web package checks, React and Vue browser matrices, website, React/Vue/Nuxt examples  |
+| CLI implementation                                                           | CLI build/types, behavior tests, and packed binary checks                                     |
+| Registry templates                                                           | Registry schema/build, CLI compatibility, all emitted variants, and website previews          |
 | RN implementation                                                            | RN build/types, behavior/packed checks, three native example exports/types                    |
-| Vue/Nuxt implementation                                                      | Vue build/types/packed checks and full Vue/Nuxt browser matrix                                |
+| Vue/Nuxt implementation                                                      | Web build/types/packed checks and full Vue/Nuxt browser matrix                                |
 | Website source or content                                                    | Website build/types and production browser smoke                                              |
 | One reference example                                                        | Its build/types; Vue/Nuxt changes run their shared integration browser suite                  |
 | Public entry points, declarations, dependency manifests, build configuration | Also select the relevant independent package consumer                                         |

@@ -12,20 +12,22 @@ pnpm add uitheme-web
 yarn add uitheme-web
 ```
 
-## Tailwind Setup For Prebuilt Components
+## Optional Tailwind controls
 
-`UIThemeSwitcher`, `UIThemeSelector`, and the shared select primitives are styled with Tailwind utility classes from `uitheme-web`. The package does not ship a compiled stylesheet, so your app must let Tailwind scan the installed package when you use those prebuilt components.
+The v2 runtime is headless. Styled controls live in your app as editable source.
+They require an existing Tailwind 3.4 or 4 setup.
 
-For Tailwind v4, add an `@source` directive to the stylesheet where you import Tailwind:
-
-```css
-@import 'tailwindcss';
-@source '../node_modules/uitheme-web/dist';
+```sh
+npx uitheme-cli init --dry-run
+npx uitheme-cli init
+npx uitheme-cli add theme-toggle theme-selector color-theme-selector
 ```
 
-Adjust the relative path so it points at your app's installed `uitheme-web` package.
+Select Base UI or Radix for React. The copied controls import only the selected
+base. Configure Tailwind to scan the destination for local components. You do
+not need to scan the runtime package for component styles.
 
-If you skip this step, the theme switcher and selector will render, but Tailwind will not generate the utility classes used inside the package, so the controls will appear mostly unstyled.
+See the [v2 component and migration guides](https://www.ui-theme.dev/docs).
 
 ## Quick Start
 

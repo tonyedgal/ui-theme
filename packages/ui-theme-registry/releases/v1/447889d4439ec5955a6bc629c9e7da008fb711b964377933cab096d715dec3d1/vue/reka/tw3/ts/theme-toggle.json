@@ -1,0 +1,36 @@
+{
+  "name": "theme-toggle",
+  "type": "registry:ui",
+  "title": "Theme Toggle",
+  "description": "Toggle between the resolved light and dark themes.",
+  "dependencies": [
+    "reka-ui@^2.11.0",
+    "tailwind-merge@^2.6.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "theme-toggle.vue",
+      "content": "<script setup lang=\"ts\">\nimport { Toggle } from 'reka-ui';\nimport { computed } from 'vue';\nimport { useUITheme } from 'uitheme-web/vue';\nimport { mergeClasses, type ControlClasses } from './classes';\n\nconst props = withDefaults(\n  defineProps<{\n    disabled?: boolean;\n    class?: string;\n    classes?: ControlClasses;\n    label?: string;\n    lightLabel?: string;\n    darkLabel?: string;\n  }>(),\n  {\n    class: undefined,\n    classes: undefined,\n    label: 'Toggle theme',\n    lightLabel: 'Switch to light theme',\n    darkLabel: 'Switch to dark theme',\n  }\n);\n\nconst theme = useUITheme();\n\nconst target = computed(() =>\n  theme.resolvedTheme.value === 'dark' ? 'light' : 'dark'\n);\n\nconst text = computed(() =>\n  target.value === 'light' ? props.lightLabel : props.darkLabel\n);\n\nconst rootClass = computed(() =>\n  mergeClasses('inline-flex', props.class, props.classes, 'root')\n);\n\nconst triggerClass = computed(() =>\n  mergeClasses(\n    'inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',\n    undefined,\n    props.classes,\n    'trigger'\n  )\n);\n</script>\n\n<template>\n  <div :class=\"rootClass\">\n    <Toggle\n      :model-value=\"theme.resolvedTheme.value === 'dark'\"\n      type=\"button\"\n      :class=\"triggerClass\"\n      :aria-label=\"label\"\n      :disabled=\"disabled || !theme.mounted.value\"\n      @click=\"\n        theme.switchTheme(target, {\n          element: $event.currentTarget as HTMLElement,\n        })\n      \"\n    >\n      {{ text }}\n    </Toggle>\n  </div>\n</template>\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.ts",
+      "content": "import { twMerge } from 'tailwind-merge';\n\nexport type ControlClasses = Partial<\n  Record<\n    'root' | 'trigger' | 'content' | 'item' | 'label' | 'track' | 'thumb',\n    string\n  >\n>;\n\nexport function mergeClass(base: string, custom?: string) {\n  return twMerge(base, custom);\n}\n\nexport function mergeClasses(\n  base: string,\n  custom?: string,\n  classes?: ControlClasses,\n  slot?: keyof ControlClasses\n) {\n  return twMerge(base, custom, slot ? classes?.[slot] : undefined);\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "447889d4439ec5955a6bc629c9e7da008fb711b964377933cab096d715dec3d1",
+      "component": "theme-toggle",
+      "framework": "vue",
+      "base": "reka",
+      "tailwind": 3,
+      "language": "ts",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

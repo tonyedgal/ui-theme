@@ -1,0 +1,59 @@
+---
+title: Next.js
+description: Set up themes in a Next.js App Router application.
+---
+
+## Install
+
+```sh
+npm install uitheme-web@latest
+```
+
+## Create a client provider
+
+```tsx title="app/providers.tsx"
+'use client';
+
+import { NextUIThemeProvider } from 'uitheme-web/next';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <NextUIThemeProvider defaultTheme="system">{children}</NextUIThemeProvider>
+  );
+}
+```
+
+## Wrap your root layout
+
+Keep the layout as a Server Component. The provider includes the script that applies the saved appearance before hydration.
+
+```tsx title="app/layout.tsx"
+import './globals.css';
+import { Providers } from './providers';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+Keep theme hooks and interactive controls in Client Components. Use `uitheme-web/next/server` when you need server-safe bootstrap helpers. Do not import browser hooks into server code.
+
+## Add a control
+
+Use the [React hook example](/docs/guides/react#change-the-theme), or install a [Theme Toggle](/docs/components/base-ui/theme-toggle). Set up [Tailwind and palette styles](/docs/installation#tailwind-and-palettes) before installing styled controls.
+
+Check the first page load, saved preferences after reload, and system appearance changes. If your site uses a Content Security Policy, configure its nonce through the provider's supported options.
+
+## Example
+
+Open the [complete Next.js example](https://github.com/tonyedgal/ui-theme/tree/main/apps/examples/example-next). Start with `app/providers.tsx` and `app/layout.tsx`.

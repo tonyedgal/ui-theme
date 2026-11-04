@@ -1,4 +1,4 @@
-import { getLLMText, source } from '@/lib/source';
+import { getLLMPage, getLLMPages } from '@/lib/llm-docs';
 import { notFound } from 'next/navigation';
 
 export const revalidate = false;
@@ -8,17 +8,20 @@ export async function GET(
   { params }: RouteContext<'/llms.mdx/docs/[[...slug]]'>
 ) {
   const { slug } = await params;
-  const page = source.getPage(slug);
 
-  if (!page) notFound();
+  const markdown = await getLLMPage(
+    `/docs${slug?.length ? `/${slug.join('/')}` : ''}`
+  );
 
-  return new Response(await getLLMText(page), {
-    headers: {
-      'Content-Type': 'text/markdown',
-    },
+  if (!markdown) notFound();
+
+  return new Response(markdown, {
+    headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
   });
 }
 
 export function generateStaticParams() {
-  return source.generateParams();
+  return getLLMPages().map((page) => ({
+    slug: page.href.slice('/docs'.length).split('/').filter(Boolean),
+  }));
 }

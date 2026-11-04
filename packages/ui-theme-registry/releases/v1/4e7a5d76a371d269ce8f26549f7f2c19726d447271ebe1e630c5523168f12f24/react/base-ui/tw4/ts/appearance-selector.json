@@ -1,0 +1,36 @@
+{
+  "name": "appearance-selector",
+  "type": "registry:ui",
+  "title": "Appearance Selector",
+  "description": "Choose an available appearance theme.",
+  "dependencies": [
+    "tailwind-merge@^3.0.0",
+    "@base-ui/react@^1.8.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "appearance-selector.tsx",
+      "content": "'use client';\n\nimport * as React from 'react';\nimport { useUITheme } from 'uitheme-web/react';\nimport { cn } from './classes';\nimport { Select } from '@base-ui/react/select';\n\nexport type AppearanceSelectorClasses = {\n  root?: string;\n  trigger?: string;\n  content?: string;\n  item?: string;\n  label?: string;\n};\n\nexport type AppearanceSelectorProps = {\n  className?: string;\n  classes?: AppearanceSelectorClasses;\n  label?: string;\n  disabled?: boolean;\n};\n\nexport const AppearanceSelector = React.forwardRef<\n  HTMLButtonElement,\n  AppearanceSelectorProps\n>(function AppearanceSelector(\n  {\n    className,\n    classes,\n    label = 'Appearance',\n    disabled = false,\n  }: AppearanceSelectorProps,\n  forwardedRef\n) {\n  const { theme, themes, mounted, switchTheme } = useUITheme();\n  const triggerRef = React.useRef<HTMLButtonElement>(null);\n  const selected = theme;\n\n  const options: { value: string; label: string }[] = themes.map((value) => ({\n    value,\n    label: value\n      .replaceAll('-', ' ')\n      .replace(/\\b\\w/g, (letter) => letter.toUpperCase()),\n  }));\n\n  React.useImperativeHandle(forwardedRef, () => triggerRef.current!);\n\n  const change = (value: string) => {\n    const next = themes.find((theme) => theme === value);\n\n    if (next) void switchTheme(next, { element: triggerRef.current });\n  };\n\n  return (\n    <div className={cn('flex flex-col gap-2', classes?.root, className)}>\n      <Select.Root\n        items={options}\n        value={selected}\n        disabled={disabled || !mounted}\n        onValueChange={(next) => next && void change(next)}\n      >\n        <Select.Label\n          className={cn('text-sm font-medium text-foreground', classes?.label)}\n        >\n          {label}\n        </Select.Label>\n        <Select.Trigger\n          ref={triggerRef}\n          disabled={disabled || !mounted}\n          className={cn(\n            'flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',\n            classes?.trigger\n          )}\n        >\n          <Select.Value />\n          <span aria-hidden=\"true\">⌄</span>\n        </Select.Trigger>\n        <Select.Portal>\n          <Select.Positioner>\n            <Select.Popup\n              className={cn(\n                'z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none',\n                classes?.content\n              )}\n            >\n              <Select.List>\n                {options.map((option) => (\n                  <Select.Item\n                    key={option.value}\n                    value={option.value}\n                    className={cn(\n                      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',\n                      classes?.item\n                    )}\n                  >\n                    <Select.ItemText>{option.label}</Select.ItemText>\n                  </Select.Item>\n                ))}\n              </Select.List>\n            </Select.Popup>\n          </Select.Positioner>\n        </Select.Portal>\n      </Select.Root>\n    </div>\n  );\n});\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.ts",
+      "content": "import { twMerge } from 'tailwind-merge';\n\nexport function cn(...classes: (string | undefined)[]) {\n  return twMerge(classes.filter(Boolean).join(' '));\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "4e7a5d76a371d269ce8f26549f7f2c19726d447271ebe1e630c5523168f12f24",
+      "component": "appearance-selector",
+      "framework": "react",
+      "base": "base-ui",
+      "tailwind": 4,
+      "language": "ts",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

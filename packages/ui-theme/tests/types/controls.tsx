@@ -3,8 +3,6 @@ import {
   NextUIThemeProvider,
   ViteUIThemeProvider,
   TanStackUIThemeProvider,
-  UIThemeSwitcher,
-  UIThemeSelector,
 } from 'uitheme-web/react';
 
 const logos = {
@@ -33,15 +31,7 @@ export const providers = [
   </TanStackUIThemeProvider>,
 ];
 
-export const controls = [
-  <UIThemeSwitcher key="UIThemeSwitcher" {...logos} />,
-  <UIThemeSelector key="UIThemeSelector" {...logos} />,
-];
-
 export const missingProviderLogo = (
   // @ts-expect-error Providers require both assets.
   <UIThemeProvider logoLight="/light.svg">{null}</UIThemeProvider>
 );
-
-// @ts-expect-error Controls require both assets.
-export const missingControlLogo = <UIThemeSwitcher logoDark="/dark.svg" />;

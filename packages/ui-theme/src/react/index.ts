@@ -7,6 +7,7 @@ export {
   type TransitionDirection,
   type AnimationPosition,
   type ThemeAnimationOptions,
+  type ThemeControlTransitionProps,
   type ThemeLogoOptions,
   type Theme,
   type ColorTheme,
@@ -73,31 +74,10 @@ export {
   type UIThemeContextType,
 } from './components/UIThemeProvider';
 
-// React components
-export { UIThemeSwitcher } from './components/UIThemeSwitcher';
-
-export { UIThemeSelector } from './components/UIThemeSelector';
-
-// UI Components
-export {
-  UISelect,
-  UISelectContent,
-  UISelectGroup,
-  UISelectItem,
-  UISelectLabel,
-  UISelectScrollDownButton,
-  UISelectScrollUpButton,
-  UISelectSeparator,
-  UISelectTrigger,
-  UISelectValue,
-} from './components/ui/UISelect';
-
 // Types
 export type {
   UseThemeProps,
   UseThemeReturn,
-  UIThemeSwitcherProps,
-  UIThemeSelectorProps,
   SystemThemeMode,
   ThemeTransitionOptions,
   ThemeTransitionInput,

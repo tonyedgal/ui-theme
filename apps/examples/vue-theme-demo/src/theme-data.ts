@@ -1,4 +1,4 @@
-import type { SlideDirection } from 'uitheme-vue';
+import type { SlideDirection } from 'uitheme-web/vue';
 
 export const COLOR_THEMES = [
   'default',

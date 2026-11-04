@@ -1,0 +1,116 @@
+---
+title: Color Theme Disclosure
+description: Expand color palette choices within the page layout.
+---
+
+## Preview
+
+<RegistryLivePreview />
+
+## Examples
+
+<RegistryExamples />
+
+## When to use
+
+- Show color palette choices in a settings panel with space in the expansion direction.
+- Keep the choices open while people compare their selection.
+- Use a bounded scroll area for a longer list.
+
+## When not to use
+
+- Expansion would cover or move content in a compact toolbar. Use [Color Theme Selector](/docs/components/base-ui/color-theme-selector).
+- You need a general content disclosure. This control selects a theme preference.
+
+## Installation
+
+Set up [uitheme-web](/docs/installation) in an existing Tailwind app.
+Then install this control. The floating selector is a separate component.
+
+<RegistryInstallation />
+
+## Usage
+
+Place the control inside your theme provider. Expansion moves the content below
+it. The panel stays open after a selection. Its scroll area defaults to 240px and
+never exceeds 60% of the viewport height.
+
+<RegistryUsage />
+
+Set `direction="up"` to place the choices above the trigger. Leave space above
+for the expanded panel. Anchor the control at the bottom of its container if the
+trigger must stay in place. The Examples section shows this layout. The default
+is `direction="down"`.
+
+Keep the label below the trigger when the panel opens upward. The component
+places the label there automatically. Keep the label above a downward-opening
+trigger. Preserve this order when you customize the layout.
+
+Reserve enough height for the expanded panel, trigger, label, and frame padding.
+Align downward controls to the top and upward controls to the bottom. The
+examples reserve `h-96` with the default `maxHeight={240}`. Adjust the space if
+you change the scroll limit. Opening a panel must not shift its trigger or the
+surrounding preview.
+
+## API reference
+
+Use `open` with the change callback to control expansion. Use `defaultOpen` for
+an initial expanded state. Use `maxHeight` to set the scroll limit.
+
+<RegistryApi />
+
+## Keyboard
+
+| Key             | Action                                                               |
+| --------------- | -------------------------------------------------------------------- |
+| `Enter / Space` | Expand or collapse the focused trigger.                              |
+| `Tab`           | Move from the trigger into the expanded panel and its radio choices. |
+| `Arrow keys`    | Change the selected radio within the group.                          |
+| `Space`         | Select the focused radio.                                            |
+
+The panel stays open until you collapse it. Escape does not close an inline panel.
+
+## Accessibility
+
+- Keep the visible label, trigger name, and radio group name.
+- The trigger reports the expanded state. Hidden choices leave the tab order.
+- The disabled state prevents expansion and selection.
+- Keyboard controls use native buttons and radio inputs.
+
+## Theme behavior
+
+The checked radio follows `colorTheme`. Choices come from `colorThemes`. Appearance does not change.
+
+The selected radio sets the transition origin. The library performs the page
+transition. Omitted transition props keep the provider settings.
+
+## AI Agent notes
+
+- Import the local control. Use `uitheme-web/react` or `uitheme-web/vue` for the runtime.
+- Read the configured provider choices. Do not invent theme values.
+- Preserve the label, focus styles, selected state, disabled state, and scroll limit.
+- Keep the label below an upward trigger and above a downward trigger.
+- Reserve room for the full bounded panel, trigger, label, and frame padding.
+- Anchor upward controls at the bottom and downward controls at the top. Opening the panel must not shift the preview.
+- Use the separate floating selector in compact layouts.
+- Keep page transitions in the library. Do not add a local transition helper.
+- Check keyboard selection, preference persistence, and reduced motion in the running app.
+
+<RegistryAgentCopy />
+
+## Source
+
+The CLI reuses the shared `cn` utility. It repairs a missing utility and checks an
+existing utility before offering a replacement. This control installs one main
+component file. It does not install the floating selector.
+
+<RegistrySource />
+
+## Customization
+
+Use the `classes` prop to style the root, label, trigger, content, and items.
+The frame uses theme tokens. Its outer radius equals the trigger radius plus
+the frame padding. This control uses solid borders.
+
+Set `animationType` and `duration` for the page transition. Set `slideDirection`
+only with `animationType="slide"`. Keep enough space in the expansion direction.

@@ -1,0 +1,119 @@
+---
+title: Theme Selector
+description: Choose light, dark, or the system appearance.
+---
+
+## Preview
+
+<RegistryLivePreview />
+
+## Examples
+
+<RegistryExamples />
+
+## When to use
+
+- Let people choose light, dark, or system appearance in app settings.
+- Show the appearance options configured on the provider in one labeled control.
+
+- Use the floating menu in headers, toolbars, and compact layouts.
+
+## When not to use
+
+- A toolbar needs only a quick light/dark action. Use Theme Toggle.
+- The choice changes brand colors rather than appearance. Use Color Theme Selector.
+
+## Installation
+
+Set up [uitheme-web](/docs/installation) in an existing Tailwind app.
+Then install the component.
+
+<RegistryInstallation />
+
+## Usage
+
+Use the component inside your theme provider. Use import paths that match your
+app’s component directory.
+
+<RegistryUsage />
+
+For inline choices, install [Theme Disclosure](/docs/components/base-ui/theme-disclosure).
+The floating selector does not install disclosure code.
+
+## API reference
+
+These props belong to the installed local control. Configure theme
+options on the provider.
+
+<RegistryApi />
+
+## Keyboard
+
+| Key             | Action                                           |
+| --------------- | ------------------------------------------------ |
+| `Enter / Space` | Open the selector or confirm the focused option. |
+| `Arrow keys`    | Move between available appearance options.       |
+| `Escape`        | Close the menu and return focus to the trigger.  |
+
+## Accessibility
+
+- Keep the label connected to the trigger. Preserve the primitive’s focus behavior.
+- The option list comes from the provider. Avoid showing a system option when that option is not configured.
+
+## Theme behavior
+
+- Use `theme` for the selected preference. `System` stays selected when the operating system changes appearance.
+- Changes use `switchTheme`. The trigger sets the transition origin. The color palette does not change.
+
+## AI Agent notes
+
+Use this checklist when a coding agent adds the control.
+
+<RegistryReact>
+
+- Use `uitheme-web/react` for the runtime. Import the control from its installed local file. The runtime does not export styled controls.
+- For Next.js, use `NextUIThemeProvider` from `uitheme-web/next`. For TanStack Start, follow the server bootstrap guide. Create server state for each request.
+
+</RegistryReact>
+
+<RegistryVue>
+
+- Use `uitheme-web/vue` for the runtime. Import the control from its installed local file. The runtime does not export styled controls.
+- Use `createUITheme` or `UIThemeProvider` for Vue. In Nuxt 4, use the `uitheme-web/nuxt` module. Follow the provider setup in the installation guide.
+
+</RegistryVue>
+
+- Before installation, select the framework, primitive base, Tailwind major version, and language. Run the CLI inside the app or pass `--cwd`.
+- Preview changes with `--dry-run`. Keep edited local files. Review the differences before using `--overwrite`.
+- Read the provider’s `themes` array. Show only the options configured on the provider.
+- Use `theme` for the selected value. Use `resolvedTheme` for visual appearance.
+- Check keyboard controls in the running app. Check that appearance and palette choices survive a reload. Check reduced motion.
+
+<RegistryAgentCopy />
+
+## Source
+
+The CLI reuses your shared `cn` utility. If it is missing, installation creates it
+at the configured utils path. Existing utilities are checked before a replacement
+is offered.
+
+These are the files the CLI installs. The component source stays in your app.
+
+<RegistrySource />
+
+## Customization
+
+Use `borderStyle="shadow"` in React or `border-style="shadow"` in Vue for prominent shadow borders. The default is `solid`.
+
+Use `slideDirection` only when `animationType` is `ThemeAnimationType.SLIDE`. Set both props on the control when you need a slide direction override.
+
+Use `display="icon-text"` to show an icon beside the text. The default is `display="text"`.
+For an icon-only action, use [Icon Theme Toggle](/docs/components/base-ui/icon-theme-toggle).
+Pass `animationType`, `duration`, and `slideDirection` to this control to set its UI theme transition.
+These props override the provider settings for this action only.
+
+Keyboard focus shows the theme’s focus ring.
+
+Edit the installed source. Use `className` in React or `class` in Vue to style
+the root. Use the `classes` prop to style individual parts. Use label props to change the
+visible text.

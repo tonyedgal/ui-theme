@@ -1,4 +1,9 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useState,
+  type ReactNode,
+  type ComponentRef,
+} from 'react';
 import { z } from 'zod';
 import type { useNativeVariable as NativeVariableHook } from 'react-native-css/native';
 import { Platform, View } from 'react-native';
@@ -65,7 +70,7 @@ function WebCSSColors({
   const [colors, setColors] = useState<ThemeColors | null>(null);
 
   const ref = useCallback(
-    (view: View | null) => {
+    (view: ComponentRef<typeof View> | null) => {
       if (!scope || !view) return;
       // SAFETY: React Native Web forwards a View ref to its host DOM element.
       const element = z.instanceof(Element).parse(view);

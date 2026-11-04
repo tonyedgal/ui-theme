@@ -1,0 +1,36 @@
+{
+  "name": "theme-toggle",
+  "type": "registry:ui",
+  "title": "Theme Toggle",
+  "description": "Toggle between the resolved light and dark themes.",
+  "dependencies": [
+    "tailwind-merge@^3.0.0",
+    "@radix-ui/react-toggle@^1.2.1"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "theme-toggle.jsx",
+      "content": "'use client';\nimport * as React from 'react';\nimport { useUITheme } from 'uitheme-web/react';\nimport { cn } from './classes';\nimport * as TogglePrimitive from '@radix-ui/react-toggle';\nexport const ThemeToggle = React.forwardRef(function ThemeToggle({ className, classes, label = 'Toggle appearance', disabled = false }, forwardedRef) {\n    const { resolvedTheme, switchTheme, mounted } = useUITheme();\n    const target = resolvedTheme === 'dark' ? 'light' : 'dark';\n    return (<div className={cn('inline-flex', classes?.root, className)}>\n      <TogglePrimitive.Root ref={forwardedRef} type=\"button\" aria-label={label} pressed={resolvedTheme === 'dark'} disabled={disabled || !mounted} className={cn('inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50', classes?.trigger)} onClick={(event) => void switchTheme(target, { element: event.currentTarget })}>\n        {resolvedTheme === 'dark' ? 'Dark' : 'Light'}\n      </TogglePrimitive.Root>\n    </div>);\n});\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.js",
+      "content": "import { twMerge } from 'tailwind-merge';\nexport function cn(...classes) {\n    return twMerge(classes.filter(Boolean).join(' '));\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "4e7a5d76a371d269ce8f26549f7f2c19726d447271ebe1e630c5523168f12f24",
+      "component": "theme-toggle",
+      "framework": "react",
+      "base": "radix",
+      "tailwind": 4,
+      "language": "js",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

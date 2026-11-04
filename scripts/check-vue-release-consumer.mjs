@@ -74,7 +74,12 @@ function tool(folder, name, args, log) {
 }
 
 function pack(name) {
-  const folder = join(root, 'packages', `ui-theme-${name}`);
+  const folder = join(
+    root,
+    'packages',
+    name === 'web' ? 'ui-theme' : `ui-theme-${name}`
+  );
+
   command(
     folder,
     'pnpm',
@@ -92,7 +97,7 @@ function pack(name) {
 
 try {
   {
-    const vueArchive = pack('vue');
+    const vueArchive = pack('web');
 
     const vue = join(directory, 'vue');
     write(
@@ -101,7 +106,7 @@ try {
       JSON.stringify({
         private: true,
         type: 'module',
-        dependencies: { 'uitheme-vue': `file:${vueArchive}`, vue: '3.5.44' },
+        dependencies: { 'uitheme-web': `file:${vueArchive}`, vue: '3.5.44' },
         devDependencies: { typescript: '5.9.3', '@types/node': '22.20.5' },
       })
     );
@@ -112,14 +117,14 @@ try {
       `
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
-import { createUITheme, useUITheme, UIThemeSwitcher, UIThemeSelector } from 'uitheme-vue';
-import { getThemeScript } from 'uitheme-vue/bootstrap';
+import { createUITheme, useUITheme } from 'uitheme-web/vue';
+import { getThemeScript } from 'uitheme-web/vue/bootstrap';
 const app = createSSRApp({ setup() { const {theme} = useUITheme(); return () => h('p', theme.value); } });
 app.use(createUITheme({defaultTheme:'dark'}));
 const output = await renderToString(app);
 if (output !== '<p>dark</p>') throw new Error(output);
 if (getThemeScript({defaultTheme:'dark'}).includes('</script>')) throw new Error('unsafe script');
-void UIThemeSwitcher; void UIThemeSelector;
+
 `
     );
     write(
@@ -157,12 +162,12 @@ void UIThemeSwitcher; void UIThemeSelector;
     write(
       vue,
       'nuxt.config.ts',
-      `export default defineNuxtConfig({ compatibilityDate: '2026-10-23', modules:['uitheme-vue/nuxt'], uiTheme:{colorThemes:['default','mocha']}, devtools:{enabled:false} });`
+      `export default defineNuxtConfig({ compatibilityDate: '2026-10-23', modules:['uitheme-web/nuxt'], uiTheme:{colorThemes:['default','mocha']}, devtools:{enabled:false} });`
     );
     write(
       vue,
       'app/app.vue',
-      `<script setup lang="ts">import { UIThemeSwitcher, UIThemeSelector, useUITheme } from 'uitheme-vue'; const {theme,colorTheme,mounted}=useUITheme();</script><template><main :data-ready="mounted"><UIThemeSwitcher/><UIThemeSelector/><p>{{theme}}/{{colorTheme}}</p></main></template>`
+      `<script setup lang="ts">import { useUITheme } from 'uitheme-web/vue'; const {theme,colorTheme,mounted,setTheme,setColorTheme}=useUITheme();</script><template><main :data-ready="mounted"><label>Appearance<select aria-label="Appearance" :value="theme" @change="setTheme(($event.target as HTMLSelectElement).value as 'light'|'dark'|'system')"><option>light</option><option>dark</option><option>system</option></select></label><label>Color theme<select aria-label="Color theme" :value="colorTheme" @change="setColorTheme(($event.target as HTMLSelectElement).value)"><option>default</option><option>mocha</option></select></label><p>{{theme}}/{{colorTheme}}</p></main></template>`
     );
     write(
       vue,
@@ -220,7 +225,7 @@ void UIThemeSwitcher; void UIThemeSelector;
     assert.ok(response?.ok, 'Standalone Nuxt server did not start');
 
     const { chromium } = createRequire(
-      join(root, 'packages/ui-theme-vue/package.json')
+      join(root, 'packages/ui-theme/package.json')
     )('@playwright/test');
 
     const browser = await chromium.launch();

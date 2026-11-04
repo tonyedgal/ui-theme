@@ -58,6 +58,20 @@ export type SlideDirection =
   | 'bottom-left'
   | 'bottom-right';
 
+export type ThemeControlTransitionProps = { duration?: number } & (
+  | { animationType: 'slide'; slideDirection?: SlideDirection }
+  | {
+      animationType?:
+        | 'circle'
+        | 'blur-circle'
+        | 'clip-path'
+        | 'polygon-gradient'
+        | 'triangle'
+        | 'svg-logo';
+      slideDirection?: never;
+    }
+);
+
 export interface AnimationConfig extends ThemeAnimationSettings {
   /** Asset already selected for the destination theme before capture. */
   logo?: string;
@@ -73,8 +87,8 @@ export interface AnimationConfig extends ThemeAnimationSettings {
 }
 
 export interface ThemeConfig {
-  themes?: Theme[];
-  colorThemes?: ColorTheme[];
+  themes?: readonly Theme[];
+  colorThemes?: readonly ColorTheme[];
   defaultTheme?: Theme;
   defaultColorTheme?: ColorTheme;
   globalClassName?: string;

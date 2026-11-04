@@ -1,0 +1,85 @@
+---
+title: Theme Switcher
+description: Choose system, light, or dark with a moving selection surface.
+---
+
+## Preview
+
+<RegistryLivePreview />
+
+## Examples
+
+<RegistryExamples />
+
+## When to use
+
+- Show all three appearance choices in a header or settings row.
+- Use a moving selection surface to connect the old and new choice.
+
+## When not to use
+
+- Space permits only one compact action. Use Icon Theme Toggle.
+- People need a longer list of named choices. Use Theme Selector.
+
+## Installation
+
+Set up [uitheme-web](/docs/installation) in an existing Tailwind app. Then install the component.
+The CLI copies one component file and reuses the shared `cn` utility.
+
+<RegistryInstallation />
+
+## Usage
+
+Use the control inside your theme provider. Import it from your app’s component directory.
+
+<RegistryUsage />
+
+## API reference
+
+These props belong to the installed control. Its page transition settings override the provider for this action only.
+
+<RegistryApi />
+
+## Keyboard
+
+| Key        | Action                                 |
+| ---------- | -------------------------------------- |
+| Tab        | Enter or leave the radio group.        |
+| Arrow keys | Move and select among enabled choices. |
+| Space      | Select the focused radio.              |
+
+## Accessibility
+
+- Keep the accessible label when changing the visible content. Icons are decorative.
+- The control stays disabled until the theme provider mounts.
+- Reduced motion removes travel and rotation. Icon state keeps a short opacity change. The selection surface changes position without travel.
+- Keyboard activation changes the theme without the pointer animation.
+
+## Theme behavior
+
+The checked radio follows the stored theme preference, including system. The selected surface moves between the three equal tracks. The icons brighten on fine-pointer hover. The group disables choices that the provider does not support.
+
+## AI Agent notes
+
+- Use `uitheme-web/react` for React or `uitheme-web/vue` for Vue. Keep the theme provider around the control.
+- Keep page transitions in the control’s `animationType` and `duration` props. Do not add a standalone transition-settings control.
+- Keep input labels, focus styles, selected state, disabled state, and reduced-motion behavior when editing source.
+- Use the shared theme tokens. Do not hardcode a palette or radius.
+
+<RegistryAgentCopy />
+
+## Source
+
+The CLI reuses your shared `cn` utility. If it is missing, installation creates it
+at the configured utils path. Existing utilities are checked before a replacement
+is offered.
+
+These are the files the CLI installs. The control installs one main component file.
+
+<RegistrySource />
+
+## Customization
+
+Use `borderStyle="shadow"` in React or `border-style="shadow"` in Vue for prominent shadow borders. The default is `solid`.
+
+Use `slideDirection` only when `animationType` is `ThemeAnimationType.SLIDE`. Set both props on the control when you need a slide direction override.

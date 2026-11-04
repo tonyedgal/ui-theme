@@ -1,16 +1,28 @@
-import { RootProvider } from 'fumadocs-ui/provider/next';
+import { DocsProviders } from '@/components/docs/providers';
 import './global.css';
-import { Inter } from 'next/font/google';
+import { Outfit, Geist_Mono } from 'next/font/google';
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ['latin'],
+  variable: '--font-outfit',
+  display: 'swap',
+});
+
+const docsMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-docs-mono',
+  preload: false,
 });
 
 export default function Layout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${outfit.variable} ${docsMono.variable}`}
+      suppressHydrationWarning
+    >
       <body className="flex flex-col min-h-screen">
-        <RootProvider>{children}</RootProvider>
+        <DocsProviders>{children}</DocsProviders>
       </body>
     </html>
   );

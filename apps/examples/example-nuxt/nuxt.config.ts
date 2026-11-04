@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-22',
-  modules: ['uitheme-vue/nuxt'],
+  modules: ['uitheme-web/nuxt'],
   uiTheme: {
     defaultTheme: 'system',
     colorThemes: [

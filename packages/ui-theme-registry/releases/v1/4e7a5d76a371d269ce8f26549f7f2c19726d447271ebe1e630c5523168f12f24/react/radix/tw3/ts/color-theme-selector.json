@@ -1,0 +1,36 @@
+{
+  "name": "color-theme-selector",
+  "type": "registry:ui",
+  "title": "Color Theme Selector",
+  "description": "Choose an available color theme.",
+  "dependencies": [
+    "tailwind-merge@^2.6.0",
+    "@radix-ui/react-select@^2.3.7"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "color-theme-selector.tsx",
+      "content": "'use client';\n\nimport * as React from 'react';\nimport { useUITheme } from 'uitheme-web/react';\nimport { cn } from './classes';\nimport * as Select from '@radix-ui/react-select';\n\nexport type ColorThemeOption = { value: string; label: string };\n\nexport type ColorThemeSelectorClasses = {\n  root?: string;\n  trigger?: string;\n  content?: string;\n  item?: string;\n  label?: string;\n};\n\nexport type ColorThemeSelectorProps = {\n  className?: string;\n  classes?: ColorThemeSelectorClasses;\n  label?: string;\n  options?: ColorThemeOption[];\n  disabled?: boolean;\n};\n\nexport const ColorThemeSelector = React.forwardRef<\n  HTMLButtonElement,\n  ColorThemeSelectorProps\n>(function ColorThemeSelector(\n  {\n    className,\n    classes,\n    label = 'Color theme',\n    options: optionOverrides,\n    disabled = false,\n  }: ColorThemeSelectorProps,\n  forwardedRef\n) {\n  const { colorTheme, colorThemes, mounted, switchColorTheme } = useUITheme();\n  const triggerRef = React.useRef<HTMLButtonElement>(null);\n  const id = React.useId();\n  const selected = colorTheme;\n\n  const options: { value: string; label: string }[] =\n    optionOverrides ??\n    colorThemes.map((value) => ({\n      value,\n      label: value\n        .replaceAll('-', ' ')\n        .replace(/\\b\\w/g, (letter) => letter.toUpperCase()),\n    }));\n\n  React.useImperativeHandle(forwardedRef, () => triggerRef.current!);\n\n  const change = (value: string) =>\n    switchColorTheme(value, { element: triggerRef.current });\n\n  return (\n    <div className={cn('flex flex-col gap-2', classes?.root, className)}>\n      <Select.Root\n        value={selected}\n        disabled={disabled || !mounted}\n        onValueChange={(next) => void change(next)}\n      >\n        <label\n          htmlFor={id}\n          className={cn('text-sm font-medium text-foreground', classes?.label)}\n        >\n          {label}\n        </label>\n        <Select.Trigger\n          ref={triggerRef}\n          id={id}\n          disabled={disabled || !mounted}\n          className={cn(\n            'flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',\n            classes?.trigger\n          )}\n        >\n          <Select.Value />\n          <Select.Icon aria-hidden=\"true\">⌄</Select.Icon>\n        </Select.Trigger>\n        <Select.Portal>\n          <Select.Content\n            position=\"popper\"\n            className={cn(\n              'z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none',\n              classes?.content\n            )}\n          >\n            <Select.Viewport>\n              {options.map((option) => (\n                <Select.Item\n                  key={option.value}\n                  value={option.value}\n                  className={cn(\n                    'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',\n                    classes?.item\n                  )}\n                >\n                  <Select.ItemText>{option.label}</Select.ItemText>\n                  <Select.ItemIndicator className=\"ml-auto\">\n                    ✓\n                  </Select.ItemIndicator>\n                </Select.Item>\n              ))}\n            </Select.Viewport>\n          </Select.Content>\n        </Select.Portal>\n      </Select.Root>\n    </div>\n  );\n});\n",
+      "type": "registry:ui"
+    },
+    {
+      "path": "classes.ts",
+      "content": "import { twMerge } from 'tailwind-merge';\n\nexport function cn(...classes: (string | undefined)[]) {\n  return twMerge(classes.filter(Boolean).join(' '));\n}\n",
+      "type": "registry:lib"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "4e7a5d76a371d269ce8f26549f7f2c19726d447271ebe1e630c5523168f12f24",
+      "component": "color-theme-selector",
+      "framework": "react",
+      "base": "radix",
+      "tailwind": 3,
+      "language": "ts",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}
