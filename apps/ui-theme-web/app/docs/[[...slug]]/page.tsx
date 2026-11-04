@@ -28,10 +28,12 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
 
   return (
     <DocsPage
+      id="main-content"
+      tabIndex={-1}
       toc={page.data.toc}
       full={page.data.full}
       className={cn(
-        'gap-12 px-8 pt-6 pb-12 md:px-8 md:pt-6 xl:px-12 xl:pt-6',
+        'gap-12 px-[max(1rem,env(safe-area-inset-left),env(safe-area-inset-right))] pt-6 pb-[max(3rem,env(safe-area-inset-bottom))] sm:px-8 md:pt-6 xl:px-12 xl:pt-6',
         page.data.full ? 'max-w-6xl' : 'max-w-3xl'
       )}
       breadcrumb={{ enabled: false }}
@@ -40,11 +42,11 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
       tableOfContentPopover={{ enabled: false }}
     >
       <header>
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-base font-semibold tracking-tight sm:text-lg md:text-xl lg:text-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="min-w-0 max-w-full text-base font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-lg md:text-xl lg:text-2xl">
             {page.data.title}
           </h1>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             {!isCatalog && <CopyPageButton markdownUrl={`${page.url}.mdx`} />}
             <PaginationArrows previous={previousLink} next={nextLink} />
           </div>

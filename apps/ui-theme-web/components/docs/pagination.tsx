@@ -25,7 +25,7 @@ export function PaginationArrows({
             key={label}
             href={page.href}
             aria-label={`${label}: ${page.title}`}
-            className="inline-flex size-6 items-center justify-center rounded-md bg-secondary text-secondary-foreground hover:bg-muted"
+            className="inline-flex size-6 focus-visible:outline-2 focus-visible:outline-ring [@media(pointer:coarse)]:size-11 items-center justify-center rounded-md bg-secondary text-secondary-foreground hover:bg-muted"
           >
             <Icon className="size-3" aria-hidden="true" />
           </Link>
@@ -35,7 +35,7 @@ export function PaginationArrows({
             type="button"
             disabled
             aria-label={`${label} page`}
-            className="inline-flex size-6 items-center justify-center rounded-md bg-secondary text-secondary-foreground opacity-50"
+            className="inline-flex size-6 focus-visible:outline-2 focus-visible:outline-ring [@media(pointer:coarse)]:size-11 items-center justify-center rounded-md bg-secondary text-secondary-foreground opacity-50"
           >
             <Icon className="size-3" aria-hidden="true" />
           </button>
@@ -62,7 +62,7 @@ export function DocsPagination({
       {previous ? (
         <Link
           href={previous.href}
-          className="group flex shrink-0 items-center gap-1.5 pr-6 pl-3 text-muted-foreground hover:text-foreground"
+          className="group flex min-h-11 shrink-0 items-center gap-1.5 pr-3 pl-3 focus-visible:outline-2 focus-visible:outline-ring sm:pr-6 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-3" strokeWidth={3} aria-hidden="true" />
           <span className="font-medium tracking-tight">Previous</span>
@@ -74,9 +74,9 @@ export function DocsPagination({
       {next ? (
         <Link
           href={next.href}
-          className="group flex h-16 min-w-0 flex-1 items-center justify-end rounded-xl bg-background hover:ring-1 hover:ring-border"
+          className="group flex min-h-16 min-w-0 flex-1 items-center justify-end rounded-xl bg-background hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-ring"
         >
-          <span className="flex min-w-0 flex-col items-end px-5">
+          <span className="flex min-w-0 flex-col items-end px-3 py-3 [overflow-wrap:anywhere] sm:px-5">
             <span className="text-right font-semibold text-foreground">
               {next.title}
             </span>
@@ -87,8 +87,8 @@ export function DocsPagination({
             )}
           </span>
           <span className="h-8 w-px shrink-0 bg-border" />
-          <span className="flex items-center gap-1.5 pr-3 pl-5 font-medium tracking-tight text-muted-foreground group-hover:text-foreground">
-            Next
+          <span className="flex shrink-0 items-center gap-1.5 pr-3 pl-3 sm:pl-5 font-medium tracking-tight text-muted-foreground group-hover:text-foreground">
+            <span className="sr-only sm:not-sr-only">Next</span>
             <ArrowRight className="size-3" strokeWidth={3} aria-hidden="true" />
           </span>
         </Link>

@@ -31,7 +31,7 @@ export function ComponentPreview({
           id: 'preview',
           label: 'Preview',
           content: (
-            <div className="min-h-30 min-w-0 overflow-x-auto rounded-lg border p-8 lg:p-20">
+            <div className="min-h-30 min-w-0 overflow-x-auto rounded-lg border p-4 sm:p-8 lg:p-20">
               <div className="mx-auto flex w-full max-w-lg items-center justify-center">
                 {children}
               </div>

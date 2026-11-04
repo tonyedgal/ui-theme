@@ -42,22 +42,22 @@ export function CopyPageButton({
         loadValue={markdownUrl ? loadValue : undefined}
         label="Copy page"
         iconOnly={false}
-        className="rounded-r-none px-2.5 text-secondary-foreground [&_svg]:size-3"
+        className="rounded-r-none px-2.5 text-secondary-foreground [&_svg]:size-3 [&>span]:hidden sm:[&>span]:inline"
       />
       <span className="h-4 w-px bg-border" />
       <Menu.Root>
         <Menu.Trigger
           aria-label="Page options"
-          className="inline-flex size-7 items-center justify-center rounded-r-md text-secondary-foreground hover:bg-secondary-foreground/10"
+          className="inline-flex size-7 shrink-0 items-center justify-center rounded-r-md text-secondary-foreground outline-none transition-[color,box-shadow] hover:bg-secondary-foreground/10 focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-reduce:transition-none"
         >
           <ChevronDown className="size-3" aria-hidden="true" />
         </Menu.Trigger>
         <Menu.Portal>
           <Menu.Positioner align="end" sideOffset={8}>
-            <Menu.Popup className="z-70 w-48 rounded-lg border bg-popover py-1 shadow-lg outline-none">
+            <Menu.Popup className="z-70 w-48 rounded-[var(--radius)] border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none">
               <Menu.Item
                 onClick={() => void openMarkdown()}
-                className="flex cursor-default items-center gap-3 px-3 py-2 text-sm text-muted-foreground outline-none data-highlighted:bg-muted data-highlighted:text-foreground"
+                className="flex min-h-9 cursor-default items-center gap-3 rounded-[max(0px,calc(var(--radius)-4px))] px-2 py-1.5 text-sm text-popover-foreground outline-none data-highlighted:bg-accent data-highlighted:text-accent-foreground"
               >
                 <FileText className="size-4" aria-hidden="true" />
                 View as Markdown
@@ -80,7 +80,7 @@ export function CopyPageButton({
                       'noopener,noreferrer'
                     );
                   }}
-                  className="flex cursor-default items-center gap-3 px-3 py-2 text-sm text-muted-foreground outline-none data-highlighted:bg-muted data-highlighted:text-foreground"
+                  className="flex min-h-9 cursor-default items-center gap-3 rounded-[max(0px,calc(var(--radius)-4px))] px-2 py-1.5 text-sm text-popover-foreground outline-none data-highlighted:bg-accent data-highlighted:text-accent-foreground"
                 >
                   <MessageSquare className="size-4" aria-hidden="true" />
                   Open in {name}
