@@ -82,6 +82,32 @@ published entry points from `dist`, rather than importing source files directly.
 
 ## Website work
 
+The root layout renders `components/site-header.tsx` on the home and docs routes.
+Keep its Docs and Components links centered on desktop. Below 1024px, move
+navigation, search, GitHub, and the palette selector into the hamburger menu.
+Keep the appearance toggle visible in the header. Fumadocs navigation stays disabled.
+Use the shared header height and safe-area insets for sticky layout offsets.
+The development-only `/dev/responsive` route exercises long and multilingual
+labels, empty lists, one option, many options, and enlarged text. It returns 404
+in production. Keep these fixtures out of public documentation.
+For a phone preview over the local network, start the dev server with
+`UITHEME_DEV_ORIGIN` set to the Mac's current LAN hostname or IP address.
+Search follows `visualViewport` resize and scroll events. Keep the input and
+Done control visible when the keyboard leaves little space. Reveal the results
+when the keyboard closes. Recover focus once after an unusable rotation; do not
+blur the input on each resize. Bound the results scroll area by the visible viewport.
+Keep the HTTP clipboard fallback limited to development. Copy fetched content
+through a promised `ClipboardItem` to preserve Safari's user gesture.
+The landing page uses a short introduction and live registry controls below the
+first screen. Keep those controls on the shared site provider.
+
+`components/theme-tagline.tsx` reads the theme preference and resolved appearance.
+Its browser animation hook waits for the shared theme transition to finish.
+Replay on appearance changes, including System changes, but not palette changes.
+Keep the sentence readable before hydration and use a static result for reduced motion.
+Use a reading pace for the stagger: Light, dark, everything, in, between.
+Keep “and” plain. The full sequence takes about three seconds.
+
 Use the existing design as a guide. Keep margins, padding, icon spacing, and
 control sizes consistent. Preserve the existing hero and install snippet unless
 changing them is part of the request. Use the shared theme library for examples.
