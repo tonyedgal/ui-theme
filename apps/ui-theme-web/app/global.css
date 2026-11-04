@@ -126,6 +126,7 @@
 }
 
 :root {
+  --site-header-height: calc(3.75rem + env(safe-area-inset-top, 0px));
   --code-background: #ffffff;
   --code-foreground: #24292e;
   --code-muted: #6e7781;
@@ -887,6 +888,18 @@
 }
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: calc(var(--site-header-height) + 1rem);
+  }
+  :where(button, a, [role='button']) {
+    touch-action: manipulation;
+  }
+  :where(button, [role='button'], [role='tab'], [role='option']) {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
   * {
     @apply border-border outline-ring/50;
     scrollbar-width: thin;
@@ -914,6 +927,71 @@
   body {
     @apply bg-background text-foreground font-sans tracking-normal;
   }
+}
+
+@media (pointer: coarse) {
+  :where(button, [role='button'], [role='option'], [role='menuitem']) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  :where(input:not([type='radio'], [type='checkbox']), textarea, select) {
+    font-size: max(1rem, 16px);
+  }
+  :where(button, [role='button']):not(:disabled):active {
+    opacity: 0.8;
+  }
+}
+
+:has(> .site-palette-popup) {
+  z-index: 70;
+}
+
+.docs-search-dialog[role='dialog'] {
+  --search-viewport-height: 100dvh;
+  --search-viewport-top: 0px;
+  --search-gap: min(1rem, calc(var(--search-viewport-height) * 0.05));
+  --search-top: max(env(safe-area-inset-top), var(--search-gap));
+  --search-bottom: max(env(safe-area-inset-bottom), var(--search-gap));
+  top: calc(var(--search-viewport-top) + var(--search-top));
+  max-height: calc(
+    var(--search-viewport-height) - var(--search-top) - var(--search-bottom)
+  );
+}
+
+.docs-search-dialog [data-search-header] {
+  padding-block: clamp(
+    0px,
+    calc((var(--search-viewport-height) - 120px) / 16),
+    0.75rem
+  );
+}
+
+.docs-search-dialog [data-search-results] {
+  height: auto;
+}
+
+.docs-search-dialog #fd-search-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overscroll-behavior: contain;
+}
+
+.docs-search-dialog[data-search-compact] {
+  --search-top: 0px;
+  --search-bottom: 0px;
+}
+
+.docs-search-dialog[data-search-compact] [data-search-header] {
+  padding-block: 0;
+}
+
+.docs-search-dialog[data-search-compact] [data-search-dismiss-keyboard] {
+  display: inline-flex;
+}
+
+.docs-search-dialog[data-search-input-only] [data-search-results] {
+  display: none;
 }
 
 [data-docs-code] .shiki,

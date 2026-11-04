@@ -8,6 +8,7 @@ import { ChevronDown, Menu as MenuIcon, Search, X } from 'lucide-react';
 import { Dialog } from '@base-ui/react/dialog';
 import { useSearchContext } from 'fumadocs-ui/contexts/search';
 import { cn } from '@/lib/utils';
+import { SitePaletteSelector } from '@/components/site-theme';
 
 import type { NavigationSection } from '@/lib/docs-navigation';
 
@@ -132,7 +133,7 @@ export function SidebarNav({
                   onClick={onNavigate}
                   prefetch={false}
                   aria-current={pathname === item.href ? 'page' : undefined}
-                  className="block w-fit rounded-md px-2.5 py-1.5 text-xs text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium aria-[current=page]:text-sidebar-accent-foreground"
+                  className="flex min-w-0 w-fit items-center rounded-md px-2.5 py-1.5 [overflow-wrap:anywhere] [@media(pointer:coarse)]:min-h-11 text-xs text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium aria-[current=page]:text-sidebar-accent-foreground"
                 >
                   {item.title}
                 </Link>
@@ -145,14 +146,17 @@ export function SidebarNav({
   );
 }
 
-export function DocsSearch() {
+export function DocsSearch({ onOpen }: { onOpen?: () => void }) {
   const { setOpenSearch } = useSearchContext();
 
   return (
     <button
       type="button"
       aria-label="Search documentation"
-      onClick={() => setOpenSearch(true)}
+      onClick={() => {
+        onOpen?.();
+        setOpenSearch(true);
+      }}
       className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
     >
       <Search className="size-3.5" aria-hidden="true" />
@@ -180,25 +184,63 @@ export function DocsMobileNavigation({
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger
         aria-label="Toggle menu"
-        className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+        className="inline-flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring lg:hidden"
       >
         <MenuIcon className="size-5" aria-hidden="true" />
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/10 backdrop-blur-sm md:hidden" />
-        <Dialog.Popup className="fixed inset-y-3 left-3 z-60 w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-xl border bg-background shadow-lg outline-none md:hidden">
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/10 backdrop-blur-sm lg:hidden" />
+        <Dialog.Popup className="fixed top-[max(0.75rem,env(safe-area-inset-top))] bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] z-60 w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-xl border bg-background shadow-lg outline-none lg:hidden">
           <div className="flex h-14 items-center justify-between px-4">
             <Dialog.Title className="font-semibold">UI-Theme</Dialog.Title>
             <Dialog.Close
               aria-label="Close menu"
-              className="rounded-md p-2 text-muted-foreground hover:bg-accent"
+              className="inline-flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
             >
               <X className="size-5" aria-hidden="true" />
             </Dialog.Close>
           </div>
           <Dialog.Description className="sr-only">
-            Documentation navigation
+            Site and documentation navigation
           </Dialog.Description>
+          <div className="space-y-3 border-b px-4 pb-4">
+            <nav
+              aria-label="Main navigation"
+              className="flex flex-wrap gap-x-5"
+            >
+              <Link
+                href="/docs"
+                prefetch={false}
+                onClick={() => setOpen(false)}
+                className="inline-flex min-h-11 items-center text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                Docs
+              </Link>
+              <Link
+                href="/docs/components"
+                prefetch={false}
+                onClick={() => setOpen(false)}
+                className="inline-flex min-h-11 items-center text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                Components
+              </Link>
+            </nav>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <DocsSearch onOpen={() => setOpen(false)} />
+              <a
+                href="https://github.com/tonyedgal/ui-theme"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-11 items-center rounded-md px-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                GitHub
+              </a>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm text-muted-foreground">Color theme</span>
+              <SitePaletteSelector />
+            </div>
+          </div>
           <SidebarNav
             sections={sections}
             pathname={pathname}

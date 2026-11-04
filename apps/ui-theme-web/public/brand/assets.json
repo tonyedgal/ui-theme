@@ -1,0 +1,90 @@
+[
+  {
+    "source": "UI-Theme-aligned-slants-8K-background.png",
+    "file": "wordmark-banner.webp",
+    "width": 1920,
+    "height": 640,
+    "bytes": 13330,
+    "alpha": true
+  },
+  {
+    "source": "UI-Theme-black-on-white-square.png",
+    "file": "wordmark-black-on-white-square.webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 6742,
+    "alpha": false
+  },
+  {
+    "source": "UI-Theme-black-on-white-wide.png",
+    "file": "wordmark-black-on-white-wide.webp",
+    "width": 1920,
+    "height": 640,
+    "bytes": 11576,
+    "alpha": false
+  },
+  {
+    "source": "UI-Theme-black-transparent.png",
+    "file": "wordmark-black-transparent.webp",
+    "width": 1200,
+    "height": 260,
+    "bytes": 43762,
+    "alpha": true
+  },
+  {
+    "source": "UI-Theme-white-on-black-square.png",
+    "file": "wordmark-white-on-black-square.webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 6764,
+    "alpha": false
+  },
+  {
+    "source": "UI-Theme-white-on-black-wide.png",
+    "file": "wordmark-white-on-black-wide.webp",
+    "width": 1920,
+    "height": 640,
+    "bytes": 11494,
+    "alpha": false
+  },
+  {
+    "source": "UI-Theme-white-transparent.png",
+    "file": "wordmark-white-transparent.webp",
+    "width": 1200,
+    "height": 260,
+    "bytes": 51394,
+    "alpha": true
+  },
+  {
+    "source": "UI-black-on-white-square.png",
+    "file": "symbol-black-on-white-square.webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 9116,
+    "alpha": false
+  },
+  {
+    "source": "UI-black-transparent.png",
+    "file": "symbol-black-transparent.webp",
+    "width": 256,
+    "height": 242,
+    "bytes": 8578,
+    "alpha": true
+  },
+  {
+    "source": "UI-white-on-black-square.png",
+    "file": "symbol-white-on-black-square.webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 9032,
+    "alpha": false
+  },
+  {
+    "source": "UI-white-transparent.png",
+    "file": "symbol-white-transparent.webp",
+    "width": 256,
+    "height": 242,
+    "bytes": 10224,
+    "alpha": true
+  }
+]

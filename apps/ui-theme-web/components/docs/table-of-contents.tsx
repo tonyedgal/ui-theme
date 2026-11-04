@@ -10,7 +10,7 @@ export function TableOfContents({ items }: { items: TOCItemType[] }) {
     <aside
       id="nd-toc"
       aria-label="On this page"
-      className="sticky top-15 hidden h-[calc(100dvh-3.75rem)] w-48 shrink-0 flex-col self-start px-4 pt-8 pb-8 [grid-area:toc] xl:flex"
+      className="sticky top-[var(--site-header-height)] hidden h-[calc(100dvh-var(--site-header-height))] w-48 shrink-0 flex-col self-start px-4 pt-8 pb-8 [grid-area:toc] xl:flex"
     >
       <p className="mb-3 text-sm font-medium text-foreground">On this page</p>
       <nav className="min-h-0 overflow-y-auto">

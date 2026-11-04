@@ -29,11 +29,12 @@ export function SitePaletteSelector() {
     <ColorThemeSelector
       label="Site color theme"
       options={paletteOptions}
+      className="min-w-0 max-w-full"
       classes={{
         label: 'sr-only',
         trigger:
-          'h-7 min-w-28 gap-2 border-0 bg-transparent px-2 py-1 text-xs shadow-none',
-        content: 'z-70',
+          'h-7 w-28 min-w-0 max-w-full gap-2 border-0 bg-transparent px-2 py-1 text-xs shadow-none',
+        content: 'site-palette-popup',
       }}
     />
   );
@@ -47,7 +48,7 @@ export function SiteAppearanceToggle() {
       duration={400}
       classes={{
         trigger:
-          'size-7 border-0 bg-transparent text-muted-foreground shadow-none hover:bg-accent hover:text-foreground',
+          'size-11 border-0 bg-transparent text-muted-foreground shadow-none hover:bg-accent hover:text-foreground',
       }}
     />
   );
