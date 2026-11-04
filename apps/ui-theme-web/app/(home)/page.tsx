@@ -1,152 +1,128 @@
-import CornerBrackets from '@/components/shared/CornerBrackets';
-import InstallSnippet from '@/components/shared/InstallSnippet';
-import { Reveal } from '@/components/shared/Reveal';
-import { Button } from '@/components/ui/button';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  Doc01Icon,
-  GithubIcon,
-  NpmIcon,
-  CircleArrowRightDoubleIcon,
-} from '@hugeicons/core-free-icons';
+import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
+import { CopyButton } from '@/components/docs/copy-button';
+import { LandingControls } from '@/components/landing-controls';
+import { ThemeTagline } from '@/components/theme-tagline';
+
+export const metadata: Metadata = {
+  title: 'UI-Theme — The library for theming the web',
+  description:
+    'A theming library and registry for React, Vue, and React Native. Add color palettes, animated transitions, and controls you can make your own.',
+};
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col text-center">
-      <div className="flex flex-1 flex-col items-center pt-[15vh] sm:pt-[20vh] md:pt-[20vh]">
-        <Link
-          href="/docs"
-          prefetch={false}
-          className="hover:bg-background mb-4 dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-2 rounded-full border p-1 pl-3 shadow-md transition-colors duration-300 sm:gap-4 sm:pl-4 dark:border-t-border"
+    <>
+      <main id="main-content" tabIndex={-1}>
+        <section
+          aria-labelledby="home-title"
+          className="flex min-h-[calc(100svh-var(--site-header-height))] flex-col items-center justify-center px-6 pt-16 pb-24 text-center"
         >
-          <span className="text-foreground text-xs sm:text-sm">
-            Read the docs
-          </span>
-          <span className="dark:border-background block h-4 w-0.5 border-l bg-border"></span>
-          <div className="bg-background group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
-            <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
-              <span className="flex size-6">
-                <HugeiconsIcon
-                  icon={Doc01Icon}
-                  className="m-auto size-3"
-                  aria-hidden="true"
-                />
-              </span>
-              <span className="flex size-6">
-                <HugeiconsIcon
-                  icon={CircleArrowRightDoubleIcon}
-                  className="m-auto size-3"
-                  aria-hidden="true"
-                />
-              </span>
-            </div>
+          <div className="w-52 sm:w-60">
+            <Image
+              src="/brand/wordmark-black-transparent.webp"
+              alt="UI-Theme"
+              width={1200}
+              height={260}
+              sizes="(min-width: 640px) 240px, 208px"
+              className="h-auto w-full dark:hidden"
+            />
+            <Image
+              src="/brand/wordmark-white-transparent.webp"
+              alt="UI-Theme"
+              width={1200}
+              height={260}
+              sizes="(min-width: 640px) 240px, 208px"
+              className="hidden h-auto w-full dark:block"
+            />
           </div>
-        </Link>
-
-        <section className="relative flex w-full max-w-4xl flex-col items-center justify-center gap-4 px-4 text-center sm:gap-6 sm:px-6 lg:px-8">
-          <section className="relative flex flex-col gap-4 p-8 sm:gap-6">
-            <CornerBrackets />
-            <div className="border-b">
-              <Reveal slideDirection="top-blur" width="100%">
-                <h1 className="text-balance pb-2 text-3xl font-semibold leading-tight tracking-tighter sm:pb-3 sm:text-4xl md:text-5xl lg:text-6xl">
-                  Theme the Web
-                </h1>
-              </Reveal>
-            </div>
-            <Reveal slideDirection="top-blur" delay={0.25}>
-              <p className="text-pretty font-light mx-auto max-w-xs text-sm text-muted-foreground sm:max-w-md sm:text-base md:max-w-2xl md:text-lg">
-                UI Framework agnostic theming library with built-in support for
-                multiple-themes and animated transitions with the View
-                Transitions API.
-              </p>
-            </Reveal>
-          </section>
-
-          <Reveal slideDirection="top-blur" delay={0.5}>
-            <section className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
-              <Button size="default" asChild>
-                <Link
-                  href="/docs"
-                  prefetch={false}
-                  className="min-w-40 sm:min-w-0"
-                >
-                  <HugeiconsIcon icon={Doc01Icon} aria-hidden="true" />
-                  <span>Get started</span>
-                </Link>
-              </Button>
-              <Button variant="outline" size="default" asChild>
-                <a
-                  href="https://github.com/tonyedgal/ui-theme"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="min-w-40 sm:min-w-0"
-                >
-                  <HugeiconsIcon icon={GithubIcon} aria-hidden="true" />
-                  <span>View on GitHub</span>
-                </a>
-              </Button>
-              <Button variant="outline" size="default" asChild>
-                <a
-                  href="https://www.npmjs.com/package/uitheme-web"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="min-w-40 sm:min-w-0"
-                >
-                  <HugeiconsIcon icon={NpmIcon} aria-hidden="true" />
-                  <span>View on NPM</span>
-                </a>
-              </Button>
-            </section>
-          </Reveal>
-
-          <Reveal
-            width="100%"
-            slideDirection="bottom-blur"
-            delay={0.75}
-            className="w-full px-2 sm:px-0"
+          <h1
+            id="home-title"
+            className="mt-7 max-w-sm text-xl leading-7 font-normal text-balance tracking-tight"
           >
-            <InstallSnippet />
-          </Reveal>
-          <Reveal
-            width="100%"
-            slideDirection="bottom-blur"
-            delay={0.75}
-            className="w-full px-2 sm:px-0"
-          >
-            <div className="mt-10 flex flex-wrap justify-center items-center gap-6">
-              <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                <HugeiconsIcon
-                  icon={CircleArrowRightDoubleIcon}
-                  aria-hidden="true"
-                />
-                <span>Light-Dark mode</span>
-              </div>
-              <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                <HugeiconsIcon
-                  icon={CircleArrowRightDoubleIcon}
-                  aria-hidden="true"
-                />
-                <span>UI Colours</span>
-              </div>
-              <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                <HugeiconsIcon
-                  icon={CircleArrowRightDoubleIcon}
-                  aria-hidden="true"
-                />
-                <span>Multiple Fonts</span>
-              </div>
-              <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                <HugeiconsIcon
-                  icon={CircleArrowRightDoubleIcon}
-                  aria-hidden="true"
-                />
-                <span>Animated transitions</span>
-              </div>
-            </div>
-          </Reveal>
+            The library for theming the web.
+          </h1>
+          <ThemeTagline />
+          <p className="mt-4 max-w-80 text-[13px] leading-6 font-normal text-pretty text-muted-foreground">
+            A theming library and registry for React, Vue, and React Native.
+            <br />
+            Add color palettes, animated transitions, and controls you can make
+            your own.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/docs/installation"
+              prefetch={false}
+              className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring motion-reduce:transition-none"
+            >
+              Get started
+            </Link>
+            <Link
+              href="/docs/components"
+              prefetch={false}
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring motion-reduce:transition-none"
+            >
+              Browse components
+            </Link>
+          </div>
+          <div className="mt-6 inline-flex max-w-full items-center gap-2 rounded-md bg-muted/60 py-1 pr-1 pl-3">
+            <code className="min-w-0 font-mono text-[11px] text-muted-foreground sm:text-xs">
+              npm install uitheme-web@latest
+            </code>
+            <CopyButton
+              value="npm install uitheme-web@latest"
+              label="Copy install command"
+            />
+          </div>
         </section>
-      </div>
-    </div>
+        <section
+          aria-labelledby="controls-title"
+          className="mx-auto max-w-4xl px-6 pt-12 pb-24 sm:px-8"
+        >
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2
+                id="controls-title"
+                className="text-lg font-medium tracking-tight"
+              >
+                Theme controls
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                This page is the preview. Try a control.
+              </p>
+            </div>
+            <Link
+              href="/docs/components"
+              prefetch={false}
+              className="rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+            >
+              All components <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+          <LandingControls />
+        </section>
+      </main>
+      <footer className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 px-6 pb-8 text-xs text-muted-foreground">
+        <span>UI-Theme.</span>
+        <span>Open source.</span>
+        <a
+          href="https://github.com/tonyedgal/ui-theme"
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-sm text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+        >
+          GitHub
+        </a>
+        <span aria-hidden="true">·</span>
+        <Link
+          href="/docs/llms"
+          prefetch={false}
+          className="rounded-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+        >
+          LLMs
+        </Link>
+      </footer>
+    </>
   );
 }

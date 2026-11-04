@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/no-noninteractive-tabindex -- scroll regions need keyboard focus */
+
 import {
   Children,
   isValidElement,
@@ -12,10 +14,32 @@ export function Prose({ className, ...props }: ComponentProps<'div'>) {
     <div
       {...props}
       className={cn(
-        'min-w-0 text-sm leading-[1.75] text-muted-foreground [&_:where(h1,h2,h3,h4):not(:where(.not-prose,.not-prose_*))]:scroll-mt-24 [&_:where(h1,h2,h3,h4,strong):not(:where(.not-prose,.not-prose_*))]:font-semibold [&_:where(h1,h2,h3,h4,strong):not(:where(.not-prose,.not-prose_*))]:text-foreground [&_h1:not(:where(.not-prose,.not-prose_*))]:mt-16 [&_h1:not(:where(.not-prose,.not-prose_*))]:text-2xl [&_h2:not(:where(.not-prose,.not-prose_*))]:mt-14 [&_h2:not(:where(.not-prose,.not-prose_*))]:text-xl [&_h2:not(:where(.not-prose,.not-prose_*))]:leading-[1.35] [&_h2:not(:where(.not-prose,.not-prose_*))]:tracking-tight [&_h3:not(:where(.not-prose,.not-prose_*))]:mt-12 [&_h3:not(:where(.not-prose,.not-prose_*))]:text-lg [&_h4:not(:where(.not-prose,.not-prose_*))]:mt-10 [&_h4:not(:where(.not-prose,.not-prose_*))]:text-base [&_:where(p,ul,ol,figure,table,blockquote):not(:where(.not-prose,.not-prose_*))]:mt-5 [&_p:not(:where(.not-prose,.not-prose_*)):not(:last-child)]:mb-5 [&_ul:not(:where(.not-prose,.not-prose_*))]:list-disc [&_ol:not(:where(.not-prose,.not-prose_*))]:list-decimal [&_:where(ul,ol):not(:where(.not-prose,.not-prose_*))]:pl-6 [&_li:not(:where(.not-prose,.not-prose_*))]:pl-2 [&_li+li:not(:where(.not-prose,.not-prose_*))]:mt-3 [&_a:not(:where(.not-prose,.not-prose_*))]:font-medium [&_a:not(:where(.not-prose,.not-prose_*))]:text-foreground [&_a:not(:where(.not-prose,.not-prose_*))]:underline [&_a:not(:where(.not-prose,.not-prose_*))]:underline-offset-3 [&_code:not(:where(.not-prose,.not-prose_*))]:rounded [&_code:not(:where(.not-prose,.not-prose_*))]:bg-muted/50 [&_code:not(:where(.not-prose,.not-prose_*))]:px-1 [&_code:not(:where(.not-prose,.not-prose_*))]:font-[family-name:var(--theme-font-mono)] [&_code:not(:where(.not-prose,.not-prose_*))]:text-[13px] [&_code:not(:where(.not-prose,.not-prose_*))]:text-foreground [&_table:not(:where(.not-prose,.not-prose_*))]:w-full [&_table:not(:where(.not-prose,.not-prose_*))]:text-[13px] [&_tr:not(:where(.not-prose,.not-prose_*))]:border-b [&_:where(th,td):not(:where(.not-prose,.not-prose_*))]:p-3 [&_th:not(:where(.not-prose,.not-prose_*))]:text-left [&_blockquote:not(:where(.not-prose,.not-prose_*))]:border-l-2 [&_blockquote:not(:where(.not-prose,.not-prose_*))]:pl-5 [&_hr]:my-12 [&_hr]:border-border [&>:first-child]:mt-0',
+        'min-w-0 [overflow-wrap:anywhere] text-sm leading-[1.75] text-muted-foreground [&_:where(h1,h2,h3,h4):not(:where(.not-prose,.not-prose_*))]:scroll-mt-24 [&_:where(h1,h2,h3,h4,strong):not(:where(.not-prose,.not-prose_*))]:font-semibold [&_:where(h1,h2,h3,h4,strong):not(:where(.not-prose,.not-prose_*))]:text-foreground [&_h1:not(:where(.not-prose,.not-prose_*))]:mt-16 [&_h1:not(:where(.not-prose,.not-prose_*))]:text-2xl [&_h2:not(:where(.not-prose,.not-prose_*))]:mt-14 [&_h2:not(:where(.not-prose,.not-prose_*))]:text-xl [&_h2:not(:where(.not-prose,.not-prose_*))]:leading-[1.35] [&_h2:not(:where(.not-prose,.not-prose_*))]:tracking-tight [&_h3:not(:where(.not-prose,.not-prose_*))]:mt-12 [&_h3:not(:where(.not-prose,.not-prose_*))]:text-lg [&_h4:not(:where(.not-prose,.not-prose_*))]:mt-10 [&_h4:not(:where(.not-prose,.not-prose_*))]:text-base [&_:where(p,ul,ol,figure,table,blockquote):not(:where(.not-prose,.not-prose_*))]:mt-5 [&_p:not(:where(.not-prose,.not-prose_*)):not(:last-child)]:mb-5 [&_ul:not(:where(.not-prose,.not-prose_*))]:list-disc [&_ol:not(:where(.not-prose,.not-prose_*))]:list-decimal [&_:where(ul,ol):not(:where(.not-prose,.not-prose_*))]:pl-6 [&_li:not(:where(.not-prose,.not-prose_*))]:pl-2 [&_li+li:not(:where(.not-prose,.not-prose_*))]:mt-3 [&_a:not(:where(.not-prose,.not-prose_*))]:font-medium [&_a:not(:where(.not-prose,.not-prose_*))]:text-foreground [&_a:not(:where(.not-prose,.not-prose_*))]:underline [&_a:not(:where(.not-prose,.not-prose_*))]:underline-offset-3 [&_code:not(:where(.not-prose,.not-prose_*))]:rounded [&_code:not(:where(.not-prose,.not-prose_*))]:bg-muted/50 [&_code:not(:where(.not-prose,.not-prose_*))]:px-1 [&_code:not(:where(.not-prose,.not-prose_*))]:font-[family-name:var(--theme-font-mono)] [&_code:not(:where(.not-prose,.not-prose_*))]:text-[0.8125rem] [&_code:not(:where(.not-prose,.not-prose_*))]:text-foreground [&_table:not(:where(.not-prose,.not-prose_*))]:w-full [&_table:not(:where(.not-prose,.not-prose_*))]:text-[0.8125rem] [&_tr:not(:where(.not-prose,.not-prose_*))]:border-b [&_:where(th,td):not(:where(.not-prose,.not-prose_*))]:p-3 [&_:where(th,td):not(:where(.not-prose,.not-prose_*))]:align-top [&_th:not(:where(.not-prose,.not-prose_*))]:text-left [&_blockquote:not(:where(.not-prose,.not-prose_*))]:border-l-2 [&_blockquote:not(:where(.not-prose,.not-prose_*))]:pl-5 [&_hr]:my-12 [&_hr]:border-border [&>:first-child]:mt-0',
         className
       )}
     />
+  );
+}
+
+export function ScrollableTable({
+  className,
+  ...props
+}: ComponentProps<'table'>) {
+  return (
+    <div
+      role="region"
+      aria-label="Scrollable table"
+      tabIndex={0}
+      className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain focus-visible:outline-2 focus-visible:outline-ring"
+    >
+      <table
+        {...props}
+        className={cn(
+          'w-full [overflow-wrap:normal] [&_td:first-child_code]:whitespace-nowrap [&_td:last-child]:min-w-48 [&_td:last-child]:[overflow-wrap:anywhere]',
+          className
+        )}
+      />
+    </div>
   );
 }
 

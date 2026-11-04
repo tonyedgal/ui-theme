@@ -5,7 +5,7 @@ import { CopyButton } from './copy-button';
 import { cn } from '@/lib/utils';
 
 export const codeStyles =
-  'min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-xs leading-6 [&_pre]:m-0 [&_pre]:min-w-0 [&_pre]:overflow-x-auto [&_pre]:[scrollbar-width:none] [&_pre::-webkit-scrollbar]:hidden [&_pre]:p-4 [&_pre]:pr-12 [&_pre]:text-xs [&_pre]:leading-6 [&_code]:font-mono [&_code]:[counter-reset:line] [&_.line]:whitespace-pre [&_.line]:before:mr-6 [&_.line]:before:inline-block [&_.line]:before:w-2 [&_.line]:before:text-right [&_.line]:before:text-[var(--code-muted)] [&_.line]:before:content-[counter(line)] [&_.line]:before:[counter-increment:line]';
+  'min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-xs leading-6 [&_pre]:m-0 [&_pre]:min-w-0 [&_pre]:overflow-x-auto [&_pre]:[scrollbar-width:none] [&_pre::-webkit-scrollbar]:hidden [&_pre]:p-4 [&_pre]:pr-16 [&_pre]:text-xs [&_pre]:leading-6 [&_code]:font-mono [&_code]:[counter-reset:line] [&_.line]:whitespace-pre [&_.line]:before:mr-6 [&_.line]:before:inline-block [&_.line]:before:w-2 [&_.line]:before:text-right [&_.line]:before:text-[var(--code-muted)] [&_.line]:before:content-[counter(line)] [&_.line]:before:[counter-increment:line]';
 
 export function CodeBlock({
   code,
@@ -31,7 +31,7 @@ export function CodeBlock({
       )}
     >
       {title && (
-        <figcaption className="flex min-h-10 items-center border-b border-[var(--code-border)] bg-[var(--code-background)] px-4 py-2 text-xs text-[var(--code-muted)]">
+        <figcaption className="flex min-h-13 min-w-0 items-center border-b border-[var(--code-border)] bg-[var(--code-background)] pl-4 pr-16 py-2 text-xs text-[var(--code-muted)] [overflow-wrap:anywhere]">
           {title}
         </figcaption>
       )}

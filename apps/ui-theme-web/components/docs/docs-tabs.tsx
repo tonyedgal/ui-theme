@@ -38,7 +38,7 @@ export function DocsTabs({
     >
       <div
         className={cn(
-          'flex min-w-0 items-center justify-between gap-2',
+          'flex min-w-0 flex-wrap items-center justify-between gap-2',
           compact && 'border-b bg-background px-4 py-2'
         )}
       >
@@ -53,7 +53,7 @@ export function DocsTabs({
                 key={tab.id}
                 value={tab.id}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-active:bg-muted data-active:text-foreground focus-visible:outline-2 focus-visible:outline-ring',
+                  'min-w-0 max-w-full rounded-md px-3 py-1.5 [overflow-wrap:anywhere] text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-active:bg-muted data-active:text-foreground focus-visible:outline-2 focus-visible:outline-ring',
                   compact && 'px-2.5 py-1 text-xs'
                 )}
               >

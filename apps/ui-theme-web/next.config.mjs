@@ -5,6 +5,9 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  allowedDevOrigins: process.env.UITHEME_DEV_ORIGIN
+    ? [process.env.UITHEME_DEV_ORIGIN]
+    : undefined,
   async redirects() {
     return [
       {
