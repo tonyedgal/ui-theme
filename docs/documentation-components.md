@@ -4,26 +4,28 @@ The website keeps Fumadocs for compilation, content collections, page trees,
 search data, and heading tracking. The following presentation components live
 in `apps/ui-theme-web/components/`.
 
-| Component               | Implementation                                      | Responsibility                                                      |
-| ----------------------- | --------------------------------------------------- | ------------------------------------------------------------------- |
-| DocsLayout / Navigation | `docs-shell.tsx`                                    | Header, page grid, 1400px outer width                               |
-| SidebarNav              | `docs/navigation.tsx`                               | Collapsible sections, active links, session persistence             |
-| DocsMobileNavigation    | `docs/navigation.tsx`                               | Focus-trapped mobile navigation with close and backdrop             |
-| TableOfContents         | `docs/table-of-contents.tsx`                        | Heading links and active-section indicator                          |
-| DocsSearch              | `docs/navigation.tsx`, `docs/search-dialog.tsx`     | Compact trigger, F shortcut, search results and keyboard navigation |
-| ThemeToggle             | `docs/navigation.tsx`                               | Light, dark, and system menu                                        |
-| CopyPageButton          | `docs/copy-page-button.tsx`                         | Copy Markdown, Markdown view, coding-assistant links                |
-| CopyButton / Tooltip    | `docs/copy-button.tsx`                              | Raw-source copy and success/failure feedback                        |
-| Prose / Wrapper / Text  | `docs/prose.tsx` and semantic Tailwind markup       | Typography, content spacing, lists, links, tables, code             |
-| CodeBlock               | `docs/code-block.tsx`, `lib/highlight-code.ts`      | Server highlighting, line numbers, dual themes and copying          |
-| DocsTabs                | `docs/docs-tabs.tsx`                                | Accessible tabs shared by documentation examples                    |
-| ComponentPreview        | `docs/component-preview.tsx`                        | Preview/code panels and copy action                                 |
-| InstallTabs             | `docs/install-tabs.tsx`                             | npx, bun, pnpm, and yarn commands                                   |
-| DocsPagination          | `docs/pagination.tsx`                               | Previous link and next-page card                                    |
-| PaginationArrows        | `docs/pagination.tsx`                               | Compact page-header navigation                                      |
-| Badge / Kbd             | `docs/prose.tsx`, `docs/navigation.tsx`             | Compact status and shortcut labels                                  |
-| Button                  | Existing `ui/button.tsx` and semantic button markup | Controls with matching sizes and focus styles                       |
-| Icons                   | Lucide and the existing GitHub mark                 | Equivalent copy, check, terminal, search, arrows, menu, theme icons |
+| Component               | Implementation                                      | Responsibility                                                                    |
+| ----------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------- |
+| SiteHeader              | `site-header.tsx`                                   | Shared site header, centered Docs and Components links, search and theme controls |
+| DocsLayout / Navigation | `docs-shell.tsx`                                    | Page grid and sidebar, 1400px outer width                                         |
+| SidebarNav              | `docs/navigation.tsx`                               | Collapsible sections, active links, session persistence                           |
+| DocsMobileNavigation    | `docs/navigation.tsx`                               | Focus-trapped mobile navigation with close and backdrop                           |
+| TableOfContents         | `docs/table-of-contents.tsx`                        | Heading links and active-section indicator                                        |
+| DocsSearch              | `docs/navigation.tsx`, `docs/search-dialog.tsx`     | Compact trigger, F shortcut, search results and keyboard navigation               |
+| ThemeToggle             | `docs/navigation.tsx`                               | Light, dark, and system menu                                                      |
+| CopyPageButton          | `docs/copy-page-button.tsx`                         | Copy Markdown, Markdown view, coding-assistant links                              |
+| CopyButton / Tooltip    | `docs/copy-button.tsx`                              | Raw-source copy and success/failure feedback                                      |
+| Prose / Wrapper / Text  | `docs/prose.tsx` and semantic Tailwind markup       | Typography, content spacing, lists, links, tables, code                           |
+| CodeBlock               | `docs/code-block.tsx`, `lib/highlight-code.ts`      | Server highlighting, line numbers, dual themes and copying                        |
+| DocsTabs                | `docs/docs-tabs.tsx`                                | Accessible tabs shared by documentation examples                                  |
+| DocsSelect              | `docs/select.tsx`                                   | Compact settings selects with aligned carets and keyboard support                 |
+| ComponentPreview        | `docs/component-preview.tsx`                        | Preview/code panels and copy action                                               |
+| InstallTabs             | `docs/install-tabs.tsx`                             | npx, bun, pnpm, and yarn commands                                                 |
+| DocsPagination          | `docs/pagination.tsx`                               | Previous link and next-page card                                                  |
+| PaginationArrows        | `docs/pagination.tsx`                               | Compact page-header navigation                                                    |
+| Badge / Kbd             | `docs/prose.tsx`, `docs/navigation.tsx`             | Compact status and shortcut labels                                                |
+| Button                  | Existing `ui/button.tsx` and semantic button markup | Controls with matching sizes and focus styles                                     |
+| Icons                   | Lucide and the existing GitHub mark                 | Equivalent copy, check, terminal, search, arrows, menu, theme icons               |
 
 The documentation port does not add public registry components or change their
 runtime APIs. Branding, navigation destinations, commands, and content stay
