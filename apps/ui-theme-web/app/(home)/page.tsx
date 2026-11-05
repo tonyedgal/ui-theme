@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CopyButton } from '@/components/docs/copy-button';
 import { LandingControls } from '@/components/landing-controls';
+import { ScrollHint } from '@/components/scroll-hint';
 import { ThemeTagline } from '@/components/theme-tagline';
 import { TextFlip } from '@/components/ui/text-flip';
 
@@ -18,7 +19,7 @@ export default function HomePage() {
       <main id="main-content" tabIndex={-1}>
         <section
           aria-labelledby="home-title"
-          className="flex min-h-[calc(100svh-var(--site-header-height))] flex-col items-center justify-center px-6 pt-16 pb-24 text-center"
+          className="relative flex min-h-[calc(90svh-var(--site-header-height))] flex-col items-center justify-center px-6 pt-16 pb-24 text-center"
         >
           <div className="w-52 sm:w-60">
             <Image
@@ -88,10 +89,13 @@ export default function HomePage() {
               label="Copy install command"
             />
           </div>
+          <div className="absolute inset-x-0 bottom-2 mx-auto w-full max-w-4xl px-6 sm:px-8">
+            <ScrollHint className="-ml-1" />
+          </div>
         </section>
         <section
           aria-labelledby="controls-title"
-          className="mx-auto max-w-4xl px-6 pt-12 pb-24 sm:px-8"
+          className="mx-auto max-w-4xl px-6 pt-4 pb-24 sm:px-8"
         >
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -102,7 +106,7 @@ export default function HomePage() {
                 Theme controls
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                This page is the preview. Try a control.
+                Each control below changes the theme of this page. Try one.
               </p>
             </div>
             <Link
