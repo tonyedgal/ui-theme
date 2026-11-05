@@ -31,22 +31,17 @@ export default defineConfig({
   webServer: [
     {
       command:
-        'pnpm exec vite tests/vue-browser/fixtures --config tests/vue-browser/fixtures/vite.config.ts --host 127.0.0.1 --port 4282 --strictPort',
-      url: 'http://127.0.0.1:4282',
-      reuseExistingServer: false,
-    },
-    {
-      command:
-        'pnpm --filter example-vue preview --host 127.0.0.1 --port 4280 --strictPort',
+        'pnpm exec vite tests/vue-browser/fixtures/vue --config tests/vue-browser/fixtures/vue/vite.config.ts --host 127.0.0.1 --port 4280 --strictPort',
       url: 'http://127.0.0.1:4280',
       reuseExistingServer: false,
     },
     {
-      command: 'pnpm --filter example-nuxt exec node .output/server/index.mjs',
+      command:
+        'pnpm exec nuxt build tests/vue-browser/fixtures/nuxt && node tests/vue-browser/fixtures/nuxt/.output/server/index.mjs',
       url: 'http://127.0.0.1:4281',
       env: { NITRO_PORT: '4281', NITRO_HOST: '127.0.0.1' },
       reuseExistingServer: false,
-      timeout: 120_000,
+      timeout: 240_000,
     },
   ],
 });

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { UIThemeProvider, useUITheme } from 'uitheme-web/vue';
 import { defineComponent, h } from 'vue';
-import ThemeSelector from '../../../../../apps/examples/vue-theme-demo/src/components/ui/theme-selector.vue';
+import AppearanceSelect from '../shared/AppearanceSelect.vue';
 
 defineProps<{ singleton: boolean }>();
 
@@ -26,7 +26,7 @@ const Commands = defineComponent({
       storage: false,
     }"
   >
-    <ThemeSelector />
+    <AppearanceSelect />
     <Commands />
   </UIThemeProvider>
 </template>

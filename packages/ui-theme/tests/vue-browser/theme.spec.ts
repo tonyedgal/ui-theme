@@ -72,20 +72,6 @@ for (const [framework, url] of [
         fullPage: true,
       });
       expect(errors).toEqual([]);
-      await expect(page.locator('main')).toHaveCSS('display', 'grid');
-
-      const titleSize = await page
-        .getByRole('heading', { level: 1 })
-        .evaluate((title) =>
-          Number.parseFloat(getComputedStyle(title).fontSize)
-        );
-
-      expect(titleSize).toBeGreaterThanOrEqual(48);
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth
-        )
-      ).toBe(true);
     });
 
     test('animates all effects in both directions and cleans interrupted transitions', async ({
@@ -276,7 +262,9 @@ for (const singleton of [false, true]) {
   }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(`http://127.0.0.1:4282/${singleton ? '?singleton' : ''}`);
+    await page.goto(
+      `http://127.0.0.1:4280/subset.html${singleton ? '?singleton' : ''}`
+    );
     await expect(page.getByRole('combobox')).toHaveText('Light');
     await page.getByRole('combobox').click();
     await expect(
