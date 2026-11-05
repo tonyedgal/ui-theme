@@ -22,8 +22,8 @@ Animation peers are restricted to Reanimated 4.5.x, Worklets 0.10.x, and Skia
 2.11.x. These ranges prevent npm from selecting incompatible animation engines.
 NativeWind support targets exactly `5.0.0-rc.0`. Newer engine versions need a
 separate compatibility check. See
-[the release review](https://github.com/tonyedgal/ui-theme/blob/main/docs/native-stable-release-readiness.md) for the current
-validation scope and remaining gates.
+[the archived release review](https://github.com/tonyedgal/ui-theme/blob/568b282c61e1071ddb2d4acd470374de36862d4e/docs/native-stable-release-readiness.md)
+for the validation scope and the open gates at the time of that review.
 
 ## Provider
 
