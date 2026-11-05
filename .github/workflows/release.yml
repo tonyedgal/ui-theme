@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 20
     outputs:
       release-needed: ${{ steps.validation.outputs.release }}
+      pending-changesets: ${{ steps.changesets.outputs.pending }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -63,11 +64,80 @@ jobs:
           retention-days: 7
           path: test-results/validation-plan.json
 
-  release:
-    name: Release
+      # Pending changesets mean the next release step opens the version pull
+      # request. No pending changesets mean the version pull request merged and
+      # the packages are ready to publish.
+      - name: Find pending changesets
+        id: changesets
+        run: |
+          pending=false
+          for file in .changeset/*.md; do
+            if [ -f "$file" ] && [ "$(basename "$file")" != "README.md" ]; then
+              pending=true
+              break
+            fi
+          done
+          echo "pending=$pending" >> "$GITHUB_OUTPUT"
+
+  version:
+    name: Version pull request
     needs: ci
-    if: github.ref == 'refs/heads/main' && needs.ci.outputs.release-needed == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.repository_owner == 'tonyedgal' && github.ref == 'refs/heads/main' && needs.ci.outputs.release-needed == 'true' && needs.ci.outputs.pending-changesets == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup npm 11.x
+        run: |
+          npm install -g npm@11
+          npm --version
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create or update the version pull request
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset:version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Pull request events from GITHUB_TOKEN start no workflows, but a manual
+      # dispatch does. This runs the full matrix on the version branch.
+      - name: Start full release validation
+        if: steps.changesets.outputs.pullRequestNumber != ''
+        run: gh workflow run full-validation.yml --ref changeset-release/main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Publish to npm
+    needs: ci
+    if: github.repository_owner == 'tonyedgal' && github.ref == 'refs/heads/main' && needs.ci.outputs.release-needed == 'true' && needs.ci.outputs.pending-changesets == 'false' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    # The npm environment holds the publish job until a maintainer approves it.
+    environment: npm
+    concurrency:
+      group: npm-publish
+      cancel-in-progress: false
     permissions:
       contents: write
       pull-requests: write
@@ -96,7 +166,7 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create Release Pull Request or Publish to npm
+      - name: Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
