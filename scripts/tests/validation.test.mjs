@@ -18,7 +18,6 @@ test('native changes do not select browser suites', () => {
   const plan = selectChecks(['packages/ui-theme-rn/src/provider.tsx']);
   assert.deepEqual(plan.packages, ['uitheme-rn']);
   assert.deepEqual(plan.browsers, []);
-  assert.equal(plan.examples.length, 3);
 });
 
 test('shared core changes protect both bindings and the website', () => {
@@ -28,22 +27,37 @@ test('shared core changes protect both bindings and the website', () => {
   assert.equal(plan.website, true);
 });
 
-test('example-only changes select no product CI work', () => {
-  const plan = selectChecks(['apps/examples/example-nuxt/app/app.vue'], {
-    ci: true,
-  });
+test('example app changes select no checks', () => {
+  for (const ci of [false, true]) {
+    const plan = selectChecks(
+      [
+        'apps/examples/example-nuxt/app/app.vue',
+        'apps/examples/vue-theme-demo/src/ThemeDemo.vue',
+      ],
+      { ci }
+    );
 
-  assert.deepEqual(plan.packages, []);
-  assert.deepEqual(plan.examples, []);
-  assert.deepEqual(plan.browsers, []);
-  assert.equal(plan.website, false);
+    assert.deepEqual(plan.packages, []);
+    assert.deepEqual(plan.browsers, []);
+    assert.deepEqual(plan.consumers, []);
+    assert.equal(plan.website, false);
+    assert.equal(plan.tooling, false);
+  }
 });
 
-test('CI global changes protect products without running examples or browsers', () => {
+test('Vue browser fixtures select the Vue browser suite', () => {
+  const plan = selectChecks([
+    'packages/ui-theme/tests/vue-browser/fixtures/shared/ThemeHarness.vue',
+  ]);
+
+  assert.deepEqual(plan.packages, ['uitheme-web']);
+  assert.deepEqual(plan.browsers, ['vue']);
+});
+
+test('CI global changes protect products without running browsers', () => {
   const plan = selectChecks(['pnpm-lock.yaml'], { ci: true });
   assert.equal(plan.packages.length, 4);
   assert.equal(plan.website, true);
-  assert.deepEqual(plan.examples, []);
   assert.deepEqual(plan.browsers, []);
 });
 
@@ -62,7 +76,6 @@ test('Nuxt public configuration selects the independent consumer', () => {
 test('unknown runtime paths fail conservatively to full local validation', () => {
   const plan = selectChecks(['new-runtime/bridge.ts']);
   assert.equal(plan.packages.length, 4);
-  assert.equal(plan.examples.length, 8);
   assert.equal(plan.consumers.length, 3);
 });
 
@@ -133,7 +146,7 @@ function snapshotCheck(staged, working, passes) {
   }
 }
 
-test('registry source protects schema, installer and website but no CI examples', () => {
+test('registry source protects schema, installer and website in CI', () => {
   const plan = selectChecks(
     ['packages/ui-theme-registry/src/templates/vue/reka/theme-toggle.vue'],
     { ci: true }
@@ -142,7 +155,6 @@ test('registry source protects schema, installer and website but no CI examples'
   assert.deepEqual(plan.packages, ['@ui-theme/registry', 'uitheme-cli']);
   assert.equal(plan.website, true);
   assert.deepEqual(plan.browsers, []);
-  assert.deepEqual(plan.examples, []);
 });
 
 test('CLI source protects installer without rebuilding mobile or website', () => {
