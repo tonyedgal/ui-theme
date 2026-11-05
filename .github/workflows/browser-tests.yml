@@ -1,0 +1,93 @@
+name: Browser tests
+
+# Chromium checks for pull requests that change runtime or registry code. The
+# full engine matrix runs in the full release validation workflow.
+on:
+  pull_request:
+    paths:
+      - 'packages/ui-theme/src/**'
+      - 'packages/ui-theme/tests/browser/**'
+      - 'packages/ui-theme/tests/vue-browser/**'
+      - 'packages/ui-theme/playwright.config.ts'
+      - 'packages/ui-theme/playwright.vue.config.ts'
+      - 'packages/ui-theme-registry/**'
+      - '.github/workflows/browser-tests.yml'
+
+concurrency:
+  group: browser-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  chromium:
+    name: Chromium
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Select suites
+        id: suites
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          files=$(git diff --name-only "$BASE_SHA...$HEAD_SHA")
+          web=false
+          registry=false
+          if echo "$files" | grep -qE '^(packages/ui-theme/|\.github/workflows/browser-tests\.yml$)'; then web=true; fi
+          if echo "$files" | grep -qE '^(packages/ui-theme-registry/|\.github/workflows/browser-tests\.yml$)'; then registry=true; fi
+          echo "web=$web" >> "$GITHUB_OUTPUT"
+          echo "registry=$registry" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Chromium
+        run: pnpm --filter uitheme-web exec playwright install --with-deps chromium
+
+      - name: Build uitheme-web
+        run: pnpm --filter uitheme-web build
+
+      - name: Web runtime
+        if: steps.suites.outputs.web == 'true'
+        run: pnpm --filter uitheme-web exec playwright test --project=chromium-dpr2
+
+      - name: Vue and Nuxt runtime
+        if: steps.suites.outputs.web == 'true'
+        run: pnpm --filter uitheme-web exec playwright test --config playwright.vue.config.ts --project=chromium
+
+      - name: Registry controls
+        if: steps.suites.outputs.registry == 'true'
+        run: pnpm --filter @ui-theme/registry exec playwright test --project=chromium
+
+      - name: Save browser evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-evidence
+          retention-days: 7
+          path: |
+            packages/ui-theme/test-results
+            packages/ui-theme/tests/vue-browser/test-results
+            packages/ui-theme-registry/test-results
