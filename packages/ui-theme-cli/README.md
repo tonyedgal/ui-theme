@@ -40,6 +40,16 @@ The alternate URL `https://uitheme.dev/r` redirects to the canonical host.
 installation use the same revision. The CLI checks versions and source paths
 before writing. It records installed file hashes for later comparison.
 
+`--registry <url>` selects another registry, for example a local build. The
+`UITHEME_REGISTRY_URL` environment variable does the same for every command.
+The flag wins when you set both. The URL must use `https`, or `http` for
+`localhost`. The CLI prints the registry URL when it is not the hosted one.
+
+```sh
+UITHEME_REGISTRY_URL=http://localhost:4000/r npx uitheme-cli list
+npx uitheme-cli add theme-toggle --registry http://localhost:4000/r --dry-run
+```
+
 `--dry-run` and `--preview` do not write files or install packages. `--yes`
 skips confirmation but does not overwrite edited source. `--overwrite` permits
 replacement after you inspect the plan. Failed dependency installation restores
