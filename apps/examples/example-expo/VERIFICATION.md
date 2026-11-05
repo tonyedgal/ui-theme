@@ -51,7 +51,8 @@ verification.
 
 Use the acceptance checklist in README.md for the next device pass. At this checkpoint, nothing
 had been published, pushed, or submitted to a store. See the later alpha
-verification in `../../../docs/react-native-release-checks.md`.
+verification in
+[the archived alpha checks](https://github.com/tonyedgal/ui-theme/blob/568b282c61e1071ddb2d4acd470374de36862d4e/docs/react-native-release-checks.md).
 
 ## Optional transitions — October 8, 2026
 
@@ -123,7 +124,8 @@ Reduce Motion enabled during the 180 ms transition itself, navigation/unmount
 during that interval, and slow-device release performance remain unverified.
 The acceptance cases and release profiling steps are recorded in the example.
 
-The circular reveal was evaluated in `docs/react-native-architecture.md`.
+The circular reveal was evaluated in
+[the archived architecture notes](https://github.com/tonyedgal/ui-theme/blob/568b282c61e1071ddb2d4acd470374de36862d4e/docs/react-native-architecture.md).
 Full-window capture, platform chrome, memory, interruptions, and accessibility
 need a separate native experiment. The public API exposes color transitions.
 
