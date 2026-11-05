@@ -330,4 +330,61 @@ customBootstrap();`
     expect(out.output()).toContain('--yes');
     await expect(readFile(join(cwd, 'uitheme.json'))).rejects.toThrow();
   });
+  it('uses the --registry flag over UITHEME_REGISTRY_URL and names the registry', async () => {
+    const cwd = await fixture(),
+      out = io();
+
+    const registry = {
+      manifest: async () => {
+        throw Error('unexpected manifest request');
+      },
+      list: async () => {
+        throw Error('unexpected list request');
+      },
+      resolve: async () => {
+        throw Error('unexpected resolve request');
+      },
+    };
+
+    const env = { UITHEME_REGISTRY_URL: 'https://registry.example.com/r' };
+
+    expect(
+      await runCli(
+        [
+          'init',
+          '--cwd',
+          cwd,
+          '--dry-run',
+          '--registry',
+          'http://localhost:4000/r/',
+        ],
+        { ...out, env, registry }
+      )
+    ).toBe(0);
+    expect(out.output()).toContain('Registry: http://localhost:4000/r\n');
+
+    const fromEnv = io();
+
+    expect(
+      await runCli(['init', '--cwd', cwd, '--dry-run'], {
+        ...fromEnv,
+        env,
+        registry,
+      })
+    ).toBe(0);
+    expect(fromEnv.output()).toContain(
+      'Registry: https://registry.example.com/r\n'
+    );
+
+    const unsafe = io();
+
+    expect(
+      await runCli(['init', '--cwd', cwd, '--dry-run'], {
+        ...unsafe,
+        env: { UITHEME_REGISTRY_URL: 'http://registry.example.com/r' },
+        registry,
+      })
+    ).toBe(1);
+    expect(unsafe.output()).toContain('Invalid UITHEME_REGISTRY_URL');
+  });
 });

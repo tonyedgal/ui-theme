@@ -1,7 +1,11 @@
 import { relative, resolve, join } from 'node:path';
 import { detectProject } from '../project.ts';
 import { readConfig } from '../config.ts';
-import { createRegistryClient } from '../registry.ts';
+import {
+  createRegistryClient,
+  defaultOrigin,
+  resolveRegistryOrigin,
+} from '../registry.ts';
 import {
   applyPlan,
   describePlan,
@@ -22,6 +26,7 @@ import type {
 export interface CliIO {
   stdout?: (text: string) => void;
   stderr?: (text: string) => void;
+  env?: Record<string, string | undefined>;
   registry?: ReturnType<typeof createRegistryClient>;
   runInstall?: InstallRunner;
   confirm?: (plan: InstallPlan) => Promise<boolean>;
@@ -42,6 +47,7 @@ interface Flags {
   help: boolean;
   components: string[];
   revision?: string;
+  registry?: string;
 }
 
 function choice<const Choices extends readonly string[]>(
@@ -81,6 +87,7 @@ function parseFlags(args: string[]): Flags {
     '--color-format',
     '--package-manager',
     '--revision',
+    '--registry',
   ];
 
   for (let index = 0; index < args.length; index++) {
@@ -152,6 +159,9 @@ function parseFlags(args: string[]): Flags {
         case '--revision':
           flags.revision = value;
           break;
+        case '--registry':
+          flags.registry = value;
+          break;
       }
 
       continue;
@@ -217,7 +227,7 @@ function diffPlan(plan: InstallPlan): string {
     .join('\n');
 }
 
-const help = `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <base-ui|radix|reka>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without a confirmation prompt\n--overwrite            Permit replacing edited component files\n--json                 Print structured output\n`;
+const help = `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <base-ui|radix|reka>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--registry <url>       Use another registry (env: UITHEME_REGISTRY_URL)\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without a confirmation prompt\n--overwrite            Permit replacing edited component files\n--json                 Print structured output\n`;
 
 export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
   const stdout = io.stdout ?? console.log,
@@ -335,12 +345,20 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
         `Incompatible uitheme-web ${webVersion}. Run migration before installing v2 controls.`
       );
 
+    const origin = resolveRegistryOrigin({
+      flag: flags.registry,
+      env: (io.env ?? process.env).UITHEME_REGISTRY_URL,
+    });
+
+    if (origin !== defaultOrigin) stderr(`Registry: ${origin}`);
+
     const registry =
       io.registry ??
       createRegistryClient({
         cliVersion: await cliVersion(),
         webVersion: webVersion ?? '2.0.0',
         revision: flags.revision,
+        origin,
       });
 
     if (command === 'list') {
