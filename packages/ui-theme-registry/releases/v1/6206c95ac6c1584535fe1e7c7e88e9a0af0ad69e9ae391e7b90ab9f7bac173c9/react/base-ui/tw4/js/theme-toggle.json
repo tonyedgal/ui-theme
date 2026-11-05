@@ -1,0 +1,31 @@
+{
+  "name": "theme-toggle",
+  "type": "registry:ui",
+  "title": "Theme Toggle",
+  "description": "Toggle between the resolved light and dark themes.",
+  "dependencies": [
+    "@base-ui/react@^1.9.0",
+    "lucide-react@^1.61.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "theme-toggle.jsx",
+      "content": "'use client';\nimport * as React from 'react';\nimport { useUITheme } from 'uitheme-web/react';\nimport { cn } from '@/lib/utils';\nimport { SunIcon, MoonIcon } from 'lucide-react';\nimport { Toggle } from '@base-ui/react/toggle';\nexport const ThemeToggle = React.forwardRef(function ThemeToggle({ animationType, duration, slideDirection, borderStyle = 'solid', display = 'text', className, classes, label, disabled = false, children, onClick, ...buttonProps }, forwardedRef) {\n    const { resolvedTheme, switchTheme, mounted } = useUITheme();\n    const target = resolvedTheme === 'dark' ? 'light' : 'dark';\n    const Icon = resolvedTheme === 'dark' ? MoonIcon : SunIcon;\n    return (<div className={cn('inline-flex', classes?.root, className)}>\n      <Toggle {...buttonProps} ref={forwardedRef} type=\"button\" data-border-style={borderStyle} aria-label={label ??\n            (display === 'text'\n                ? 'Toggle appearance'\n                : `Switch to ${target} theme`)} pressed={resolvedTheme === 'dark'} disabled={disabled || !mounted} className={cn('inline-flex h-10 gap-2 items-center justify-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50', 'data-[border-style=shadow]:[--shadow-border-edge:theme(colors.border)] data-[border-style=shadow]:[--shadow-border-focus:theme(colors.ring)] data-[border-style=shadow]:border-transparent data-[border-style=shadow]:focus-visible:border-transparent data-[border-style=shadow]:ring-0 data-[border-style=shadow]:focus-visible:ring-0 data-[border-style=shadow]:shadow-[0_0_4px_rgb(0_0_0_/_0.25),inset_0_0_0_1px_var(--shadow-border-edge)] data-[border-style=shadow]:hover:shadow-[0_0_4px_rgb(0_0_0_/_0.25),inset_0_0_0_1px_color-mix(in_oklch,var(--shadow-border-focus)_55%,transparent)] data-[border-style=shadow]:focus-visible:shadow-[0_0_12px_color-mix(in_oklch,var(--shadow-border-focus)_18%,transparent),0_1px_3px_rgb(0_0_0_/_0.1),inset_0_0_0_2px_color-mix(in_oklch,var(--shadow-border-focus)_55%,transparent)] data-[border-style=shadow]:forced-colors:outline data-[border-style=shadow]:forced-colors:outline-1 data-[border-style=shadow]:forced-colors:outline-[CanvasText] data-[border-style=shadow]:forced-colors:focus-visible:outline-2 data-[border-style=shadow]:forced-colors:focus-visible:outline-[Highlight]', classes?.trigger)} onClick={(event) => {\n            onClick?.(event);\n            if (!event.defaultPrevented)\n                void switchTheme(target, {\n                    element: event.currentTarget,\n                    animationType,\n                    duration,\n                    slideDirection,\n                    animationOff: event.detail === 0,\n                });\n        }}>\n        {children ?? (<>\n            {display !== 'text' && (<Icon aria-hidden=\"true\" focusable=\"false\" className=\"size-4 shrink-0\"/>)}\n            {resolvedTheme === 'dark' ? 'Dark' : 'Light'}\n          </>)}\n      </Toggle>\n    </div>);\n});\n",
+      "type": "registry:ui"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "6206c95ac6c1584535fe1e7c7e88e9a0af0ad69e9ae391e7b90ab9f7bac173c9",
+      "component": "theme-toggle",
+      "framework": "react",
+      "base": "base-ui",
+      "tailwind": 4,
+      "language": "js",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

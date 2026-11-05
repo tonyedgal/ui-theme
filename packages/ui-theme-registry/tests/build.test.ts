@@ -40,7 +40,7 @@ test('builds all 84 variants reproducibly from sources with only selected base d
 
     for (const [framework, base, dep] of [
       ['react', 'base-ui', '@base-ui/react'],
-      ['react', 'radix', '@radix-ui/react-select'],
+      ['react', 'radix', 'radix-ui@^1.4.3'],
       ['vue', 'reka', 'reka-ui'],
     ]) {
       const dir = join(sourceDir, framework, base);
@@ -97,7 +97,7 @@ test('builds all 84 variants reproducibly from sources with only selected base d
         i.meta.uiTheme.language === 'js'
     );
 
-    assert.ok(react.dependencies.includes('@radix-ui/react-select'));
+    assert.ok(react.dependencies.includes('radix-ui@^1.4.3'));
     assert.ok(!react.dependencies.includes('reka-ui'));
     assert.ok(react.dependencies.includes('tailwind-merge@^2.6.0'));
     assert.ok(!react.files[0].content.includes(': string'));
