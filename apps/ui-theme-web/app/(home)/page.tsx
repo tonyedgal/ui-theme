@@ -3,7 +3,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CopyButton } from '@/components/docs/copy-button';
 import { LandingControls } from '@/components/landing-controls';
+import { PaletteWordmark } from '@/components/palette-wordmark';
 import { ScrollHint } from '@/components/scroll-hint';
+import { StackCarousel } from '@/components/stack-carousel';
 import { ThemeTagline } from '@/components/theme-tagline';
 import { TextFlip } from '@/components/ui/text-flip';
 
@@ -90,7 +92,7 @@ export default function HomePage() {
             />
           </div>
           <div className="absolute inset-x-0 bottom-2 mx-auto w-full max-w-4xl px-6 sm:px-8">
-            <ScrollHint className="-ml-1" />
+            <ScrollHint className="ml-12" />
           </div>
         </section>
         <section
@@ -119,27 +121,44 @@ export default function HomePage() {
           </div>
           <LandingControls />
         </section>
+        <StackCarousel />
+        <section
+          aria-label="UI-Theme wordmark"
+          className="mx-auto max-w-4xl px-6 pb-24 sm:px-8"
+        >
+          <PaletteWordmark />
+        </section>
       </main>
-      <footer className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 px-6 pb-8 text-xs text-muted-foreground">
-        <span>UI-Theme.</span>
-        <span>Open source.</span>
-        <a
-          href="https://github.com/tonyedgal/ui-theme"
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-sm text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-        >
-          GitHub
-        </a>
-        <span aria-hidden="true">·</span>
-        <Link
-          href="/docs/llms"
-          prefetch={false}
-          className="rounded-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-        >
-          LLMs
-        </Link>
+      <footer className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 max-sm:flex-col max-sm:gap-y-1 px-6 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] text-xs text-muted-foreground">
+        <span className="whitespace-nowrap">
+          Developed by{' '}
+          <FooterLink href="https://spaceman.sh">Spaceman</FooterLink>
+          <span aria-hidden="true"> · </span>
+          <FooterLink href="https://x.com/TonyEdgal">X</FooterLink>
+          <span aria-hidden="true"> · </span>
+          <FooterLink href="https://github.com/tonyedgal">GitHub</FooterLink>
+        </span>
+        <span aria-hidden="true" className="max-sm:hidden">
+          ·
+        </span>
+        <span className="whitespace-nowrap">
+          Inspired by{' '}
+          <FooterLink href="https://bearnie.dev">bearnie.dev</FooterLink>
+        </span>
       </footer>
     </>
+  );
+}
+
+function FooterLink({ href, children }: { href: string; children: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="rounded-sm text-foreground underline-offset-4 [-webkit-tap-highlight-color:transparent] hover:underline active:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+    >
+      {children}
+    </a>
   );
 }
