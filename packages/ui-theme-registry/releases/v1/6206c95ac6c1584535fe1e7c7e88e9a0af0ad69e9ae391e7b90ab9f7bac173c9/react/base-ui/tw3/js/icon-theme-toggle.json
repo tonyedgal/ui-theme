@@ -1,0 +1,32 @@
+{
+  "name": "icon-theme-toggle",
+  "type": "registry:ui",
+  "title": "Icon Theme Toggle",
+  "description": "Animate between sun and moon icons while changing the UI theme.",
+  "dependencies": [
+    "lucide-react@^1.61.0"
+  ],
+  "registryDependencies": [
+    "https://www.ui-theme.dev/r/v1/6206c95ac6c1584535fe1e7c7e88e9a0af0ad69e9ae391e7b90ab9f7bac173c9/react/base-ui/tw3/js/theme-toggle.json"
+  ],
+  "files": [
+    {
+      "path": "icon-theme-toggle.jsx",
+      "content": "'use client';\nimport * as React from 'react';\nimport { SunIcon, MoonIcon } from 'lucide-react';\nimport { useUITheme } from 'uitheme-web/react';\nimport { ThemeToggle } from './theme-toggle';\nimport { cn } from '@/lib/utils';\nexport const IconThemeToggle = React.forwardRef(function IconThemeToggle({ effect = 'rotate', label, classes, onKeyDown, onPointerDown, ...props }, ref) {\n    const { resolvedTheme } = useUITheme();\n    const [keyboard, setKeyboard] = React.useState(false);\n    const dark = resolvedTheme === 'dark';\n    const transition = keyboard\n        ? 'transition-none motion-reduce:transition-none'\n        : 'transition-[transform,translate,rotate,scale,opacity,filter] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-opacity motion-reduce:duration-100';\n    const hidden = (side) => effect === 'slide'\n        ? side === 'sun'\n            ? '-translate-x-2'\n            : 'translate-x-2'\n        : effect === 'blur'\n            ? 'scale-75 blur-[4px]'\n            : side === 'sun'\n                ? '-rotate-90 scale-75'\n                : 'rotate-90 scale-75';\n    const layer = 'col-start-1 row-start-1 inline-flex size-4 items-center justify-center motion-reduce:!transform-none motion-reduce:!translate-x-0 motion-reduce:!rotate-0 motion-reduce:!scale-100 motion-reduce:!blur-none';\n    return (<ThemeToggle {...props} ref={ref} label={label ?? `Switch to ${dark ? 'light' : 'dark'} theme`} onKeyDown={(event) => {\n            setKeyboard(true);\n            onKeyDown?.(event);\n        }} onPointerDown={(event) => {\n            setKeyboard(false);\n            onPointerDown?.(event);\n        }} classes={{\n            ...classes,\n            trigger: cn('w-10 px-0 active:scale-[0.96] motion-reduce:active:scale-100', classes?.trigger),\n        }}>\n      <span aria-hidden=\"true\" data-effect={effect} className=\"grid size-4 overflow-hidden\">\n        <span className={cn(layer, transition, dark ? cn('opacity-0', hidden('sun')) : 'opacity-100')}>\n          <SunIcon className=\"size-4\"/>\n        </span>\n        <span className={cn(layer, transition, dark ? 'opacity-100' : cn('opacity-0', hidden('moon')))}>\n          <MoonIcon className=\"size-4\"/>\n        </span>\n      </span>\n    </ThemeToggle>);\n});\n",
+      "type": "registry:ui"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "6206c95ac6c1584535fe1e7c7e88e9a0af0ad69e9ae391e7b90ab9f7bac173c9",
+      "component": "icon-theme-toggle",
+      "framework": "react",
+      "base": "base-ui",
+      "tailwind": 3,
+      "language": "js",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

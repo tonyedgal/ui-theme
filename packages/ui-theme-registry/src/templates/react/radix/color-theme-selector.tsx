@@ -5,7 +5,7 @@ import { useUITheme } from 'uitheme-web/react';
 import { cn } from '@/lib/utils';
 import type { ThemeControlTransitionProps } from 'uitheme-web/react';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
-import * as Select from '@radix-ui/react-select';
+import { Select } from 'radix-ui';
 
 export type ColorThemeOption = {
   value: string;

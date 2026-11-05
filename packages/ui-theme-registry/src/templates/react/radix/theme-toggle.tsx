@@ -6,7 +6,7 @@ import { useUITheme } from 'uitheme-web/react';
 import { cn } from '@/lib/utils';
 import { SunIcon, MoonIcon } from 'lucide-react';
 import type { ThemeControlTransitionProps } from 'uitheme-web/react';
-import * as TogglePrimitive from '@radix-ui/react-toggle';
+import { Toggle as TogglePrimitive } from 'radix-ui';
 
 export type ThemeToggleClasses = {
   root?: string;
