@@ -12,6 +12,12 @@ before generating the current revision. Existing archive bytes cannot change.
 The revision includes generated payloads and the registry origin, so compiler
 changes cannot reuse an old URL with different content.
 
+Each record contains absolute URLs. To serve a build from another address, run
+`pnpm build --origin <url>`, for example `--origin http://localhost:4000/r`.
+Then serve `dist/` at that URL and pass the same URL to the CLI `--registry`
+flag. This build has a different revision. Run `pnpm build` again before you
+build the website. `--origin` and `--snapshot` cannot be used together.
+
 The website stages these artifacts at build time. It does not fetch source from
 another server while serving a request. Do not publish this private workspace.
 
