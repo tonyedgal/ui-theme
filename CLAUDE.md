@@ -289,12 +289,17 @@ Follow the `/auto-commit` workflow in [AGENTS.md](AGENTS.md). Keep commits scope
 and preserve stashes. A passing local check does not confirm publication or
 remote CI. Push and publish only within the human's explicit authorization.
 
-## Local commit checks
+## Checks
 
-Each commit checks the staged snapshot with lint-staged and affected validation.
-Local checks include package tests, relevant browser suites, and independent
-release consumers. Normal CI checks affected packages and the website without
-browser-engine downloads. The apps in `apps/examples/` show usage and are tested
-by hand. The validation checks do not build or test them.
+| When                 | What runs                                                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Each commit          | lint-staged: eslint and prettier on the staged files.                                                                                             |
+| On request           | `pnpm test:commit` validates the staged snapshot. `pnpm test:local` runs every local check, browser suites and release consumers included.        |
+| Each pull request    | CI builds, typechecks, and tests the affected packages and the website. Changes to runtime or registry code also run the Chromium browser suites. |
+| Version pull request | The full release validation runs every browser engine and the release consumers. A maintainer can also start it from the Actions tab.             |
+| Publish              | The npm publish job waits for maintainer approval.                                                                                                |
+
+The apps in `apps/examples/` show usage and are tested by hand. The checks do
+not build or test them.
 
 `scripts/validation-plan.mjs` selects the checks for each changed path.
