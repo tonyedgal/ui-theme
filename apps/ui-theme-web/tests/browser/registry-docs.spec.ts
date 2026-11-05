@@ -48,7 +48,7 @@ test('base selection keeps the preview, installation command and copied source a
     '--base radix'
   );
   await expect(page.getByTestId('registry-source')).toContainText(
-    '@radix-ui/react-toggle'
+    "from 'radix-ui'"
   );
 
   const toggle = page

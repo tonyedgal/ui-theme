@@ -11,7 +11,7 @@
           "type": "registry:ui"
         }
       ],
-      "dependencies": ["@radix-ui/react-toggle@^1.2.1", "lucide-react@^1.61.0"]
+      "dependencies": ["radix-ui@^1.4.3", "lucide-react@^1.61.0"]
     },
     "icon-theme-toggle": {
       "title": "Icon Theme Toggle",
@@ -48,7 +48,7 @@
           "type": "registry:ui"
         }
       ],
-      "dependencies": ["@radix-ui/react-select@^2.4.1", "lucide-react@^1.61.0"]
+      "dependencies": ["radix-ui@^1.4.3", "lucide-react@^1.61.0"]
     },
     "color-theme-selector": {
       "title": "Color Theme Selector",
@@ -60,7 +60,7 @@
           "type": "registry:ui"
         }
       ],
-      "dependencies": ["@radix-ui/react-select@^2.4.1", "lucide-react@^1.61.0"]
+      "dependencies": ["radix-ui@^1.4.3", "lucide-react@^1.61.0"]
     },
     "theme-disclosure": {
       "title": "Theme Disclosure",
