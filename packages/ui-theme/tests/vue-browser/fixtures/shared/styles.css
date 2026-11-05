@@ -1,0 +1,54 @@
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #111111;
+  --primary: #34a85a;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #111111;
+  --foreground: #eeeeee;
+  --primary: #4cc870;
+}
+
+.theme-caffeine {
+  --primary: #6f4e37;
+}
+
+.theme-caffeine.dark {
+  --primary: #e8cfa9;
+}
+
+.theme-mocha {
+  --primary: #8a6a50;
+}
+
+.theme-mocha.dark {
+  --primary: #c9a88a;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, sans-serif;
+}
+
+main {
+  display: grid;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.select {
+  position: relative;
+}
+
+[role='listbox'] {
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--background);
+  border: 1px solid var(--foreground);
+}
