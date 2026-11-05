@@ -46,16 +46,14 @@ Web framework agnostic UI theme switching library with smooth view transition an
 - **[NativeWind v5 Example](./apps/examples/example-nativewind/README.md)** - Tailwind v4 CSS palettes and native styles
 - **[Uniwind Example](./apps/examples/example-uniwind/README.md)** - Tailwind v4 scoped themes and native styles
 - **[Expo Reference App](./apps/examples/example-expo/README.md)** - Native appearance settings and a shared-theme preview
-- **[Next.js / SSR Setup Guide](./docs/nextjs-setup.md)** - Complete guide with App Router, Pages Router, CSP support
-- **[TanStack Start Setup Guide](./docs/tanstack-start-setup.md)** - Isomorphic rendering, hydration-safe patterns
-- **[Vite React SPA Setup Guide](./docs/vite-setup.md)** - Client-side setup, flash prevention, routing
+- **[Next.js Guide](https://www.ui-theme.dev/docs/guides/nextjs)** - App Router setup and server rendering
+- **[TanStack Start Guide](https://www.ui-theme.dev/docs/guides/tanstack-start)** - Server rendering and hydration
+- **[React Guide](https://www.ui-theme.dev/docs/guides/react)** - Vite React setup
 - **[View Complete Examples](./apps/examples/)** - Next.js implementation with both hook and provider patterns
 
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to contribute to this project.
-
-See [Workspace linting](./docs/linting.md) for the shared ESLint presets, anti-slop rules, runtime requirements, and lint commands.
 
 ## License
 
