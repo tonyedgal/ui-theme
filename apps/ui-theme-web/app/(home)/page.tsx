@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CopyButton } from '@/components/docs/copy-button';
 import { LandingControls } from '@/components/landing-controls';
 import { ThemeTagline } from '@/components/theme-tagline';
+import { TextFlip } from '@/components/ui/text-flip';
 
 export const metadata: Metadata = {
   title: 'UI-Theme — The library for theming the web',
@@ -45,7 +46,19 @@ export default function HomePage() {
           </h1>
           <ThemeTagline />
           <p className="mt-4 max-w-80 text-[13px] leading-6 font-normal text-pretty text-muted-foreground">
-            A theming library and registry for React, Vue, and React Native.
+            Theming registry and library for{' '}
+            <span className="sr-only">React, Vue, and React Native.</span>
+            <span aria-hidden="true">
+              <TextFlip
+                as="span"
+                className="font-medium text-foreground motion-reduce:hidden"
+              >
+                {['React', 'Vue', 'React Native']}
+              </TextFlip>
+              <span className="hidden font-medium text-foreground motion-reduce:inline">
+                React, Vue, and React Native
+              </span>
+            </span>
             <br />
             Add color palettes, animated transitions, and controls you can make
             your own.
