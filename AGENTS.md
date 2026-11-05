@@ -149,7 +149,7 @@ Default to no comment. Write one only where the code cannot say it itself: a dec
   This is a style target, not a formal compliance score.
 - Use short sentences, active voice, and one main fact or instruction per sentence.
   Remove filler. Keep requirements, actions, and results distinct.
-- Follow [the writing guide](docs/writing-guide.md) for new documentation and when
+- Follow [the writing guide](WRITING.md) for new documentation and when
   reviewing existing documentation. Preserve code examples, legal notices,
   generated content, and historical verification facts.
 - Use Outfit for prose and Geist Mono for inline code and code blocks on the website.

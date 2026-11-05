@@ -78,7 +78,8 @@ published entry points from `dist`, rather than importing source files directly.
   or white and starts a dark-to-light transition. `logoLight` is normally dark
   or black and starts a light-to-dark transition. Both assets are required.
 - Keep the logo centered. Preserve intrinsic aspect ratios when a dimension is
-  `"auto"`. See [the logo guide](docs/stationary-logo-transition.md).
+  `"auto"`. See
+  [the archived logo guide](https://github.com/tonyedgal/ui-theme/blob/568b282c61e1071ddb2d4acd470374de36862d4e/docs/stationary-logo-transition.md).
 
 ## Website work
 
@@ -121,7 +122,7 @@ website task into package or workspace changes without a necessary reason.
 
 ## Documentation language and navigation
 
-Follow [the writing guide](docs/writing-guide.md). Use ASD-STE-inspired clear
+Follow [the writing guide](WRITING.md). Use ASD-STE-inspired clear
 English for about 80% of documentation prose. Keep technical terms and exact
 identifiers. This is a style target, not a formal compliance score. Review titles,
 descriptions, tables, API text, and AI Agent notes as well as body text.
@@ -184,8 +185,9 @@ build. Preview, Examples, Installation, Usage, API reference, and Source must ea
 their corresponding `Registry*` block exactly once. Do not hide written prose in
 TypeScript objects or JSX. Keep only variant-dependent API data and primitive
 credits in `lib/component-guides.ts`. Interactive blocks and preview state live
-in `components/registry-preview.tsx`. Use `docs/component-docs-template.mdx.example`
-as the starting point for a new document. Headings supply the page TOC.
+in `components/registry-preview.tsx`. Use
+`content/components/_template.mdx.example` as the starting point for a new
+document. Headings supply the page TOC.
 The full-page Markdown copy must include decision guidance, API, AI Agent notes,
 and Credits, matching the visible page.
 
@@ -208,8 +210,7 @@ same code-block renderer. Copy raw source, without line numbers or HTML.
 Preview/code and package-manager tabs must support keyboard navigation and keep
 source aligned with the selected framework, Tailwind version, and language.
 
-See [the presentation inventory](docs/documentation-components.md). Preserve
-required license and copyright notices for adapted portions.
+Preserve required license and copyright notices for adapted portions.
 
 ## Inline disclosure surfaces
 
@@ -295,4 +296,4 @@ Local checks include package tests, reference app builds/types, relevant browser
 suites, and independent release consumers. Normal CI checks affected packages
 and the website without example builds or browser-engine downloads.
 
-See [the CI guide](docs/ci.md) and `scripts/validation-plan.mjs` for routing.
+`scripts/validation-plan.mjs` selects the checks for each changed path.
