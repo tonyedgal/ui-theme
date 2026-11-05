@@ -36,7 +36,7 @@ apps/ui-theme-web/             # Website and documentation
   components/                  # Website components
   content/docs/                # MDX documentation
   lib/source.ts                # Fumadocs content adapter
-apps/examples/                 # Reference framework integrations
+apps/examples/                 # Usage examples, tested by hand
 .changeset/                    # Pending package release notes
 ```
 
@@ -292,8 +292,9 @@ remote CI. Push and publish only within the human's explicit authorization.
 ## Local commit checks
 
 Each commit checks the staged snapshot with lint-staged and affected validation.
-Local checks include package tests, reference app builds/types, relevant browser
-suites, and independent release consumers. Normal CI checks affected packages
-and the website without example builds or browser-engine downloads.
+Local checks include package tests, relevant browser suites, and independent
+release consumers. Normal CI checks affected packages and the website without
+browser-engine downloads. The apps in `apps/examples/` show usage and are tested
+by hand. The validation checks do not build or test them.
 
 `scripts/validation-plan.mjs` selects the checks for each changed path.
