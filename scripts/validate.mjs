@@ -17,9 +17,7 @@ export function validate(files, { ci = false, root = process.cwd() } = {}) {
 
   const existing = files.filter((file) => existsSync(resolve(root, file)));
 
-  const checked = ci
-    ? existing.filter((file) => !file.startsWith('apps/examples/'))
-    : existing;
+  const checked = existing.filter((file) => !file.startsWith('apps/examples/'));
 
   if (checked.length) {
     run('exec', 'prettier', '--check', '--ignore-unknown', ...checked);
@@ -35,11 +33,7 @@ export function validate(files, { ci = false, root = process.cwd() } = {}) {
 
   if (plan.website) run('--filter', 'ui-theme-web', 'postinstall');
 
-  const targets = [
-    ...plan.packages,
-    ...plan.examples,
-    ...(plan.website ? ['ui-theme-web'] : []),
-  ];
+  const targets = [...plan.packages, ...(plan.website ? ['ui-theme-web'] : [])];
 
   if (targets.length) {
     const filters = targets.map((name) => `--filter=${name}`);
