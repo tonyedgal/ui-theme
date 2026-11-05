@@ -402,7 +402,7 @@ try {
             base === 'base-ui'
           );
           assert.equal(
-            existsSync(join(folder, 'node_modules/@radix-ui/react-select')),
+            existsSync(join(folder, 'node_modules/radix-ui')),
             base === 'radix'
           );
 

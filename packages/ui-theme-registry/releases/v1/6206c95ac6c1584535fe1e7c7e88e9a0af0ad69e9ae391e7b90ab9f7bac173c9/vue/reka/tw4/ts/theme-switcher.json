@@ -1,0 +1,30 @@
+{
+  "name": "theme-switcher",
+  "type": "registry:ui",
+  "title": "Theme Switcher",
+  "description": "Choose system, light, or dark with a sliding selection surface.",
+  "dependencies": [
+    "@lucide/vue@^1.61.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "theme-switcher.vue",
+      "content": "<script setup lang=\"ts\">\nimport type { ThemeControlTransitionProps } from 'uitheme-web/vue';\nimport { useId, shallowRef } from 'vue';\nimport { useUITheme, type Theme } from 'uitheme-web/vue';\nimport { SunIcon, MoonIcon, MonitorIcon } from '@lucide/vue';\nimport { cn } from '@/lib/utils';\n\nconst props = withDefaults(\n  defineProps<\n    ThemeControlTransitionProps & {\n      label?: string;\n      disabled?: boolean;\n      borderStyle?: 'solid' | 'shadow';\n      class?: string;\n      classes?: {\n        root?: string;\n        item?: string;\n        indicator?: string;\n      };\n    }\n  >(),\n  {\n    duration: undefined,\n    slideDirection: undefined,\n    borderStyle: 'solid',\n    class: undefined,\n    classes: undefined,\n    label: 'Theme',\n  }\n);\n\nconst theme = useUITheme(() => ({\n  animationType: props.animationType,\n  duration: props.duration,\n  slideDirection: props.slideDirection,\n}));\n\nconst choices: readonly Theme[] = ['system', 'light', 'dark'];\n\nconst id = useId();\n\nconst keyboard = shallowRef(false);\n</script>\n<template>\n  <div\n    :data-border-style=\"borderStyle\"\n    role=\"radiogroup\"\n    :aria-label=\"label\"\n    :class=\"\n      cn(\n        'relative isolate inline-grid h-8 shrink-0 grid-cols-3 items-stretch rounded-[var(--radius)] border border-border bg-muted p-[var(--switcher-pad)] [--switcher-pad:calc(var(--spacing,0.25rem)/2)] [--switcher-inner-radius:max(0px,calc(var(--radius)-var(--switcher-pad)-1px))] [@media(pointer:coarse)]:h-11',\n        cn(\n          'data-[border-style=shadow]:[--shadow-border-edge:theme(colors.border)] data-[border-style=shadow]:[--shadow-border-focus:theme(colors.ring)] data-[border-style=shadow]:border-transparent data-[border-style=shadow]:focus-visible:border-transparent data-[border-style=shadow]:ring-0 data-[border-style=shadow]:focus-visible:ring-0 data-[border-style=shadow]:shadow-[0_0_4px_rgb(0_0_0_/_0.25),inset_0_0_0_1px_var(--shadow-border-edge)] data-[border-style=shadow]:forced-colors:outline data-[border-style=shadow]:forced-colors:outline-1 data-[border-style=shadow]:forced-colors:outline-[CanvasText] data-[border-style=shadow]:forced-colors:focus-visible:outline-2 data-[border-style=shadow]:forced-colors:focus-visible:outline-[Highlight]',\n          cn(props.classes?.root ?? '', props.class)\n        )\n      )\n    \"\n    @keydown.capture=\"keyboard = true\"\n    @pointerdown.capture=\"keyboard = false\"\n  >\n    <span\n      aria-hidden=\"true\"\n      data-slot=\"selection-indicator\"\n      :style=\"{\n        transform: `translateX(${choices.indexOf(theme.theme.value) * 100}%)`,\n      }\"\n      :class=\"\n        cn(\n          'pointer-events-none absolute bottom-[var(--switcher-pad)] left-[var(--switcher-pad)] top-[var(--switcher-pad)] -z-10 w-[calc((100%_-_var(--switcher-pad)_-_var(--switcher-pad))/3)] rounded-[var(--switcher-inner-radius)] bg-card border border-border motion-reduce:transition-none',\n          cn(\n            keyboard\n              ? 'transition-none'\n              : 'transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]',\n            props.classes?.indicator\n          )\n        )\n      \"\n    />\n    <label\n      v-for=\"value in choices\"\n      :key=\"value\"\n      :data-checked=\"theme.theme.value === value ? '' : undefined\"\n      :class=\"\n        cn(\n          'relative flex min-w-8 cursor-pointer items-center justify-center rounded-[var(--switcher-inner-radius)] px-2 text-muted-foreground has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50 data-[checked]:text-foreground [@media(hover:hover)_and_(pointer:fine)]:hover:text-foreground [@media(pointer:coarse)]:min-w-11',\n          cn(\n            keyboard\n              ? 'transition-none'\n              : 'transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]',\n            props.classes?.item\n          )\n        )\n      \"\n    >\n      <input\n        type=\"radio\"\n        :name=\"id\"\n        :value=\"value\"\n        :checked=\"theme.theme.value === value\"\n        :aria-label=\"`${value[0]!.toUpperCase() + value.slice(1)} theme`\"\n        :disabled=\"\n          disabled || !theme.mounted.value || !theme.themes.includes(value)\n        \"\n        class=\"peer absolute inset-0 z-10 m-0 size-full cursor-inherit opacity-0\"\n        @change=\"\n          theme.switchTheme(value, {\n            animationOff: keyboard,\n            element: ($event.currentTarget as HTMLElement).closest('label'),\n          })\n        \"\n      />\n      <component\n        :is=\"\n          value === 'light'\n            ? SunIcon\n            : value === 'dark'\n              ? MoonIcon\n              : MonitorIcon\n        \"\n        aria-hidden=\"true\"\n        class=\"size-4 shrink-0\"\n      />\n    </label>\n  </div>\n</template>\n",
+      "type": "registry:ui"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "6206c95ac6c1584535fe1e7c7e88e9a0af0ad69e9ae391e7b90ab9f7bac173c9",
+      "component": "theme-switcher",
+      "framework": "vue",
+      "base": "reka",
+      "tailwind": 4,
+      "language": "ts",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

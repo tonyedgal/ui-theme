@@ -1,0 +1,30 @@
+{
+  "name": "color-theme-disclosure",
+  "type": "registry:ui",
+  "title": "Color Theme Disclosure",
+  "description": "Expand palette choices inside the page layout.",
+  "dependencies": [
+    "lucide-react@^1.61.0"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "color-theme-disclosure.jsx",
+      "content": "'use client';\nimport * as React from 'react';\nimport { useUITheme, } from 'uitheme-web/react';\nimport { ChevronDownIcon } from 'lucide-react';\nimport { cn } from '@/lib/utils';\nexport const ColorThemeDisclosure = React.forwardRef(function ColorThemeDisclosure({ label = 'Color theme', disabled = false, open, defaultOpen = false, onOpenChange, maxHeight = 240, direction = 'down', options: optionOverrides, animationType, duration, slideDirection, className, classes, }, ref) {\n    const { colorTheme, colorThemes, mounted, switchColorTheme } = useUITheme();\n    const [internalOpen, setInternalOpen] = React.useState(defaultOpen);\n    const expanded = open ?? internalOpen;\n    const id = React.useId();\n    const options = optionOverrides?.filter((option) => colorThemes.includes(option.value)) ??\n        colorThemes.map((value) => ({\n            value,\n            label: value\n                .replaceAll('-', ' ')\n                .replace(/\\b\\w/g, (letter) => letter.toUpperCase()),\n        }));\n    const selected = options.find((option) => option.value === colorTheme);\n    const style = {\n        '--disclosure-max-height': `${maxHeight}px`,\n    };\n    return (<div data-direction={direction} className={cn('flex min-w-0 flex-col gap-2 data-[direction=up]:flex-col-reverse', classes?.root, className)}>\n      <span id={id} className={cn('text-sm font-medium text-foreground', classes?.label)}>\n        {label}\n      </span>\n      <div data-direction={direction} className=\"flex flex-col data-[direction=up]:flex-col-reverse min-w-0 [--disclosure-padding:var(--spacing,0.25rem)] rounded-[calc(var(--radius)+var(--disclosure-padding))] bg-muted p-[var(--disclosure-padding)] ring-1 ring-inset ring-border\">\n        <button ref={ref} id={`${id}-trigger`} type=\"button\" disabled={disabled || !mounted} aria-expanded={expanded} aria-controls={`${id}-content`} onClick={() => {\n            if (open === undefined)\n                setInternalOpen(!expanded);\n            onOpenChange?.(!expanded);\n        }} className={cn('flex min-h-10 w-full items-center justify-between gap-3 rounded-[var(--radius)] border border-border bg-card px-3 py-2 text-left text-sm font-medium text-card-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50', classes?.trigger)}>\n          <span className=\"flex min-w-0 items-center gap-2\">\n            <span className=\"sr-only\">{label}: </span>\n\n            <span className=\"truncate\">{selected?.label ?? colorTheme}</span>\n          </span>\n          <ChevronDownIcon aria-hidden=\"true\" className={cn('size-4 shrink-0', (direction === 'up' ? !expanded : expanded) && 'rotate-180')}/>\n        </button>\n        <div id={`${id}-content`} data-direction={direction} hidden={!expanded} role=\"region\" aria-labelledby={`${id}-trigger`} tabIndex={0} style={style} className={cn('max-h-[min(var(--disclosure-max-height),60svh)] overflow-auto overscroll-contain rounded-b-[var(--radius)] data-[direction=up]:rounded-t-[var(--radius)] data-[direction=up]:rounded-b-none p-1 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [scrollbar-width:thin] [scrollbar-color:var(--muted-foreground)_transparent]', classes?.content)}>\n          <fieldset disabled={disabled || !mounted} aria-labelledby={id} className=\"m-0 min-w-0 border-0 p-0\">\n            {options.map((option) => (<label key={option.value} className={cn('flex cursor-pointer items-center gap-3 rounded-[max(0px,calc(var(--radius)-2px))] px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring has-[:checked]:bg-accent has-[:checked]:text-accent-foreground has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50', classes?.item)}>\n                <input type=\"radio\" name={id} value={option.value} checked={colorTheme === option.value} onChange={(event) => {\n                const next = colorThemes.find((value) => value === option.value);\n                if (next)\n                    void switchColorTheme(next, {\n                        element: event.currentTarget.closest('label'),\n                        animationType,\n                        duration,\n                        slideDirection,\n                    });\n            }} className=\"size-3.5 shrink-0 accent-primary\"/>\n\n                {option.label}\n              </label>))}\n          </fieldset>\n        </div>\n      </div>\n    </div>);\n});\n",
+      "type": "registry:ui"
+    }
+  ],
+  "meta": {
+    "uiTheme": {
+      "schemaVersion": 1,
+      "revision": "6206c95ac6c1584535fe1e7c7e88e9a0af0ad69e9ae391e7b90ab9f7bac173c9",
+      "component": "color-theme-disclosure",
+      "framework": "react",
+      "base": "base-ui",
+      "tailwind": 4,
+      "language": "js",
+      "webVersion": "^2.0.0",
+      "cliVersion": "^1.0.0"
+    }
+  }
+}

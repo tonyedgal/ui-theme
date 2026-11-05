@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import type { ThemeControlTransitionProps } from 'uitheme-web/react';
 import { SunIcon, MoonIcon, MonitorIcon } from 'lucide-react';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
-import * as Select from '@radix-ui/react-select';
+import { Select } from 'radix-ui';
 
 export type ThemeSelectorClasses = {
   root?: string;
