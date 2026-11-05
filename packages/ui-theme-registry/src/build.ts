@@ -374,9 +374,25 @@ if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 )
-  buildRegistry()
-    .then(async (result) => {
-      if (process.argv.includes('--snapshot')) await snapshotRegistry();
+  (async () => {
+    const at = process.argv.indexOf('--origin'),
+      origin = at === -1 ? undefined : process.argv[at + 1],
+      snapshot = process.argv.includes('--snapshot');
+
+    if (at !== -1 && (!origin || origin.startsWith('--')))
+      throw new Error('Missing value for --origin');
+
+    // A snapshot is the published record, so it must use the hosted origin.
+    if (origin && snapshot)
+      throw new Error('--snapshot cannot be combined with --origin');
+
+    const result = await buildRegistry({ origin });
+
+    if (snapshot) await snapshotRegistry();
+
+    return result;
+  })()
+    .then((result) => {
       console.log(
         `Built ${result.index.items.length} registry items at ${result.revision}`
       );
