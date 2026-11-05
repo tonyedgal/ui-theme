@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRegistryClient } from '../src/registry.ts';
+import {
+  createRegistryClient,
+  defaultOrigin,
+  resolveRegistryOrigin,
+} from '../src/registry.ts';
 
 const revision = 'a'.repeat(64),
   origin = 'https://www.ui-theme.dev/r';
@@ -164,5 +168,52 @@ test('request timeout rejects stalled injectable clients', async () => {
       http: () => new Promise(() => {}),
     }).manifest(),
     /timed out/i
+  );
+});
+
+test('selects the registry origin from the flag, then the environment, then the hosted registry', () => {
+  assert.equal(resolveRegistryOrigin(), defaultOrigin);
+  assert.equal(resolveRegistryOrigin({ env: '' }), defaultOrigin);
+  assert.equal(
+    resolveRegistryOrigin({ env: 'https://registry.example.com/r/' }),
+    'https://registry.example.com/r'
+  );
+  assert.equal(
+    resolveRegistryOrigin({
+      flag: 'http://localhost:4000/r',
+      env: 'https://registry.example.com/r',
+    }),
+    'http://localhost:4000/r'
+  );
+  assert.equal(
+    resolveRegistryOrigin({ flag: 'http://127.0.0.1:4000/r' }),
+    'http://127.0.0.1:4000/r'
+  );
+  assert.equal(
+    resolveRegistryOrigin({ flag: 'http://ui-theme.localhost/r' }),
+    'http://ui-theme.localhost/r'
+  );
+});
+
+test('rejects unsafe registry origins and names the source', () => {
+  assert.throws(
+    () => resolveRegistryOrigin({ flag: 'registry.example.com' }),
+    /Invalid --registry/
+  );
+  assert.throws(
+    () => resolveRegistryOrigin({ env: 'http://registry.example.com/r' }),
+    /Invalid UITHEME_REGISTRY_URL: use https/
+  );
+  assert.throws(
+    () => resolveRegistryOrigin({ flag: 'file:///tmp/r' }),
+    /use https/
+  );
+  assert.throws(
+    () => resolveRegistryOrigin({ flag: 'https://user:pass@example.com/r' }),
+    /remove credentials/
+  );
+  assert.throws(
+    () => resolveRegistryOrigin({ flag: 'https://example.com/r?token=1' }),
+    /remove credentials/
   );
 });

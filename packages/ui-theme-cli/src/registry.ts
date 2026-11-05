@@ -11,7 +11,47 @@ import type {
   RegistryVariant,
 } from './types.ts';
 
-const defaultOrigin = 'https://www.ui-theme.dev/r';
+export const defaultOrigin = 'https://www.ui-theme.dev/r';
+
+const localHosts = ['localhost', '127.0.0.1', '[::1]'];
+
+/**
+ * Select the registry origin. The `--registry` flag wins over the
+ * `UITHEME_REGISTRY_URL` variable, and both win over the hosted registry.
+ * Plain HTTP is accepted only for a registry on this machine.
+ */
+export function resolveRegistryOrigin(
+  sources: { flag?: string; env?: string } = {}
+): string {
+  const value = sources.flag || sources.env;
+
+  if (!value) return defaultOrigin;
+
+  const name = sources.flag ? '--registry' : 'UITHEME_REGISTRY_URL';
+
+  let url: URL;
+
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`Invalid ${name}: ${value} is not a URL`);
+  }
+
+  const local =
+    localHosts.includes(url.hostname) || url.hostname.endsWith('.localhost');
+
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local))
+    throw new Error(
+      `Invalid ${name}: use https, or http for localhost (${value})`
+    );
+
+  if (url.username || url.password || url.search || url.hash)
+    throw new Error(
+      `Invalid ${name}: remove credentials, query and fragment (${value})`
+    );
+
+  return `${url.origin}${url.pathname}`.replace(/\/+$/, '');
+}
 
 const validRevision = (value: unknown): value is string =>
   typeof value === 'string' && /^\w[\w-]{7,127}$/.test(value);
