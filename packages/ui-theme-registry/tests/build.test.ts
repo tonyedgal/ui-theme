@@ -121,7 +121,26 @@ test('builds all 84 variants reproducibly from sources with only selected base d
     );
 
     for (const [style, base] of shadcnStyles) {
-      assert.equal((await readdir(join(outDir, style))).length, 7, style);
+      const files = await readdir(join(outDir, style));
+      assert.equal(files.length, 8, style);
+
+      // shadcn search reads the index; the directory forbids file content in it
+      const index = JSON.parse(
+        await readFile(join(outDir, style, 'registry.json'), 'utf8')
+      );
+
+      assert.equal(index.name, 'uitheme');
+      assert.deepEqual(
+        index.items.map((item) => `${item.name}.json`).sort(),
+        files.filter((file) => file !== 'registry.json').sort(),
+        style
+      );
+      assert.ok(
+        index.items.every((item) =>
+          item.files.every((file) => !('content' in file))
+        ),
+        style
+      );
 
       const record = JSON.parse(
         await readFile(join(outDir, style, 'icon-theme-toggle.json'), 'utf8')
