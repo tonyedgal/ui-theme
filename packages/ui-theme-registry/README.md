@@ -12,6 +12,13 @@ before generating the current revision. Existing archive bytes cannot change.
 The revision includes generated payloads and the registry origin, so compiler
 changes cannot reuse an old URL with different content.
 
+The build also writes a shadcn layer at `{style}/{name}.json`. It has one
+TypeScript, Tailwind 4 record per React component for each shadcn style:
+`new-york`, `new-york-v4` and `default`, plus the `radix-*` styles, use Radix,
+and the `base-*` styles use Base UI. These records follow the stable revision
+and are not frozen. React Aria (`aria-*`) styles are not served. When shadcn
+adds a style, add its name to `shadcnStyles` in `src/build.ts`.
+
 Each record contains absolute URLs. To serve a build from another address, run
 `pnpm build --origin <url>`, for example `--origin http://localhost:4000/r`.
 Then serve `dist/` at that URL and pass the same URL to the CLI `--registry`
