@@ -8,6 +8,7 @@ import {
   RegistryLivePreview,
   RegistryExamples,
   RegistryInstallation,
+  RegistryShadcnInstallation,
   RegistryUsage,
   RegistryApi,
   RegistryReact,
@@ -25,7 +26,11 @@ import {
 import registry from '@/.generated/registry.json';
 import { highlightCode } from '@/lib/highlight-code';
 import { componentUsage, componentExamples } from '@/lib/component-docs';
-import { packageManagers, packageCommand } from '@/lib/docs-commands';
+import {
+  packageManagers,
+  packageCommand,
+  shadcnCommand,
+} from '@/lib/docs-commands';
 import { TableOfContents } from '@/components/docs/table-of-contents';
 
 export const dynamicParams = false;
@@ -118,6 +123,18 @@ export default async function Page({
     )
   );
 
+  const shadcnCommands = Object.fromEntries(
+    await Promise.all(
+      packageManagers.map(async (pm) => [
+        pm,
+        await highlightCode(
+          packageCommand(shadcnCommand(doc.name), pm),
+          'bash'
+        ),
+      ])
+    )
+  );
+
   const commands = Object.fromEntries(
     await Promise.all(
       records.map(async (record) => {
@@ -160,6 +177,7 @@ export default async function Page({
         records={records}
         usageHtml={usageHtml}
         commands={commands}
+        shadcnCommands={shadcnCommands}
         markdown={markdown}
       >
         <MDX
@@ -167,6 +185,7 @@ export default async function Page({
             RegistryLivePreview,
             RegistryExamples,
             RegistryInstallation,
+            RegistryShadcnInstallation,
             RegistryUsage,
             RegistryApi,
             RegistryReact,
