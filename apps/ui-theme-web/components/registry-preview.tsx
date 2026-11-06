@@ -44,7 +44,7 @@ import { ComponentPreview } from './docs/component-preview';
 import { InstallTabs } from './docs/install-tabs';
 import { DocsSelect } from './docs/select';
 import { DocsPagination, PaginationArrows } from './docs/pagination';
-import type { PackageManager } from '@/lib/docs-commands';
+import { shadcnCommand, type PackageManager } from '@/lib/docs-commands';
 import './registry-preview.css';
 
 interface RegistryPreviewProps {
@@ -56,6 +56,7 @@ interface RegistryPreviewProps {
   records: ComponentSource[];
   usageHtml: Record<string, string>;
   commands: Record<string, Partial<Record<PackageManager, string>>>;
+  shadcnCommands: Partial<Record<PackageManager, string>>;
   children: ReactNode;
   markdown: string;
 }
@@ -66,6 +67,7 @@ function RegistryContent({
   records,
   usageHtml,
   commands,
+  shadcnCommands,
   children,
   markdown: authoredMarkdown,
   navigation,
@@ -339,6 +341,13 @@ function RegistryContent({
               />
             </div>
           ),
+          shadcnInstallation: (
+            <InstallTabs
+              command={shadcnCommand(component)}
+              highlighted={shadcnCommands}
+              testId="shadcn-install-command"
+            />
+          ),
           usage: (
             <div className="not-prose">
               {' '}
@@ -427,6 +436,7 @@ interface RegistryBlockValues {
   live: ReactNode;
   examples: ReactNode;
   installation: ReactNode;
+  shadcnInstallation: ReactNode;
   usage: ReactNode;
   source: ReactNode;
   api: ReturnType<typeof componentApi>;
@@ -455,6 +465,10 @@ export function RegistryExamples() {
 
 export function RegistryInstallation() {
   return useRegistryBlocks().installation;
+}
+
+export function RegistryShadcnInstallation() {
+  return useRegistryBlocks().shadcnInstallation;
 }
 
 export function RegistryUsage() {

@@ -14,15 +14,17 @@ import { CopyButton } from './copy-button';
 export function InstallTabs({
   command,
   highlighted = {},
+  testId = 'install-command',
 }: {
   command: string;
   highlighted?: Partial<Record<PackageManager, string>>;
+  testId?: string;
 }) {
   const [manager, setManager] = useState<PackageManager>('npx');
 
   return (
     <div
-      data-testid="install-command"
+      data-testid={testId}
       className="not-prose overflow-hidden rounded-lg border"
     >
       <DocsTabs
