@@ -1,15 +1,29 @@
 ---
 title: Installation
-description: Set up the shared runtime for your framework.
+description: Install the runtime, then add controls with the CLI or shadcn.
 ---
+
+## Choose an install path
+
+Each path uses the `uitheme-web` runtime. Pick one.
+
+| Path                                  | Use it when                                                                      |
+| ------------------------------------- | -------------------------------------------------------------------------------- |
+| Runtime only                          | You build your own controls with the hooks. Any CSS works, Tailwind is optional. |
+| [UI-Theme CLI](#install-with-the-cli) | You want ready controls in React or Vue, with Tailwind 3.4 or 4.                 |
+| [shadcn](#install-with-shadcn)        | Your React app already uses shadcn with Tailwind 4.                              |
+
+For the runtime only, install the package and add the provider for your
+framework:
 
 ```sh
 npm install uitheme-web@latest
 ```
 
 The runtime changes theme classes and CSS variables. Supply your own styles.
-The optional [local controls](/docs/components) support Tailwind CSS 3.4 and 4.
-The CLI requires an existing Tailwind setup. It does not create an app or upgrade Tailwind.
+The CLI and shadcn copy editable [controls](/docs/components) into your app.
+The CLI requires an existing Tailwind setup. It does not create an app or
+upgrade Tailwind.
 
 ## React
 
@@ -131,7 +145,42 @@ The CLI supports complete CSS colors and HSL channel tokens.
 Review the dry-run before applying CSS changes. Existing imports, variables,
 and plugins must remain intact.
 
-## Install components
+## Without Tailwind
+
+The runtime works with any CSS. It adds the `dark` class to the `html` element
+for the dark appearance. It also adds a `theme-<key>` class for the selected
+palette, for example `theme-ocean`. Register each palette key in `colorThemes`
+on the provider. Then define your variables for these classes:
+
+```css title="styles.css"
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+}
+
+.theme-ocean {
+  --background: #f0f9ff;
+}
+
+.theme-ocean.dark {
+  --background: #082f49;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+```
+
+The CLI and shadcn controls use Tailwind classes. Without Tailwind, build your
+controls with `useUITheme()`.
+
+## Install with the CLI
 
 Use the [component catalog](/docs/components) to choose a control. The CLI copies
 editable source into your app. Set up the runtime, provider, and Tailwind first.
@@ -145,6 +194,43 @@ npx uitheme-cli add theme-toggle --base base-ui
 
 See the [CLI guide](/docs/cli) for commands, flags, workspace paths, and previews.
 Review the plan before you replace edited component files.
+
+## Install with shadcn
+
+Use this path in a React app that already has shadcn and Tailwind 4.
+
+1. Add the UI-Theme registry to `components.json`:
+
+   ```json title="components.json"
+   {
+     "registries": {
+       "@uitheme": "https://www.ui-theme.dev/r/{style}/{name}.json"
+     }
+   }
+   ```
+
+2. Add a control:
+
+   ```sh
+   npx shadcn@latest add @uitheme/theme-toggle
+   ```
+
+3. Add the provider for your framework, as the sections above show. shadcn
+   installs `uitheme-web`, but it does not add the provider.
+
+The `style` in `components.json` selects the primitive base:
+
+| Styles                                              | Base    |
+| --------------------------------------------------- | ------- |
+| `radix-*`, `new-york`, `new-york-v4`, and `default` | Radix   |
+| `base-*`                                            | Base UI |
+
+The registry serves Tailwind 4 source only. React Aria styles (`aria-*`) are
+not supported. For Vue or Tailwind 3.4, use the
+[UI-Theme CLI](#install-with-the-cli).
+
+shadcn does not write `uitheme.json`, so `uitheme-cli diff` does not track the
+files that shadcn installs.
 
 ## Native applications
 
