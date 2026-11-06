@@ -50,6 +50,20 @@ UITHEME_REGISTRY_URL=http://localhost:4000/r npx uitheme-cli list
 npx uitheme-cli add theme-toggle --registry http://localhost:4000/r --dry-run
 ```
 
+The CLI installs `uitheme-web@latest`. To test another runtime, set
+`UITHEME_WEB_VERSION` to a dist-tag, a version, or a packed `.tgz` file. The
+CLI always installs that value, even when the app already has `uitheme-web`.
+A prerelease counts as its release, so `2.0.0-rc.1` meets `^2.0.0`.
+
+```sh
+UITHEME_WEB_VERSION=next npx uitheme-cli init
+UITHEME_WEB_VERSION=./uitheme-web-2.0.0.tgz npx uitheme-cli init
+```
+
+A `.tgz` path is relative to the folder where you run the command. The app's
+`package.json` then records a `file:` path to that tarball, so use it only for
+local tests.
+
 `--dry-run` and `--preview` do not write files or install packages. `--yes`
 skips confirmation but does not overwrite edited source. `--overwrite` permits
 replacement after you inspect the plan. Failed dependency installation restores
