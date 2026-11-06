@@ -28,7 +28,8 @@
     "test:validation": "node --test scripts/tests/validation.test.mjs",
     "test:browsers:install": "pnpm --filter uitheme-web exec playwright install chromium firefox webkit",
     "test:local": "node scripts/validate.mjs --all",
-    "test:release:registry": "node scripts/check-registry-release-consumers.mjs"
+    "test:release:registry": "node scripts/check-registry-release-consumers.mjs && pnpm test:registry:shadcn",
+    "test:registry:shadcn": "node scripts/check-registry-shadcn.mjs"
   },
   "repository": {
     "type": "git",
