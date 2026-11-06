@@ -565,7 +565,7 @@ export async function planInit(
     dependencies: await missingDependencies(
       profile,
       [
-        'uitheme-web@latest',
+        options.webDependency ?? 'uitheme-web@latest',
         ...(utility.owner.cwd === profile.cwd ? utility.dependencies : []),
       ],
       ['uitheme-web']

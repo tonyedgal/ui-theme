@@ -9,6 +9,7 @@ import {
 } from 'node:fs/promises';
 import { resolve, relative, dirname, isAbsolute, join } from 'node:path';
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import semver from 'semver';
 import { planSharedUtils } from './shared-utils.ts';
 import { readConfig } from '../config.ts';
@@ -35,6 +36,38 @@ export interface PlanOptions {
   overwrite?: boolean;
   yes?: boolean;
   diff?: boolean;
+  /** The uitheme-web dependency to install, from `resolveWebDependency`. */
+  webDependency?: string;
+}
+
+const defaultWebDependency = 'uitheme-web@latest';
+
+/**
+ * Select the uitheme-web dependency from `UITHEME_WEB_VERSION`. The value can
+ * be a dist-tag (`next`), a version or range (`2.0.0-rc.1`), or a path to a
+ * packed `.tgz` file. Without a value, the CLI installs `uitheme-web@latest`.
+ */
+export function resolveWebDependency(
+  value: string | undefined,
+  base = process.cwd()
+): string {
+  if (!value) return defaultWebDependency;
+
+  if (value.endsWith('.tgz')) {
+    const path = resolve(base, value.replace(/^file:/, ''));
+
+    if (!existsSync(path))
+      throw new Error(`UITHEME_WEB_VERSION file does not exist: ${path}`);
+
+    return `uitheme-web@file:${path}`;
+  }
+
+  if (/^[a-z][a-z0-9._-]*$/i.test(value) || semver.validRange(value))
+    return `uitheme-web@${value}`;
+
+  throw new Error(
+    `Invalid UITHEME_WEB_VERSION: use a dist-tag, a version, or a .tgz path (${value})`
+  );
 }
 
 export type InstallRunner = (
@@ -202,12 +235,19 @@ function dependencySpec(spec: string) {
       spec
     );
 
-  const version = spec === 'uitheme-web@latest' ? '^2.0.0' : match?.[2];
+  if (spec.startsWith('uitheme-web@'))
+    return {
+      name: 'uitheme-web',
+      version: spec === defaultWebDependency ? '^2.0.0' : undefined,
+      explicit: spec !== defaultWebDependency,
+    };
+
+  const version = match?.[2];
 
   if (!match || (version && !semver.validRange(version)))
     throw new Error(`Unsafe registry dependency: ${spec}`);
 
-  return { name: match[1], version };
+  return { name: match[1], version, explicit: false };
 }
 
 export async function missingDependencies(
@@ -223,11 +263,17 @@ export async function missingDependencies(
   const result = new Map<string, string>();
 
   for (const spec of requested) {
-    const { name, version } = dependencySpec(spec);
+    const { name, version, explicit } = dependencySpec(spec);
     const previous = result.get(name);
 
     if (previous && previous !== spec)
       throw new Error(`Conflicting registry dependency: ${name}`);
+
+    // UITHEME_WEB_VERSION is a deliberate choice, so it is always installed.
+    if (explicit) {
+      result.set(name, spec);
+      continue;
+    }
 
     const current = existing[name];
 
@@ -274,7 +320,8 @@ export async function planRegistryInstall(
   const saved = await readConfig(profile.cwd);
   const installed = { ...saved?.installed };
   const files = new Map<string, PlannedFile>();
-  const dependencies: string[] = ['uitheme-web@latest'];
+  const web = options.webDependency ?? defaultWebDependency;
+  const dependencies: string[] = [web];
   const utility = await planSharedUtils(profile, options);
   const owner = utility.owner;
   profile = utility.profile;
@@ -377,7 +424,7 @@ export async function planRegistryInstall(
     files: [...files.values()],
     dependencies: await missingDependencies(
       profile,
-      owner.cwd === profile.cwd ? dependencies : ['uitheme-web@latest']
+      owner.cwd === profile.cwd ? dependencies : [web]
     ),
     manualSteps: [],
     revision: graph.manifest.stable.revision,

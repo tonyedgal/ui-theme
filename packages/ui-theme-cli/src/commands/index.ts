@@ -5,16 +5,18 @@ import {
   createRegistryClient,
   defaultOrigin,
   resolveRegistryOrigin,
+  satisfiesRelease,
+  unreleasedVersion,
 } from '../registry.ts';
 import {
   applyPlan,
   describePlan,
+  resolveWebDependency,
   planRegistryInstall,
   readOptional,
 } from '../install/index.ts';
 import { planInit } from '../install/setup.ts';
 import { cliVersion, installedWebVersion } from './version.ts';
-import semver from 'semver';
 import { runMigration } from './migrate.ts';
 import type { InstallPlan, InstallRunner } from '../install/index.ts';
 import type {
@@ -227,7 +229,7 @@ function diffPlan(plan: InstallPlan): string {
     .join('\n');
 }
 
-const help = `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <base-ui|radix|reka>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--registry <url>       Use another registry (env: UITHEME_REGISTRY_URL)\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without a confirmation prompt\n--overwrite            Permit replacing edited component files\n--json                 Print structured output\n`;
+const help = `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <base-ui|radix|reka>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--registry <url>       Use another registry (env: UITHEME_REGISTRY_URL)\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without a confirmation prompt\n--overwrite            Permit replacing edited component files\n--json                 Print structured output\n\nEnvironment:\nUITHEME_REGISTRY_URL   Use another registry (--registry wins)\nUITHEME_WEB_VERSION    Install uitheme-web from a dist-tag, version, or .tgz path\n`;
 
 export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
   const stdout = io.stdout ?? console.log,
@@ -339,23 +341,31 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
     if (
       command !== 'init' &&
       webVersion &&
-      !semver.satisfies(webVersion, '^2.0.0')
+      !satisfiesRelease(webVersion, '^2.0.0')
     )
       throw new Error(
         `Incompatible uitheme-web ${webVersion}. Run migration before installing v2 controls.`
       );
 
-    const origin = resolveRegistryOrigin({
-      flag: flags.registry,
-      env: (io.env ?? process.env).UITHEME_REGISTRY_URL,
-    });
+    const env = io.env ?? process.env,
+      origin = resolveRegistryOrigin({
+        flag: flags.registry,
+        env: env.UITHEME_REGISTRY_URL,
+      }),
+      webDependency = resolveWebDependency(env.UITHEME_WEB_VERSION),
+      version = await cliVersion();
 
     if (origin !== defaultOrigin) stderr(`Registry: ${origin}`);
+
+    if (env.UITHEME_WEB_VERSION) stderr(`Runtime: ${webDependency}`);
+
+    if (version === unreleasedVersion)
+      stderr('Unreleased CLI build: skipping the CLI version check.');
 
     const registry =
       io.registry ??
       createRegistryClient({
-        cliVersion: await cliVersion(),
+        cliVersion: version,
         webVersion: webVersion ?? '2.0.0',
         revision: flags.revision,
         origin,
@@ -386,7 +396,8 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
 
     let plan: InstallPlan;
 
-    if (command === 'init') plan = await planInit(profile, flags);
+    if (command === 'init')
+      plan = await planInit(profile, { ...flags, webDependency });
     else {
       const names = flags.components.length
         ? flags.components
@@ -401,6 +412,7 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
       const graph = await registry.resolve(names, variant(profile));
       plan = await planRegistryInstall(profile, graph, {
         ...flags,
+        webDependency,
         diff: command === 'diff',
       });
     }
