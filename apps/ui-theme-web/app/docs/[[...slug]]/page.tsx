@@ -82,7 +82,19 @@ export async function generateMetadata(
   return {
     title: page.data.title,
     description: page.data.description,
+    alternates: { canonical: page.url },
     openGraph: {
+      type: 'article',
+      url: page.url,
+      siteName: 'UI-Theme',
+      title: page.data.title,
+      description: page.data.description,
+      images: getPageImage(page).url,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: page.data.title,
+      description: page.data.description,
       images: getPageImage(page).url,
     },
   };
