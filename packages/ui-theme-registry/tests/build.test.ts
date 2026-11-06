@@ -1,7 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRegistry, javascriptSource } from '../src/build.ts';
-import { mkdtemp, mkdir, writeFile, rm, readFile } from 'node:fs/promises';
+import { buildRegistry, javascriptSource, shadcnStyles } from '../src/build.ts';
+import {
+  mkdtemp,
+  mkdir,
+  writeFile,
+  rm,
+  readFile,
+  readdir,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -105,6 +112,46 @@ test('builds all 84 variants reproducibly from sources with only selected base d
       JSON.parse(await readFile(join(outDir, 'manifest.json'), 'utf8')),
       first.manifest
     );
+
+    const folders = (await readdir(outDir)).sort();
+
+    assert.deepEqual(
+      folders,
+      ['manifest.json', 'v1', ...shadcnStyles.keys()].sort()
+    );
+
+    for (const [style, base] of shadcnStyles) {
+      assert.equal((await readdir(join(outDir, style))).length, 7, style);
+
+      const record = JSON.parse(
+        await readFile(join(outDir, style, 'icon-theme-toggle.json'), 'utf8')
+      );
+
+      const source = first.index.items.find(
+        (i) =>
+          i.name === 'icon-theme-toggle' &&
+          i.meta.uiTheme.framework === 'react' &&
+          i.meta.uiTheme.base === base &&
+          i.meta.uiTheme.tailwind === 4 &&
+          i.meta.uiTheme.language === 'ts'
+      );
+
+      assert.equal(
+        record.$schema,
+        'https://ui.shadcn.com/schema/registry-item.json'
+      );
+      assert.ok(record.dependencies.includes('uitheme-web@^2.0.0'));
+      assert.ok(record.registryDependencies.includes('utils'));
+      assert.deepEqual(record.files, source.files);
+      assert.ok(
+        record.registryDependencies
+          .filter((url) => url !== 'utils')
+          .every((url) =>
+            url.startsWith(`https://www.ui-theme.dev/r/${style}/`)
+          ),
+        style
+      );
+    }
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -243,4 +290,15 @@ test('revision identifies serialized records and origin, while frozen releases s
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test('serves only shadcn styles that have a matching base', () => {
+  assert.equal(shadcnStyles.size, 19);
+  assert.equal(shadcnStyles.get('new-york-v4'), 'radix');
+  assert.equal(shadcnStyles.get('new-york'), 'radix');
+  assert.equal(shadcnStyles.get('radix-nova'), 'radix');
+  assert.equal(shadcnStyles.get('base-vega'), 'base-ui');
+
+  for (const style of ['aria-nova', 'aria-vega', 'unknown'])
+    assert.equal(shadcnStyles.has(style), false, style);
 });
