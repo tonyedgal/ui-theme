@@ -36,6 +36,11 @@ test('the site serves shadcn records only for supported styles', async ({
     expect(response.ok()).toBe(true);
     const record = await response.json();
     expect(record.dependencies).toContain('uitheme-web@^2.0.0');
+
+    const index = await (await request.get(`/r/${style}/registry.json`)).json();
+    expect(index.items.map((item: { name: string }) => item.name)).toContain(
+      'theme-toggle'
+    );
   }
 
   expect((await request.get('/r/aria-nova/theme-toggle.json')).status()).toBe(
