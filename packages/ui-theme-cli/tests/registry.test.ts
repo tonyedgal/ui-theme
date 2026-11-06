@@ -4,6 +4,7 @@ import {
   createRegistryClient,
   defaultOrigin,
   resolveRegistryOrigin,
+  satisfiesRelease,
 } from '../src/registry.ts';
 
 const revision = 'a'.repeat(64),
@@ -216,4 +217,13 @@ test('rejects unsafe registry origins and names the source', () => {
     () => resolveRegistryOrigin({ flag: 'https://example.com/r?token=1' }),
     /remove credentials/
   );
+});
+
+test('treats a prerelease as the release it leads to', () => {
+  assert.equal(satisfiesRelease('2.0.0-rc.1', '^2.0.0'), true);
+  assert.equal(satisfiesRelease('1.0.0-rc.0', '^1.0.0'), true);
+  assert.equal(satisfiesRelease('2.3.1', '^2.0.0'), true);
+  assert.equal(satisfiesRelease('1.2.0', '^2.0.0'), false);
+  assert.equal(satisfiesRelease('3.0.0-rc.0', '^2.0.0'), false);
+  assert.equal(satisfiesRelease('not-a-version', '^2.0.0'), false);
 });
