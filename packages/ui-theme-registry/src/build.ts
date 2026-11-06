@@ -414,8 +414,9 @@ export async function buildRegistry(
 
 /**
  * Write the shadcn layer: one TypeScript, Tailwind 4 file per style and
- * component. These files follow the stable revision. They are rebuilt on
- * every build and are never frozen in `releases/`.
+ * component, and a `registry.json` index per style for `shadcn search`. These
+ * files follow the stable revision. They are rebuilt on every build and are
+ * never frozen in `releases/`.
  */
 async function writeShadcnStyles(
   outDir: string,
@@ -430,6 +431,8 @@ async function writeShadcnStyles(
   for (const [style, base] of shadcnStyles) {
     await rm(join(outDir, style), { recursive: true, force: true });
     await mkdir(join(outDir, style), { recursive: true });
+
+    const indexItems = [];
 
     for (const { item } of records) {
       const meta = item.meta.uiTheme;
@@ -448,8 +451,7 @@ async function writeShadcnStyles(
 
       const path = `${style}/${item.name}.json`;
 
-      const record = {
-        $schema: 'https://ui.shadcn.com/schema/registry-item.json',
+      const entry = {
         name: item.name,
         type: item.type,
         title: item.title,
@@ -461,12 +463,40 @@ async function writeShadcnStyles(
         meta: item.meta,
       };
 
+      const record = {
+        $schema: 'https://ui.shadcn.com/schema/registry-item.json',
+        ...entry,
+      };
+
       await writeFile(
         join(outDir, path),
         `${JSON.stringify(record, null, 2)}\n`
       );
       written.push(path);
+
+      // the directory requires an index without file content
+      indexItems.push({
+        ...entry,
+        files: entry.files.map(({ path, type }) => ({ path, type })),
+      });
     }
+
+    const indexPath = `${style}/registry.json`;
+
+    await writeFile(
+      join(outDir, indexPath),
+      `${JSON.stringify(
+        {
+          $schema: 'https://ui.shadcn.com/schema/registry.json',
+          name: 'uitheme',
+          homepage: 'https://www.ui-theme.dev',
+          items: indexItems,
+        },
+        null,
+        2
+      )}\n`
+    );
+    written.push(indexPath);
   }
 
   return written;
