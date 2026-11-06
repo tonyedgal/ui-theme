@@ -75,19 +75,21 @@ export function validate(files, { ci = false, root = process.cwd() } = {}) {
 
   for (const name of plan.consumers) {
     const script = name === 'rn' ? 'native' : name;
-    execFileSync(
-      process.execPath,
-      [
-        name === 'registry'
-          ? 'scripts/check-registry-release-consumers.mjs'
-          : `scripts/check-${script}-release-consumer.mjs`,
-      ],
-      {
+
+    const scripts =
+      name === 'registry'
+        ? [
+            'scripts/check-registry-release-consumers.mjs',
+            'scripts/check-registry-shadcn.mjs',
+          ]
+        : [`scripts/check-${script}-release-consumer.mjs`];
+
+    for (const path of scripts)
+      execFileSync(process.execPath, [path], {
         cwd: root,
         stdio: 'inherit',
         env: { ...process.env, CI: '1' },
-      }
-    );
+      });
   }
 
   return plan;

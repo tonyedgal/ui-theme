@@ -19,6 +19,12 @@ and the `base-*` styles use Base UI. These records follow the stable revision
 and are not frozen. React Aria (`aria-*`) styles are not served. When shadcn
 adds a style, add its name to `shadcnStyles` in `src/build.ts`.
 
+Run `pnpm test:registry:shadcn` from the repository root to check this layer
+with the shadcn CLI. The check runs `shadcn add --dry-run` for each style
+against a local build. It writes no files in your app, but it needs network
+access because shadcn fetches its own `utils` item. The logs are in
+`test-results/registry-shadcn`.
+
 Each record contains absolute URLs. To serve a build from another address, run
 `pnpm build --origin <url>`, for example `--origin http://localhost:4000/r`.
 Then serve `dist/` at that URL and pass the same URL to the CLI `--registry`
