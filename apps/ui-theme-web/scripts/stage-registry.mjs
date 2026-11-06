@@ -86,9 +86,8 @@ const target = join(app, 'public/r');
 
 await mkdir(target, { recursive: true });
 
-await cp(join(source, 'v1'), join(target, 'v1'), { recursive: true });
-
-await cp(join(source, 'manifest.json'), join(target, 'manifest.json'));
+// Copy the versioned records, the manifest and the shadcn style folders.
+await cp(source, target, { recursive: true });
 
 await mkdir(join(app, '.generated'), { recursive: true });
 
