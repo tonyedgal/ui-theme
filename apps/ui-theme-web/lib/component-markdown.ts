@@ -6,6 +6,7 @@ import {
   type ComponentDoc,
   type ComponentSource,
 } from './component-docs';
+import { shadcnCommand } from './docs-commands';
 
 export function componentMarkdown({
   doc,
@@ -47,6 +48,7 @@ export function componentMarkdown({
         })
         .join('\n\n'),
       RegistryInstallation: `\`\`\`sh\n${command}\n\`\`\``,
+      RegistryShadcnInstallation: `\`\`\`sh\n${shadcnCommand(doc.name)}\n\`\`\``,
       RegistryUsage: `\`\`\`${base === 'reka' ? 'vue' : language === 'js' ? 'jsx' : 'tsx'}\n${usage}\n\`\`\``,
       RegistryApi: `| Prop | Type | Behavior |\n| --- | --- | --- |\n${api.map((row) => `| ${row.name} | ${row.type} | ${row.description} |`).join('\n')}`,
       RegistryAgentCopy: '',
