@@ -1,4 +1,4 @@
-import { readFile, readdir, mkdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir, mkdir, writeFile, rm } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -42,6 +42,41 @@ interface Metadata {
     }
   >;
 }
+
+/**
+ * shadcn installs from `{origin}/{style}/{name}.json`, where `style` comes
+ * from the app's `components.json`. Each served style maps to one React base.
+ * React Aria styles (`aria-*`) are not served, because no Aria templates
+ * exist. When shadcn adds a style, add its name here.
+ */
+const shadcnStyleNames = [
+  'vega',
+  'nova',
+  'maia',
+  'lyra',
+  'mira',
+  'luma',
+  'rhea',
+  'sera',
+];
+
+export const shadcnStyles = new Map<string, 'radix' | 'base-ui'>([
+  ['new-york', 'radix'],
+  // shadcn uses new-york-v4 when the style is missing, and for new-york on
+  // Tailwind 4.
+  ['new-york-v4', 'radix'],
+  ['default', 'radix'],
+  ...shadcnStyleNames.map((name): [string, 'radix'] => [
+    `radix-${name}`,
+    'radix',
+  ]),
+  ...shadcnStyleNames.map((name): [string, 'base-ui'] => [
+    `base-${name}`,
+    'base-ui',
+  ]),
+]);
+
+const installationDocs = 'https://www.ui-theme.dev/docs/installation';
 
 const digest = (value: string) =>
   createHash('sha256').update(value).digest('hex');
@@ -367,7 +402,74 @@ export async function buildRegistry(
     await writeFile(path, serialized);
   }
 
-  return { revision, manifest, index, files: output.map((r) => r.path) };
+  const styleFiles = await writeShadcnStyles(outDir, origin, records);
+
+  return {
+    revision,
+    manifest,
+    index,
+    files: [...output.map((r) => r.path), ...styleFiles],
+  };
+}
+
+/**
+ * Write the shadcn layer: one TypeScript, Tailwind 4 file per style and
+ * component. These files follow the stable revision. They are rebuilt on
+ * every build and are never frozen in `releases/`.
+ */
+async function writeShadcnStyles(
+  outDir: string,
+  origin: string,
+  records: {
+    path: string;
+    item: import('../../ui-theme-cli/src/types.ts').RegistryItem;
+  }[]
+) {
+  const written: string[] = [];
+
+  for (const [style, base] of shadcnStyles) {
+    await rm(join(outDir, style), { recursive: true, force: true });
+    await mkdir(join(outDir, style), { recursive: true });
+
+    for (const { item } of records) {
+      const meta = item.meta.uiTheme;
+
+      if (
+        meta.framework !== 'react' ||
+        meta.base !== base ||
+        meta.tailwind !== 4 ||
+        meta.language !== 'ts'
+      )
+        continue;
+
+      const dependencies = item.registryDependencies.map(
+        (url) => `${origin}/${style}/${url.split('/').at(-1)}`
+      );
+
+      const path = `${style}/${item.name}.json`;
+
+      const record = {
+        $schema: 'https://ui.shadcn.com/schema/registry-item.json',
+        name: item.name,
+        type: item.type,
+        title: item.title,
+        description: item.description,
+        dependencies: [...item.dependencies, 'uitheme-web@^2.0.0'],
+        registryDependencies: ['utils', ...dependencies],
+        files: item.files,
+        docs: `${item.title} needs the UI-Theme provider in your app. See ${installationDocs}.`,
+        meta: item.meta,
+      };
+
+      await writeFile(
+        join(outDir, path),
+        `${JSON.stringify(record, null, 2)}\n`
+      );
+      written.push(path);
+    }
+  }
+
+  return written;
 }
 
 if (
