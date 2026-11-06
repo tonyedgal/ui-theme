@@ -12,3 +12,7 @@ export function packageCommand(command: string, manager: PackageManager) {
 
   return command.replace(/^npx /, `${runners[manager]} `);
 }
+
+export function shadcnCommand(component: string) {
+  return `npx shadcn@latest add @uitheme/${component}`;
+}
