@@ -8,16 +8,89 @@ import { ScrollHint } from '@/components/scroll-hint';
 import { StackCarousel } from '@/components/stack-carousel';
 import { ThemeTagline } from '@/components/theme-tagline';
 import { TextFlip } from '@/components/ui/text-flip';
+import {
+  siteAuthor,
+  siteDescription,
+  siteKeywords,
+  siteName,
+  siteRepository,
+  siteTitle,
+  siteUrl,
+} from '@/lib/site';
 
 export const metadata: Metadata = {
-  title: 'UI-Theme — The library for theming the web',
-  description:
-    'A theming library and registry for React, Vue, and React Native. Add color palettes, animated transitions, and controls you can make your own.',
+  title: { absolute: siteTitle },
+  description: siteDescription,
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    url: '/',
+    siteName,
+    title: siteTitle,
+    description: siteDescription,
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/opengraph-image'],
+  },
+};
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${siteUrl}/#website`,
+      url: siteUrl,
+      name: siteName,
+      alternateName: ['UITheme', 'uitheme', 'ui-theme', 'uitheme.dev'],
+      description: siteDescription,
+      publisher: { '@id': `${siteUrl}/#author` },
+    },
+    {
+      '@type': 'Person',
+      '@id': `${siteUrl}/#author`,
+      name: siteAuthor.name,
+      url: siteAuthor.url,
+      sameAs: [siteAuthor.github, 'https://x.com/TonyEdgal'],
+    },
+    {
+      '@type': 'SoftwareSourceCode',
+      '@id': `${siteUrl}/#library`,
+      name: 'uitheme-web',
+      alternateName: siteName,
+      description: siteDescription,
+      url: siteUrl,
+      codeRepository: siteRepository,
+      programmingLanguage: ['TypeScript', 'JavaScript', 'CSS'],
+      runtimePlatform: ['React', 'Next.js', 'Vue', 'Nuxt', 'React Native'],
+      license: 'https://opensource.org/licenses/MIT',
+      keywords: siteKeywords.join(', '),
+      author: { '@id': `${siteUrl}/#author` },
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: siteName,
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'Web, iOS, Android',
+      url: siteUrl,
+      description: siteDescription,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      author: { '@id': `${siteUrl}/#author` },
+    },
+  ],
 };
 
 export default function HomePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+        }}
+      />
       <main id="main-content" tabIndex={-1}>
         <section
           aria-labelledby="home-title"
