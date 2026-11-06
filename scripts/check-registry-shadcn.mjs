@@ -1,8 +1,9 @@
 // Check that the shadcn CLI can read the registry layer for each shadcn style.
 //
 // The check builds the registry into a temporary folder with a local origin,
-// serves it, and runs `shadcn add --dry-run` in a small React app with
-// Tailwind 4. A dry run writes no files and installs no packages. shadcn still
+// serves it, and runs `shadcn add --dry-run` and `shadcn search` in a small
+// React app with Tailwind 4. A dry run writes no files and installs no
+// packages. shadcn still
 // fetches its own `utils` item from ui.shadcn.com, so the check needs network
 // access.
 import assert from 'node:assert/strict';
@@ -86,18 +87,11 @@ function shadcnBin() {
 }
 
 // The server is in this process, so shadcn must run asynchronously.
-async function shadcnAdd(app, bin, names, label) {
+async function runShadcn(bin, args, label) {
   try {
     const { stdout, stderr } = await promisify(execFile)(
       process.execPath,
-      [
-        bin,
-        'add',
-        ...names.map((name) => `@uitheme/${name}`),
-        '--dry-run',
-        '--cwd',
-        app,
-      ],
+      [bin, ...args],
       {
         encoding: 'utf8',
         timeout: 120_000,
@@ -107,13 +101,27 @@ async function shadcnAdd(app, bin, names, label) {
 
     write(evidence, `${label}.log`, stdout + stderr);
 
-    return { ok: true, output: stdout + stderr };
+    return { ok: true, output: stdout + stderr, stdout };
   } catch (error) {
     const output = `${error.stdout ?? ''}\n${error.stderr ?? ''}`;
     write(evidence, `${label}.log`, output);
 
     return { ok: false, output };
   }
+}
+
+function shadcnAdd(app, bin, names, label) {
+  return runShadcn(
+    bin,
+    [
+      'add',
+      ...names.map((name) => `@uitheme/${name}`),
+      '--dry-run',
+      '--cwd',
+      app,
+    ],
+    label
+  );
 }
 
 function writeApp(app, style, origin) {
@@ -270,6 +278,21 @@ try {
         dependencyBase === base,
         `${label}: wrong primitive dependency ${dependency}`
       );
+
+    const search = await runShadcn(
+      shadcn.path,
+      ['search', '@uitheme', '--json', '--cwd', app],
+      `${label}-search`
+    );
+
+    assert.ok(search.ok, `${label} search failed; see the log in ${evidence}`);
+    assert.deepEqual(
+      JSON.parse(search.stdout)
+        .items.map((item) => item.name)
+        .sort(),
+      names.toSorted(),
+      `${label}: search did not list every control`
+    );
 
     results.push({ style, base, folder, controls: names });
   }
