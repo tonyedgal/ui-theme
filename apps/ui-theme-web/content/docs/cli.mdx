@@ -162,6 +162,7 @@ compatible component configuration, then automatic detection.
 | Option                   | Behavior                                                                                                                                       |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--revision <revision>`  | Select an immutable registry revision for `list`, `add`, or `diff`. Omit it to use the registry's current stable revision.                     |
+| `--registry <url>`       | Use another registry, for example a local build. The URL must use `https`, or `http` for `localhost` and `127.0.0.1`.                          |
 | `--dry-run`, `--preview` | Preview `init` or `add` without writing files or installing packages. `diff` is always read-only.                                              |
 | `--yes`, `-y`            | Apply an `init` or `add` plan without a confirmation prompt. This does not authorize replacement of edited source.                             |
 | `--overwrite`            | Allow `add` to replace edited registry files. Inspect the plan first.                                                                          |
@@ -173,6 +174,25 @@ Combine JSON output with a preview when you need a plan without writes:
 ```sh
 npx uitheme-cli add theme-toggle --json --dry-run
 ```
+
+## Environment variables
+
+| Variable               | Behavior                                                                                                        |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `UITHEME_REGISTRY_URL` | Use another registry for every command. `--registry` wins when you set both.                                    |
+| `UITHEME_WEB_VERSION`  | Install `uitheme-web` from a dist-tag, a version, or a packed `.tgz` file. The default is `uitheme-web@latest`. |
+
+The CLI prints the registry URL and the runtime when you change them.
+
+```sh
+UITHEME_WEB_VERSION=next npx uitheme-cli init
+UITHEME_REGISTRY_URL=http://127.0.0.1:4000/r npx uitheme-cli add theme-toggle
+```
+
+The CLI always installs the `UITHEME_WEB_VERSION` value, even when the app
+already has `uitheme-web`. A `.tgz` path records a `file:` path in
+`package.json`. Use it only for local tests, and keep the variable set for
+later commands in that app.
 
 ## Help and version
 
