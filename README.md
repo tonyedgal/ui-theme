@@ -1,9 +1,9 @@
-# ui-theme
+# UI-Theme
 
 https://github.com/user-attachments/assets/2819cf70-c474-478e-b821-6b26457c8d4a
 
 <p align="center">
-  <a>
+  <a href="https://www.npmjs.com/package/uitheme-web">
     <img alt="npm" src="https://img.shields.io/npm/v/uitheme-web/latest"/>
   </a>
   <a href="https://github.com/tonyedgal/ui-theme/stargazers">
@@ -17,44 +17,77 @@ https://github.com/user-attachments/assets/2819cf70-c474-478e-b821-6b26457c8d4a
   </a>
 </p>
 
-Web framework agnostic UI theme switching library with smooth view transition animations, multi-theme support, and synchronized state management. The unified `uitheme-web` runtime supports React, Vue 3.5, Next.js, TanStack Start, and Nuxt 4. React Native uses the separate `uitheme-rn` package.
+Light, dark, and color themes for web apps, with animated view transitions.
+`uitheme-web` supports React, Next.js, TanStack Start, Vue 3.5, and Nuxt 4.
+React Native uses `uitheme-rn`.
 
-## Live Demo
+[Documentation](https://www.ui-theme.dev/docs) ·
+[Components](https://www.ui-theme.dev/docs/components) ·
+[Live demo](https://www.ui-theme.dev)
 
-[View Live Demo](https://ui-theme.dev/)
+## Install
 
-## Features
+Use one of these three paths. Each path uses the `uitheme-web` runtime.
 
-- Smooth view transition animations with customizable origins
-- Eight-direction polygon wipes, triangle reveals, and SVG logo transitions
-- Multi-theme support (light, dark, system)
-- Color theme variants (brand colors, custom themes)
-- Framework-optimized providers
-- Powerful hooks for custom implementations
-- Editable Tailwind controls installed through an optional CLI and registry
-- State synchronization across components
-- Full TypeScript support
-- Performance optimized with reduced motion support
+### 1. Runtime only
 
-## Documentation
+Install the package, add a provider, and build your own controls with the hooks.
 
-- **[uitheme-web Package Documentation](./packages/ui-theme/README.md)** - Complete API reference, installation, and usage
-- **[uitheme-cli Documentation](./packages/ui-theme-cli/README.md)** - Framework detection, local controls, previews, and migration
-- **[Vue Example](./apps/examples/example-vue/README.md)** - Vite and Tailwind v4 palettes
-- **[Nuxt Example](./apps/examples/example-nuxt/README.md)** - Server rendering and cookie persistence
-- **[uitheme-rn Package Documentation](./packages/ui-theme-rn/README.md)** - React Native appearance, palettes, storage, and Expo UI controls
-- **[NativeWind v5 Example](./apps/examples/example-nativewind/README.md)** - Tailwind v4 CSS palettes and native styles
-- **[Uniwind Example](./apps/examples/example-uniwind/README.md)** - Tailwind v4 scoped themes and native styles
-- **[Expo Reference App](./apps/examples/example-expo/README.md)** - Native appearance settings and a shared-theme preview
-- **[Next.js Guide](https://www.ui-theme.dev/docs/guides/nextjs)** - App Router setup and server rendering
-- **[TanStack Start Guide](https://www.ui-theme.dev/docs/guides/tanstack-start)** - Server rendering and hydration
-- **[React Guide](https://www.ui-theme.dev/docs/guides/react)** - Vite React setup
-- **[View Complete Examples](./apps/examples/)** - Next.js implementation with both hook and provider patterns
+```sh
+npm install uitheme-web
+```
+
+See [Installation](https://www.ui-theme.dev/docs/installation) for each
+framework.
+
+### 2. UI-Theme CLI
+
+The CLI detects your framework, sets up the provider and CSS, and copies
+editable controls into your app.
+
+```sh
+npx uitheme-cli init
+npx uitheme-cli add theme-toggle color-theme-selector
+```
+
+See the [CLI reference](https://www.ui-theme.dev/docs/cli).
+
+### 3. shadcn
+
+For a React app with shadcn and Tailwind 4, add the registry to
+`components.json`:
+
+```json
+{
+  "registries": {
+    "@uitheme": "https://www.ui-theme.dev/r/{style}/{name}.json"
+  }
+}
+```
+
+Then add a control:
+
+```sh
+npx shadcn@latest add @uitheme/theme-toggle
+```
+
+shadcn installs `uitheme-web`. Add the UI-Theme provider to your app as the
+[installation guide](https://www.ui-theme.dev/docs/installation) shows. Radix
+and Base UI styles are supported.
+
+## Packages
+
+| Package                                  | Purpose                                         |
+| ---------------------------------------- | ----------------------------------------------- |
+| [`uitheme-web`](./packages/ui-theme)     | Theme runtime, providers, hooks, and animations |
+| [`uitheme-cli`](./packages/ui-theme-cli) | Setup, editable controls, and migration         |
+| [`uitheme-rn`](./packages/ui-theme-rn)   | React Native appearance and palettes            |
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to contribute to this project.
+Read [CONTRIBUTING.md](./CONTRIBUTING.md) to set up the repository, run the
+checks, and open a pull request.
 
 ## License
 
-MIT
+[MIT](./LICENSE)
