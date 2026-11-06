@@ -11,6 +11,22 @@ import type {
   RegistryVariant,
 } from './types.ts';
 
+/**
+ * Check a version against a release range. A prerelease counts as the release
+ * it leads to, so `2.0.0-rc.1` satisfies `^2.0.0`.
+ */
+export function satisfiesRelease(version: string, range: string): boolean {
+  const parsed = semver.parse(version);
+
+  return (
+    !!parsed &&
+    semver.satisfies(`${parsed.major}.${parsed.minor}.${parsed.patch}`, range)
+  );
+}
+
+/** A CLI built from source before its first release has version 0.0.0. */
+export const unreleasedVersion = '0.0.0';
+
 export const defaultOrigin = 'https://www.ui-theme.dev/r';
 
 const localHosts = ['localhost', '127.0.0.1', '[::1]'];
@@ -158,8 +174,9 @@ export function createRegistryClient(
       typeof value.cliVersion !== 'string' ||
       !semver.validRange(value.webVersion) ||
       !semver.validRange(value.cliVersion) ||
-      !semver.satisfies(options.webVersion ?? '2.0.0', value.webVersion) ||
-      !semver.satisfies(options.cliVersion ?? '1.0.0', value.cliVersion)
+      !satisfiesRelease(options.webVersion ?? '2.0.0', value.webVersion) ||
+      (options.cliVersion !== unreleasedVersion &&
+        !satisfiesRelease(options.cliVersion ?? '1.0.0', value.cliVersion))
     )
       throw new Error('Registry version compatibility check failed');
 
