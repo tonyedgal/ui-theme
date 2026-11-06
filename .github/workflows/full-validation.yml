@@ -49,6 +49,9 @@ jobs:
       - name: Independent emitted registry consumers
         run: node scripts/check-registry-release-consumers.mjs
 
+      - name: shadcn registry consumer
+        run: node scripts/check-registry-shadcn.mjs
+
       - name: Full web browser matrix
         run: pnpm --filter uitheme-web test:browser
 
@@ -75,3 +78,4 @@ jobs:
             test-results/release-consumers-native
             test-results/release-consumers-vue
             test-results/release-consumers-registry
+            test-results/registry-shadcn
