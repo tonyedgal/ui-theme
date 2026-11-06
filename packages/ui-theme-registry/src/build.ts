@@ -62,8 +62,8 @@ const shadcnStyleNames = [
 
 export const shadcnStyles = new Map<string, 'radix' | 'base-ui'>([
   ['new-york', 'radix'],
-  // shadcn uses new-york-v4 when the style is missing, and for new-york on
-  // Tailwind 4.
+  // When an app on Tailwind 4 selects new-york, shadcn installs the files from
+  // new-york-v4.
   ['new-york-v4', 'radix'],
   ['default', 'radix'],
   ...shadcnStyleNames.map((name): [string, 'radix'] => [
