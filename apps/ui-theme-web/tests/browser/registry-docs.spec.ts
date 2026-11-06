@@ -28,6 +28,21 @@ test('registry links resolve to a pinned, complete local artifact', async ({
   }
 });
 
+test('the site serves shadcn records only for supported styles', async ({
+  request,
+}) => {
+  for (const style of ['new-york-v4', 'radix-nova', 'base-vega']) {
+    const response = await request.get(`/r/${style}/theme-toggle.json`);
+    expect(response.ok()).toBe(true);
+    const record = await response.json();
+    expect(record.dependencies).toContain('uitheme-web@^2.0.0');
+  }
+
+  expect((await request.get('/r/aria-nova/theme-toggle.json')).status()).toBe(
+    404
+  );
+});
+
 test('base selection keeps the preview, installation command and copied source aligned', async ({
   page,
 }) => {
@@ -39,6 +54,9 @@ test('base selection keeps the preview, installation command and copied source a
   ).toHaveAttribute('aria-current', 'page');
   await expect(page.getByTestId('install-command')).toContainText(
     '--base base-ui'
+  );
+  await expect(page.getByTestId('shadcn-install-command')).toContainText(
+    'npx shadcn@latest add @uitheme/theme-toggle'
   );
   await expect(page.getByTestId('registry-source')).toContainText(
     '@base-ui/react'
@@ -89,6 +107,7 @@ test('Vue selects only Reka and migration explains the v1 boundary', async ({
   await expect(page.getByTestId('install-command')).toContainText(
     '--base reka'
   );
+  await expect(page.getByTestId('shadcn-install-command')).toHaveCount(0);
   await expect(page.getByTestId('registry-source')).toContainText('reka-ui');
   await page.goto('/docs/migration');
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
