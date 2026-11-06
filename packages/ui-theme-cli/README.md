@@ -62,7 +62,7 @@ UITHEME_WEB_VERSION=./uitheme-web-2.0.0.tgz npx uitheme-cli init
 
 A `.tgz` path is relative to the folder where you run the command. The app's
 `package.json` then records a `file:` path to that tarball, so use it only for
-local tests.
+local tests. Keep `UITHEME_WEB_VERSION` set for later commands in that app.
 
 `--dry-run` and `--preview` do not write files or install packages. `--yes`
 skips confirmation but does not overwrite edited source. `--overwrite` permits
