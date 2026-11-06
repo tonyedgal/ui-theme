@@ -30,9 +30,9 @@ const config = {
         permanent: true,
       })),
       ...['uitheme.dev', 'www.uitheme.dev', 'ui-theme.dev'].map((host) => ({
-        source: '/r/:path*',
+        source: '/:path*',
         has: [{ type: 'host', value: host.replaceAll('.', '\\.') }],
-        destination: 'https://www.ui-theme.dev/r/:path*',
+        destination: 'https://www.ui-theme.dev/:path*',
         permanent: true,
       })),
     ];
