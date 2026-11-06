@@ -13,6 +13,8 @@ import {
   applyPlan,
   planRegistryInstall,
   hashContent,
+  missingDependencies,
+  resolveWebDependency,
 } from '../src/install/index';
 import type { ProjectProfile, RegistryGraph } from '../src/types';
 
@@ -386,5 +388,42 @@ describe('installation plans and transactions', () => {
     expect(
       await readFile(join(profile.componentsDir, 'theme-toggle.tsx'), 'utf8')
     ).toBe('concurrent edit');
+  });
+  it('selects the uitheme-web dependency from UITHEME_WEB_VERSION', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'uitheme-web-version-'));
+    roots.push(root);
+    await writeFile(join(root, 'uitheme-web-2.0.0.tgz'), '');
+
+    expect(resolveWebDependency(undefined)).toBe('uitheme-web@latest');
+    expect(resolveWebDependency('')).toBe('uitheme-web@latest');
+    expect(resolveWebDependency('next')).toBe('uitheme-web@next');
+    expect(resolveWebDependency('2.0.0-rc.1')).toBe('uitheme-web@2.0.0-rc.1');
+    expect(resolveWebDependency('./uitheme-web-2.0.0.tgz', root)).toBe(
+      `uitheme-web@file:${join(root, 'uitheme-web-2.0.0.tgz')}`
+    );
+    expect(() => resolveWebDependency('./missing.tgz', root)).toThrow(
+      /does not exist/
+    );
+    expect(() =>
+      resolveWebDependency('https://example.com/uitheme-web.tgz')
+    ).toThrow(/does not exist/);
+    expect(() => resolveWebDependency('git+ssh://example.com/x')).toThrow(
+      /Invalid UITHEME_WEB_VERSION/
+    );
+  });
+
+  it('always installs an explicit uitheme-web dependency', async () => {
+    const { cwd, profile } = await fixture();
+    await writeFile(
+      join(cwd, 'package.json'),
+      JSON.stringify({ dependencies: { 'uitheme-web': '^2.0.0' } })
+    );
+
+    expect(await missingDependencies(profile, ['uitheme-web@latest'])).toEqual(
+      []
+    );
+    expect(await missingDependencies(profile, ['uitheme-web@next'])).toEqual([
+      'uitheme-web@next',
+    ]);
   });
 });
