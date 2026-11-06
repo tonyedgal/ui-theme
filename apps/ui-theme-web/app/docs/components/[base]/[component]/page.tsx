@@ -71,10 +71,29 @@ export async function generateMetadata({
 }: PageProps<'/docs/components/[base]/[component]'>): Promise<Metadata> {
   const { base, doc } = await resolveDoc(params);
 
+  const title = `${doc.title} · ${base.title}`;
+  const url = componentDocUrl(base.name, doc.name);
+
   return {
-    title: `${doc.title} · ${base.title}`,
+    title,
     description: doc.description,
-    alternates: { canonical: componentDocUrl(base.name, doc.name) },
+    keywords: [
+      doc.title,
+      `${doc.title} ${base.title}`,
+      `${base.framework === 'vue' ? 'Vue' : 'React'} ${doc.title}`,
+      `shadcn ${doc.title}`,
+      'dark mode',
+      'theme toggle',
+      'theme transition',
+    ],
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'article',
+      url,
+      siteName: 'UI-Theme',
+      title,
+      description: doc.description,
+    },
   };
 }
 
