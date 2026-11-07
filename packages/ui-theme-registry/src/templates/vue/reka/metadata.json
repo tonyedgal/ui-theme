@@ -1,5 +1,8 @@
 {
   "dependencies": [],
+  "compatibleDependencies": {
+    "@lucide/vue": "^1.0.1"
+  },
   "components": {
     "theme-toggle": {
       "title": "Theme Toggle",
