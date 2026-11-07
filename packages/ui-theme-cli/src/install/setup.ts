@@ -50,6 +50,27 @@ function sourceFile(path: string, content: string): ts.SourceFile {
   return file;
 }
 
+// The app-owned wrapper that the CLI generates around UIThemeProvider.
+const wrapperName = 'ThemeProvider';
+
+// Wrap the children of a JSX element and indent them one more level.
+// `\n    <App />\n  ` becomes `\n    <Name>\n      <App />\n    </Name>\n  `.
+function wrapChildren(inner: string, name: string): string {
+  const last = inner.lastIndexOf('\n');
+
+  if (last === -1) return `<${name}>${inner}</${name}>`;
+
+  const body = inner.slice(0, last),
+    closingIndent = inner.slice(last + 1),
+    childIndent = /\n([ \t]*)\S/.exec(body)?.[1] ?? closingIndent;
+
+  const unit = childIndent.startsWith(closingIndent)
+    ? childIndent.slice(closingIndent.length) || '  '
+    : '  ';
+
+  return `\n${childIndent}<${name}>${body.replace(/\n(?=[ \t]*\S)/g, `\n${unit}`)}\n${childIndent}</${name}>\n${closingIndent}`;
+}
+
 function walk(node: ts.Node, visit: (node: ts.Node) => void): void {
   visit(node);
   node.forEachChild((child) => {
@@ -177,12 +198,12 @@ async function reactProvider(
     edits.push({
       start: body.openingElement.end,
       end: body.openingElement.end,
-      text: '<UIThemeSetup>',
+      text: `<${wrapperName}>`,
     });
     edits.push({
       start: body.closingElement.getStart(file),
       end: body.closingElement.getStart(file),
-      text: '</UIThemeSetup>',
+      text: `</${wrapperName}>`,
     });
   } else {
     const renders: ts.CallExpression[] = [];
@@ -210,11 +231,28 @@ async function reactProvider(
 
     const child = renders[0].arguments[0];
     rootNode = child;
-    edits.push({
-      start: child.getStart(file),
-      end: child.end,
-      text: `<UIThemeSetup>${child.getText(file)}</UIThemeSetup>`,
-    });
+
+    // Keep StrictMode outermost so that it also checks the provider.
+    if (
+      ts.isJsxElement(child) &&
+      ['StrictMode', 'React.StrictMode'].includes(
+        child.openingElement.tagName.getText(file)
+      )
+    ) {
+      const start = child.openingElement.end,
+        end = child.closingElement.getStart(file);
+
+      edits.push({
+        start,
+        end,
+        text: wrapChildren(file.text.slice(start, end), wrapperName),
+      });
+    } else
+      edits.push({
+        start: child.getStart(file),
+        end: child.end,
+        text: `<${wrapperName}>${child.getText(file)}</${wrapperName}>`,
+      });
   }
 
   const localComponents = relative(profile.cwd, profile.componentsDir);
@@ -228,13 +266,13 @@ async function reactProvider(
 
   const wrapperPath = join(
     wrapperDirectory,
-    `uitheme-provider.${profile.language === 'ts' ? 'tsx' : 'jsx'}`
+    `theme-provider.${profile.language === 'ts' ? 'tsx' : 'jsx'}`
   );
 
   const provider =
     profile.framework === 'next' ? 'NextUIThemeProvider' : 'UIThemeProvider';
 
-  const wrapper = `${profile.framework === 'next' ? "'use client';\n\n" : ''}import { ${provider} } from 'uitheme-web/${profile.framework === 'next' ? 'next' : 'react'}';\n${profile.language === 'ts' ? "import type { ReactNode } from 'react';\n" : ''}\nexport function UIThemeSetup({ children }${profile.language === 'ts' ? ': { children: ReactNode }' : ''}) {\n  return <${provider} defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>{children}</${provider}>;\n}\n`;
+  const wrapper = `${profile.framework === 'next' ? "'use client';\n\n" : ''}import { ${provider} } from 'uitheme-web/${profile.framework === 'next' ? 'next' : 'react'}';\n${profile.language === 'ts' ? "import type { ReactNode } from 'react';\n" : ''}\nexport function ${wrapperName}({ children }${profile.language === 'ts' ? ': { children: ReactNode }' : ''}) {\n  return <${provider} defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>{children}</${provider}>;\n}\n`;
   const directProviders = new Set<string>();
   let setupImported = false;
   let setupConflict = false;
@@ -259,9 +297,9 @@ async function reactProvider(
       )
         directProviders.add(element.name.text);
 
-      if (element.name.text === 'UIThemeSetup') {
+      if (element.name.text === wrapperName) {
         if (
-          exported === 'UIThemeSetup' &&
+          exported === wrapperName &&
           module === relativeImport(entry.path, wrapperPath)
         )
           setupImported = true;
@@ -280,7 +318,7 @@ async function reactProvider(
 
         if (directProviders.has(tag)) directProviderUsed = true;
 
-        if (tag === 'UIThemeSetup') setupUsed = true;
+        if (tag === wrapperName) setupUsed = true;
       }
     });
 
@@ -304,10 +342,12 @@ async function reactProvider(
   if (
     setupConflict ||
     setupUsed ||
-    /\b(?:const|function|class)\s+UIThemeSetup\b/.test(entry.content)
+    new RegExp(`\\b(?:const|function|class)\\s+${wrapperName}\\b`).test(
+      entry.content
+    )
   ) {
     manual.push(
-      `Choose an unused provider binding in ${relative(profile.cwd, entry.path)}. UIThemeSetup already belongs to existing source.`
+      `Choose an unused provider binding in ${relative(profile.cwd, entry.path)}. ${wrapperName} already belongs to existing source. Rename that binding, or wrap the root with UIThemeProvider yourself.`
     );
 
     return;
@@ -318,7 +358,7 @@ async function reactProvider(
   for (const edit of edits.sort((a, b) => b.start - a.start))
     content =
       content.slice(0, edit.start) + edit.text + content.slice(edit.end);
-  const imported = `import { UIThemeSetup } from '${relativeImport(entry.path, wrapperPath)}';\n`;
+  const imported = `import { ${wrapperName} } from '${relativeImport(entry.path, wrapperPath)}';\n`;
   let insertAt = 0;
 
   for (const statement of file.statements) {
