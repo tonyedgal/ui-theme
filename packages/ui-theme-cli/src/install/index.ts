@@ -27,6 +27,8 @@ export interface InstallPlan {
   profile: ProjectProfile;
   files: PlannedFile[];
   dependencies: string[];
+  /** Existing dependencies that the plan moves to another range. */
+  dependencyUpdates?: DependencyUpdate[];
   dependencyInstalls?: { profile: ProjectProfile; dependencies: string[] }[];
   manualSteps: string[];
   revision?: string;
@@ -250,17 +252,52 @@ function dependencySpec(spec: string) {
   return { name: match[1], version, explicit: false };
 }
 
+export interface DependencyUpdate {
+  name: string;
+  current: string;
+  spec: string;
+  /** The update leaves the current major version, or the current 0.x minor. */
+  major: boolean;
+}
+
+// True when the lowest version of `next` is outside a caret range of the
+// lowest version of `current`. `^0.576.0` to `^1.61.0` is a major update.
+function isMajorUpdate(current: string, next: string) {
+  const from = semver.minVersion(current),
+    to = semver.minVersion(next);
+
+  return Boolean(from && to && !semver.satisfies(to, `^${from.version}`));
+}
+
 export async function missingDependencies(
   profile: ProjectProfile,
   requested: string[],
-  allowUpgrades: string[] = []
+  allowUpgrades: string[] = [],
+  compatible: Record<string, string> = {}
 ): Promise<string[]> {
+  return (
+    await resolveDependencies(profile, requested, allowUpgrades, compatible)
+  ).install;
+}
+
+/**
+ * Select the dependencies to install. An existing dependency stays when its
+ * range is inside the registry range, or inside the item's compatible range.
+ * Otherwise the CLI installs the registry spec and reports the update.
+ */
+export async function resolveDependencies(
+  profile: ProjectProfile,
+  requested: string[],
+  allowUpgrades: string[] = [],
+  compatible: Record<string, string> = {}
+): Promise<{ install: string[]; updates: DependencyUpdate[] }> {
   const pkg = JSON.parse(
     (await readOptional(join(profile.cwd, 'package.json'))) ?? '{}'
   );
 
   const existing = { ...pkg.devDependencies, ...pkg.dependencies };
   const result = new Map<string, string>();
+  const updates: DependencyUpdate[] = [];
 
   for (const spec of requested) {
     const { name, version, explicit } = dependencySpec(spec);
@@ -284,25 +321,43 @@ export async function missingDependencies(
     )
       throw new Error(`Invalid installed dependency declaration: ${name}`);
 
+    if (!current) {
+      result.set(name, spec);
+      continue;
+    }
+
+    if (!version) continue;
+
+    const accepted = compatible[name] ?? version;
+
+    if (semver.validRange(current) && semver.subset(current, accepted))
+      continue;
+
+    // A uitheme-web major changes the runtime API, so it needs the migration.
     if (
-      current &&
-      version &&
-      (!semver.validRange(current) || !semver.intersects(current, version)) &&
-      !allowUpgrades.includes(name)
+      name === 'uitheme-web' &&
+      !allowUpgrades.includes(name) &&
+      (!semver.validRange(current) || !semver.intersects(current, version))
     )
       throw new Error(
-        `Incompatible existing dependency ${name}@${current}; migration or an explicit dependency update is required before installation.`
+        `Incompatible existing dependency ${name}@${current}. Run \`uitheme migrate\` first.`
       );
 
+    result.set(name, spec);
+
     if (
-      !current ||
-      (version &&
-        (!semver.validRange(current) || !semver.subset(current, version)))
+      semver.validRange(current) &&
+      !updates.some((update) => update.name === name)
     )
-      result.set(name, spec);
+      updates.push({
+        name,
+        current,
+        spec: version,
+        major: isMajorUpdate(current, version),
+      });
   }
 
-  return [...result.values()];
+  return { install: [...result.values()], updates };
 }
 
 function registryDestination(profile: ProjectProfile, path: string): string {
@@ -419,24 +474,40 @@ export async function planRegistryInstall(
     await planFile(profile, profile.configFile, config)
   );
 
+  const compatible = Object.assign(
+    {},
+    ...graph.items.map((item) => item.meta.uiTheme.compatibleDependencies)
+  );
+
+  const resolved = await resolveDependencies(
+    profile,
+    owner.cwd === profile.cwd ? dependencies : [web],
+    [],
+    compatible
+  );
+
   const plan: InstallPlan = {
     profile,
     files: [...files.values()],
-    dependencies: await missingDependencies(
-      profile,
-      owner.cwd === profile.cwd ? dependencies : [web]
-    ),
+    dependencies: resolved.install,
+    dependencyUpdates: resolved.updates,
     manualSteps: [],
     revision: graph.manifest.stable.revision,
   };
 
-  if (owner.cwd !== profile.cwd)
+  if (owner.cwd !== profile.cwd) {
+    const shared = await resolveDependencies(
+      owner,
+      dependencies,
+      [],
+      compatible
+    );
+
     plan.dependencyInstalls = [
-      {
-        profile: owner,
-        dependencies: await missingDependencies(owner, dependencies),
-      },
+      { profile: owner, dependencies: shared.install },
     ];
+    plan.dependencyUpdates = [...resolved.updates, ...shared.updates];
+  }
 
   return plan;
 }
@@ -597,7 +668,15 @@ export function describePlan(plan: InstallPlan): string {
 
   return [
     ...files,
-    ...plan.dependencies.map((dependency) => `dependency ${dependency}`),
+    ...plan.dependencies.map((dependency) => {
+      const update = plan.dependencyUpdates?.find(
+        ({ name }) => dependency === name || dependency.startsWith(`${name}@`)
+      );
+
+      return update
+        ? `update ${update.name} ${update.current} -> ${update.spec}${update.major ? ' (major update: check your other imports from this package)' : ''}`
+        : `dependency ${dependency}`;
+    }),
     ...(plan.dependencyInstalls ?? []).flatMap((install) =>
       install.dependencies.map(
         (dependency) =>
