@@ -228,6 +228,27 @@ export function createRegistryClient(
         if (variant[key] !== expected[key])
           throw new Error(`Registry variant mismatch: ${key}`);
     compatible(meta);
+
+    const declared = strings(value.dependencies) ? value.dependencies : [];
+
+    let compatibleDependencies: Record<string, string> | undefined;
+
+    if (meta.compatibleDependencies !== undefined) {
+      if (!isRecord(meta.compatibleDependencies))
+        throw new Error('Invalid registry compatible dependencies');
+      compatibleDependencies = {};
+
+      for (const [name, range] of Object.entries(meta.compatibleDependencies)) {
+        if (
+          typeof range !== 'string' ||
+          !semver.validRange(range) ||
+          !declared.some((spec) => spec === name || spec.startsWith(`${name}@`))
+        )
+          throw new Error('Invalid registry compatible dependencies');
+        compatibleDependencies[name] = range;
+      }
+    }
+
     const seen = new Set<string>();
     const files: RegistryFile[] = [];
 
@@ -258,6 +279,17 @@ export function createRegistryClient(
       files.push(parsed);
     }
 
+    const uiTheme: RegistryItem['meta']['uiTheme'] = {
+      ...variant,
+      schemaVersion: 1,
+      revision,
+      component: meta.component,
+      ...compatible(meta),
+    };
+
+    if (compatibleDependencies)
+      uiTheme.compatibleDependencies = compatibleDependencies;
+
     return {
       name: value.name,
       type: value.type,
@@ -266,15 +298,7 @@ export function createRegistryClient(
       dependencies: value.dependencies,
       registryDependencies: value.registryDependencies,
       files,
-      meta: {
-        uiTheme: {
-          ...variant,
-          schemaVersion: 1,
-          revision,
-          component: meta.component,
-          ...compatible(meta),
-        },
-      },
+      meta: { uiTheme },
     };
   };
 
