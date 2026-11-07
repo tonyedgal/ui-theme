@@ -49,7 +49,7 @@ export type ViteUIThemeProviderProps = ThemeAnimationOptions & {
   /** Default color theme to use */
   defaultColorTheme?: ColorTheme;
   /** Animation type for theme transitions */
-  animationType?: ThemeAnimationType;
+  animationType?: ThemeAnimationType | `${ThemeAnimationType}`;
   /** Animation duration in milliseconds */
   duration?: number;
   /** Attribute to use for theme ('class' or 'data-theme') */
