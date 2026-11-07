@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   applyPlan,
+  describePlan,
   planRegistryInstall,
   hashContent,
   missingDependencies,
@@ -97,7 +98,7 @@ function graph(
 }
 
 describe('installation plans and transactions', () => {
-  it('refuses incompatible existing package majors before writes', async () => {
+  it('refuses an older uitheme-web major before writes', async () => {
     const { profile, cwd } = await fixture();
     await writeFile(
       join(cwd, 'package.json'),
@@ -111,11 +112,78 @@ describe('installation plans and transactions', () => {
       join(cwd, 'package.json'),
       JSON.stringify({ dependencies: { 'tailwind-merge': '^2.6.0' } })
     );
+  });
+  it('updates an outdated dependency and reports a major update in the plan', async () => {
+    const { profile, cwd } = await fixture();
+    await writeFile(
+      join(cwd, 'package.json'),
+      JSON.stringify({ dependencies: { 'tailwind-merge': '^2.6.0' } })
+    );
     const item = graph();
     item.items[0].dependencies = ['tailwind-merge@^3.0.0'];
-    await expect(planRegistryInstall(profile, item)).rejects.toThrow(
-      /incompatible/i
+
+    const plan = await planRegistryInstall(profile, item);
+
+    expect(plan.dependencies).toContain('tailwind-merge@^3.0.0');
+    expect(plan.dependencyUpdates).toEqual([
+      {
+        name: 'tailwind-merge',
+        current: '^2.6.0',
+        spec: '^3.0.0',
+        major: true,
+      },
+    ]);
+    expect(describePlan(plan)).toContain(
+      'update tailwind-merge ^2.6.0 -> ^3.0.0 (major update'
     );
+    await expect(readFile(profile.configFile)).rejects.toThrow();
+  });
+  it('keeps an existing dependency inside the compatible range', async () => {
+    const { profile, cwd } = await fixture();
+    await writeFile(
+      join(cwd, 'package.json'),
+      JSON.stringify({ dependencies: { 'lucide-react': '^0.576.0' } })
+    );
+    const item = graph();
+    item.items[0].dependencies = ['lucide-react@^1.61.0'];
+    item.items[0].meta.uiTheme.compatibleDependencies = {
+      'lucide-react': '>=0.397.0 <2.0.0',
+    };
+
+    const kept = await planRegistryInstall(profile, item);
+
+    expect(kept.dependencies.join(' ')).not.toContain('lucide-react');
+    expect(kept.dependencyUpdates).toEqual([]);
+
+    await writeFile(
+      join(cwd, 'package.json'),
+      JSON.stringify({ dependencies: { 'lucide-react': '^0.300.0' } })
+    );
+
+    const updated = await planRegistryInstall(profile, item);
+
+    expect(updated.dependencies).toContain('lucide-react@^1.61.0');
+    expect(updated.dependencyUpdates?.[0]).toMatchObject({
+      name: 'lucide-react',
+      major: true,
+    });
+  });
+  it('updates inside the same major without a major warning', async () => {
+    const { profile, cwd } = await fixture();
+    await writeFile(
+      join(cwd, 'package.json'),
+      JSON.stringify({ dependencies: { 'tailwind-merge': '^3.0.0' } })
+    );
+    const item = graph();
+    item.items[0].dependencies = ['tailwind-merge@^3.4.0'];
+
+    const plan = await planRegistryInstall(profile, item);
+
+    expect(plan.dependencyUpdates?.[0]?.major).toBe(false);
+    expect(describePlan(plan)).toContain(
+      'update tailwind-merge ^3.0.0 -> ^3.4.0'
+    );
+    expect(describePlan(plan)).not.toContain('major update');
   });
   it('previews all source and dependencies without creating project files', async () => {
     const { profile, cwd } = await fixture();
