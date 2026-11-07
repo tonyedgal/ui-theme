@@ -65,7 +65,7 @@ export type TanStackUIThemeProviderProps = ThemeAnimationOptions & {
   /** Default color theme to use */
   defaultColorTheme?: ColorTheme;
   /** Animation type for theme transitions */
-  animationType?: ThemeAnimationType;
+  animationType?: ThemeAnimationType | `${ThemeAnimationType}`;
   /** Animation duration in milliseconds */
   duration?: number;
   /** Storage key for theme preference */
