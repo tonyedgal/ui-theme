@@ -17,8 +17,34 @@ interface AppJson {
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
   packageManager?: string;
+  style?: string;
   aliases?: { components?: string; ui?: string };
   tailwind?: { css?: string; config?: string };
+}
+
+// Choose the React base from the primitives that the app already installs.
+// When the app has both or neither, a shadcn `base-*` style selects Base UI and
+// any other shadcn style selects Radix. Without either signal, use Base UI.
+function installedReactBase(
+  dependencies: Record<string, string>,
+  style: string | undefined
+): 'base-ui' | 'radix' {
+  const names = Object.keys(dependencies);
+
+  const radix = names.some(
+    (name) => name === 'radix-ui' || name.startsWith('@radix-ui/')
+  );
+
+  const baseUi = names.some(
+    (name) => name === '@base-ui/react' || name === '@base-ui-components/react'
+  );
+
+  if (radix !== baseUi) return radix ? 'radix' : 'base-ui';
+
+  if (style && !style.startsWith('aria-'))
+    return style.startsWith('base-') ? 'base-ui' : 'radix';
+
+  return 'base-ui';
 }
 
 async function json(path: string): Promise<AppJson | undefined> {
@@ -326,7 +352,9 @@ export async function detectProject(
   const base =
     overrides.base ??
     saved?.base ??
-    (framework === 'nuxt' || framework === 'vite-vue' ? 'reka' : 'base-ui');
+    (framework === 'nuxt' || framework === 'vite-vue'
+      ? 'reka'
+      : installedReactBase(dependencies, existing?.style));
 
   if (
     framework === 'nuxt' || framework === 'vite-vue'
