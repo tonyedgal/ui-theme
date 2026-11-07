@@ -322,6 +322,27 @@ customBootstrap();`
     expect(asked).toContain('framework');
     expect(out.output()).toContain('vite-vue');
   });
+  it('offers the installed primitive as the default React base', async () => {
+    const cwd = await fixture(),
+      out = io();
+
+    const pkg = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8'));
+    pkg.dependencies['radix-ui'] = '^1.4.3';
+    await writeFile(join(cwd, 'package.json'), JSON.stringify(pkg));
+    let offered: string | undefined;
+
+    const result = await runCli(['init', '--cwd', cwd, '--dry-run'], {
+      ...out,
+      select: async (_message, _choices, defaultChoice) => {
+        offered = defaultChoice;
+
+        return defaultChoice;
+      },
+    });
+
+    expect(result).toBe(0);
+    expect(offered).toBe('radix');
+  });
   it('refuses apply without confirmation when no input is available', async () => {
     const cwd = await fixture(),
       out = io();
