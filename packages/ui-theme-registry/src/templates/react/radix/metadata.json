@@ -1,5 +1,8 @@
 {
   "dependencies": [],
+  "compatibleDependencies": {
+    "lucide-react": ">=0.397.0 <2.0.0"
+  },
   "components": {
     "theme-toggle": {
       "title": "Theme Toggle",
