@@ -35,3 +35,27 @@ export const missingProviderLogo = (
   // @ts-expect-error Providers require both assets.
   <UIThemeProvider logoLight="/light.svg">{null}</UIThemeProvider>
 );
+
+export const providerAnimationNames = [
+  <UIThemeProvider key="UIThemeProvider" animationType="slide">
+    {null}
+  </UIThemeProvider>,
+  <NextUIThemeProvider key="NextUIThemeProvider" animationType="blur-circle">
+    {null}
+  </NextUIThemeProvider>,
+  <ViteUIThemeProvider key="ViteUIThemeProvider" animationType="clip-path">
+    {null}
+  </ViteUIThemeProvider>,
+  <TanStackUIThemeProvider
+    key="TanStackUIThemeProvider"
+    animationType="triangle"
+    onServerError={(error) => console.error(error)}
+  >
+    {null}
+  </TanStackUIThemeProvider>,
+];
+
+export const unknownProviderAnimation = (
+  // @ts-expect-error Providers accept only the built-in animation names.
+  <UIThemeProvider animationType="spin">{null}</UIThemeProvider>
+);
