@@ -19,6 +19,11 @@ and the `base-*` styles use Base UI. These records follow the stable revision
 and are not frozen. React Aria (`aria-*`) styles are not served. When shadcn
 adds a style, add its name to `shadcnStyles` in `src/build.ts`.
 
+shadcn records list shared libraries by package name only, for example
+`lucide-react`. shadcn writes every versioned spec into the app's
+`package.json`, so a bare name keeps the app's version. `uitheme-web@^2.0.0`
+keeps its range, because the controls need the v2 runtime.
+
 Each style folder also has a `registry.json` index without file content.
 `shadcn search @uitheme` reads it, and the shadcn registry directory requires
 it.
@@ -37,6 +42,20 @@ build the website. `--origin` and `--snapshot` cannot be used together.
 
 The website stages these artifacts at build time. It does not fetch source from
 another server while serving a request. Do not publish this private workspace.
+
+## Compatible dependency ranges
+
+Each `metadata.json` lists the install spec for a dependency, for example
+`lucide-react@^1.61.0`. `compatibleDependencies` adds an older range that an
+app's existing dependency may satisfy, for example `>=0.397.0 <2.0.0`. The CLI
+keeps an app's dependency inside that range and updates a dependency outside
+it.
+
+The lowest version of each range must have every named import that the
+templates use, and accept the React or Vue versions that `uitheme-web`
+supports. `pnpm test:registry:minimum` installs that version and checks both.
+Run it after you add an import from one of these packages, and raise the range
+when it fails. It needs network access.
 
 ## Inline expansion
 
