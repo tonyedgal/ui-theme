@@ -227,3 +227,59 @@ test('treats a prerelease as the release it leads to', () => {
   assert.equal(satisfiesRelease('3.0.0-rc.0', '^2.0.0'), false);
   assert.equal(satisfiesRelease('not-a-version', '^2.0.0'), false);
 });
+
+type CompatibleRanges = Record<string, string | number> | string[];
+
+const withRanges = (ranges: CompatibleRanges) => {
+  const record = item('a');
+
+  return {
+    ...record,
+    dependencies: ['lucide-react@^1.61.0'],
+    meta: {
+      uiTheme: { ...record.meta.uiTheme, compatibleDependencies: ranges },
+    },
+  };
+};
+
+const rangeClient = (ranges: CompatibleRanges) =>
+  createRegistryClient({
+    http: async (u) => ({
+      ok: true,
+      status: 200,
+      json: async () =>
+        u.endsWith('manifest.json')
+          ? {
+              schemaVersion: 1,
+              stable: {
+                revision,
+                index: `${origin}/v1/${revision}/registry.json`,
+                webVersion: '^2.0.0',
+                cliVersion: '^1.0.0',
+              },
+            }
+          : withRanges(ranges),
+    }),
+  });
+
+test('keeps valid compatible dependency ranges and rejects invalid ones', async () => {
+  const resolved = await rangeClient({
+    'lucide-react': '>=0.397.0 <2.0.0',
+  }).resolve(['a'], variant);
+
+  assert.deepEqual(resolved.items[0].meta.uiTheme.compatibleDependencies, {
+    'lucide-react': '>=0.397.0 <2.0.0',
+  });
+
+  for (const ranges of [
+    { 'lucide-react': 'not a range' },
+    { 'lucide-react': 1 },
+    { 'not-installed': '^1.0.0' },
+    ['lucide-react'],
+  ])
+    await assert.rejects(
+      rangeClient(ranges).resolve(['a'], variant),
+      /compatible dependencies/,
+      JSON.stringify(ranges)
+    );
+});
