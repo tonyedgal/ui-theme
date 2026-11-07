@@ -52,6 +52,9 @@ jobs:
       - name: shadcn registry consumer
         run: node scripts/check-registry-shadcn.mjs
 
+      - name: Minimum versions of compatible dependencies
+        run: node scripts/check-registry-minimum-dependencies.mjs
+
       - name: Full web browser matrix
         run: pnpm --filter uitheme-web test:browser
 
@@ -79,3 +82,4 @@ jobs:
             test-results/release-consumers-vue
             test-results/release-consumers-registry
             test-results/registry-shadcn
+            test-results/registry-minimum-dependencies
