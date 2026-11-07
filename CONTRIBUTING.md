@@ -76,37 +76,36 @@ Do not change `packages/ui-theme-registry/releases`. It holds frozen releases.
 
 ## Running the registry locally
 
-Start a local registry:
+Use a local registry to try a control change in a real app before you open a
+pull request.
 
-```sh
-pnpm registry:dev
-```
-
-The registry is at `http://127.0.0.1:4000/r`. It rebuilds when you change a
-file in `packages/ui-theme-registry/src`. Use `--port <number>` to select
-another port. Press Ctrl+C to stop it.
-
-Keep it running, and install from it in another terminal with the CLI or with
-shadcn.
-
-### With the CLI
-
-1. Build the local CLI:
+1. Start the registry:
 
    ```sh
-   pnpm --filter uitheme-cli build
+   pnpm registry:dev
    ```
 
-2. In your app folder, run the CLI with the local registry:
+   It serves `http://127.0.0.1:4000/r` and rebuilds when you change a template.
+
+2. Keep it running. Open a second terminal, and install a control in your app
+   with the CLI or with shadcn.
+
+### Install from the local registry with the CLI
+
+1. In your app folder, point the CLI at the local registry:
 
    ```sh
-   UITHEME_REGISTRY_URL=http://127.0.0.1:4000/r node <path-to-ui-theme>/packages/ui-theme-cli/dist/index.js add theme-toggle
+   export UITHEME_REGISTRY_URL=http://127.0.0.1:4000/r
    ```
 
-To test an unpublished `uitheme-web` too, see `UITHEME_WEB_VERSION` in the
-[CLI README](./packages/ui-theme-cli/README.md).
+2. Set up the app and add a control:
 
-### With shadcn
+   ```sh
+   npx uitheme-cli init
+   npx uitheme-cli add theme-toggle
+   ```
+
+### Install from the local registry with shadcn
 
 1. In your app's `components.json`, add the local registry:
 
@@ -124,8 +123,15 @@ To test an unpublished `uitheme-web` too, see `UITHEME_WEB_VERSION` in the
    npx shadcn@latest add @uitheme/theme-toggle
    ```
 
-To check the records for every shadcn style, run `pnpm test:registry:shadcn`.
-This check needs network access, because shadcn fetches its own `utils` item.
+### Test the registry
+
+| Command                                 | What it checks                                         |
+| --------------------------------------- | ------------------------------------------------------ |
+| `pnpm --filter @ui-theme/registry test` | The registry build                                     |
+| `pnpm test:registry:shadcn`             | A shadcn dry-run install of each control in each style |
+| `pnpm test:registry:minimum`            | The oldest supported version of each icon package      |
+
+The shadcn and minimum version checks need network access.
 
 ## Documentation
 
