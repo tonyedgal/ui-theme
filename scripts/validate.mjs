@@ -81,6 +81,7 @@ export function validate(files, { ci = false, root = process.cwd() } = {}) {
         ? [
             'scripts/check-registry-release-consumers.mjs',
             'scripts/check-registry-shadcn.mjs',
+            'scripts/check-registry-minimum-dependencies.mjs',
           ]
         : [`scripts/check-${script}-release-consumer.mjs`];
 
