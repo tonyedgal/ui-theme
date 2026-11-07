@@ -213,3 +213,55 @@ test('explicit shared component directories stay within the detected workspace',
     await rm(cwd, { recursive: true, force: true });
   }
 });
+
+test('detects the React base from installed primitives, then the shadcn style', async () => {
+  const cwd = await mkdtemp(join(tmpdir(), 'uitheme-base-'));
+
+  const detect = async (primitives: Record<string, string>, style?: string) => {
+    await writeFile(
+      join(cwd, 'package.json'),
+      JSON.stringify({
+        dependencies: {
+          vite: '^7',
+          react: '^19',
+          tailwindcss: '^4',
+          ...primitives,
+        },
+      })
+    );
+    await rm(join(cwd, 'components.json'), { force: true });
+
+    if (style)
+      await writeFile(
+        join(cwd, 'components.json'),
+        JSON.stringify({ style, tailwind: { css: 'styles.css' } })
+      );
+
+    return (await detectProject({ cwd })).base;
+  };
+
+  try {
+    await writeFile(join(cwd, 'styles.css'), '@import "tailwindcss";');
+
+    assert.equal(await detect({}), 'base-ui');
+    assert.equal(await detect({ 'radix-ui': '^1.4.3' }), 'radix');
+    assert.equal(await detect({ '@radix-ui/react-slot': '^1' }), 'radix');
+    assert.equal(await detect({ '@base-ui/react': '^1' }), 'base-ui');
+
+    // the installed primitive wins over the style
+    assert.equal(await detect({ 'radix-ui': '^1' }, 'base-nova'), 'radix');
+
+    assert.equal(await detect({}, 'new-york'), 'radix');
+    assert.equal(await detect({}, 'base-vega'), 'base-ui');
+    assert.equal(await detect({}, 'aria-nova'), 'base-ui');
+    assert.equal(
+      await detect({ 'radix-ui': '^1', '@base-ui/react': '^1' }, 'base-nova'),
+      'base-ui'
+    );
+
+    // an explicit base still wins over detection
+    assert.equal((await detectProject({ cwd, base: 'radix' })).base, 'radix');
+  } finally {
+    await rm(cwd, { recursive: true, force: true });
+  }
+});
