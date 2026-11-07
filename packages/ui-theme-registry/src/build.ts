@@ -31,6 +31,10 @@ interface SourceFile {
 
 interface Metadata {
   dependencies?: string[];
+  // Ranges that existing app dependencies may satisfy instead of the install
+  // spec. Each range is the oldest version that has every import the controls
+  // use. `pnpm test:registry:minimum` checks it.
+  compatibleDependencies?: Record<string, string>;
   components: Record<
     string,
     {
@@ -80,6 +84,26 @@ const installationDocs = 'https://www.ui-theme.dev/docs/installation';
 
 const digest = (value: string) =>
   createHash('sha256').update(value).digest('hex');
+
+// `@scope/name@^1.0.0` -> `@scope/name`
+function packageName(spec: string) {
+  const at = spec.indexOf('@', 1);
+
+  return at === -1 ? spec : spec.slice(0, at);
+}
+
+// Keep only the ranges for packages that this item installs.
+function compatibleRanges(metadata: Metadata, dependencies: string[]) {
+  const names = new Set(dependencies.map(packageName));
+
+  const ranges = Object.entries(metadata.compatibleDependencies ?? {}).filter(
+    ([name]) => names.has(name)
+  );
+
+  return ranges.length
+    ? { compatibleDependencies: Object.fromEntries(ranges) }
+    : {};
+}
 
 function safe(path: string) {
   if (
@@ -326,6 +350,7 @@ export async function buildRegistry(
                 language,
                 webVersion: '^2.0.0',
                 cliVersion: '^1.0.0',
+                ...compatibleRanges(metadata, dependencies),
               },
             },
           };
@@ -456,7 +481,13 @@ async function writeShadcnStyles(
         type: item.type,
         title: item.title,
         description: item.description,
-        dependencies: [...item.dependencies, 'uitheme-web@^2.0.0'],
+        // shadcn overwrites an app's declared version with every versioned
+        // spec, so shared libraries use bare names. The controls need the v2
+        // runtime, so uitheme-web keeps its range.
+        dependencies: [
+          ...item.dependencies.map((spec) => packageName(spec)),
+          'uitheme-web@^2.0.0',
+        ],
         registryDependencies: ['utils', ...dependencies],
         files: item.files,
         docs: `${item.title} needs the UI-Theme provider in your app. See ${installationDocs}.`,
