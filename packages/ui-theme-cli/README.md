@@ -24,8 +24,9 @@ Vite React, Vite Vue, and Nuxt 4. It does not scaffold an app or upgrade Tailwin
 | `diff <names>` | Show differences without changing files           |
 | `migrate`      | Preview safe legacy import and dependency changes |
 
-Use `--cwd apps/web` to select one app in a workspace. Use `--base base-ui` or
-`--base radix` for React. Vue uses `--base reka`. Use `--language ts` or
+Use `--cwd apps/web` to select one app in a workspace. For React, the CLI
+selects Radix or Base UI from the app's dependencies, then from the shadcn
+style. Use `--base base-ui` or `--base radix` to choose. Vue uses `--base reka`. Use `--language ts` or
 `--language js`, and `--tailwind 3` or `--tailwind 4` to match your app.
 
 Flags override saved `uitheme.json`, then compatible component configuration,

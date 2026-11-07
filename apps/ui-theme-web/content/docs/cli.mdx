@@ -40,7 +40,12 @@ npx uitheme-cli init --dry-run
 npx uitheme-cli init
 ```
 
-React uses Base UI by default. Choose Radix with `--base radix`. Vue uses Reka.
+For React, the CLI selects the base that the app already uses. It selects Radix
+when the app depends on `radix-ui` or `@radix-ui/*`, and Base UI when the app
+depends on `@base-ui/react`. If the app has both or neither, the shadcn style in
+`components.json` decides: `base-*` styles select Base UI, and other styles
+select Radix. Otherwise, the CLI uses Base UI. Set `--base` to choose another
+base. Vue uses Reka.
 Interactive runs can ask for a framework or component base when a choice is needed.
 For unattended runs, provide explicit choices and `--yes`.
 
