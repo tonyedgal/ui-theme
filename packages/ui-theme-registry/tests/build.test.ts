@@ -82,6 +82,10 @@ test('builds all 84 variants reproducibly from sources with only selected base d
         join(dir, 'metadata.json'),
         JSON.stringify({
           dependencies: [dep, 'tailwind-merge@{{tailwindMergeVersion}}'],
+          compatibleDependencies: {
+            'tailwind-merge': '>=2.0.0 <4.0.0',
+            'not-installed': '^1.0.0',
+          },
           components,
         })
       );
@@ -107,6 +111,10 @@ test('builds all 84 variants reproducibly from sources with only selected base d
     assert.ok(react.dependencies.includes('radix-ui@^1.4.3'));
     assert.ok(!react.dependencies.includes('reka-ui'));
     assert.ok(react.dependencies.includes('tailwind-merge@^2.6.0'));
+    // only ranges for packages that the item installs
+    assert.deepEqual(react.meta.uiTheme.compatibleDependencies, {
+      'tailwind-merge': '>=2.0.0 <4.0.0',
+    });
     assert.ok(!react.files[0].content.includes(': string'));
     assert.deepEqual(
       JSON.parse(await readFile(join(outDir, 'manifest.json'), 'utf8')),
@@ -159,7 +167,16 @@ test('builds all 84 variants reproducibly from sources with only selected base d
         record.$schema,
         'https://ui.shadcn.com/schema/registry-item.json'
       );
-      assert.ok(record.dependencies.includes('uitheme-web@^2.0.0'));
+      // shadcn overwrites declared versions, so shared libraries are bare
+      assert.deepEqual(
+        record.dependencies.toSorted(),
+        [
+          base === 'radix' ? 'radix-ui' : '@base-ui/react',
+          'tailwind-merge',
+          'uitheme-web@^2.0.0',
+        ].toSorted(),
+        style
+      );
       assert.ok(record.registryDependencies.includes('utils'));
       assert.deepEqual(record.files, source.files);
       assert.ok(
