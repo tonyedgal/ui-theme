@@ -67,7 +67,9 @@ local tests. Keep `UITHEME_WEB_VERSION` set for later commands in that app.
 
 `--dry-run` and `--preview` do not write files or install packages. `--yes`
 skips confirmation but does not overwrite edited source. `--overwrite` permits
-replacement after you inspect the plan. Failed dependency installation restores
+replacement after you inspect the plan. A dependency that the app already has
+stays when its range is compatible. Otherwise, the plan shows an `update` line,
+with a note for a major update. Failed dependency installation restores
 touched source, manifests, and lockfiles. Explicit shared component destinations
 must be inside the detected workspace and have an owning package manifest.
 

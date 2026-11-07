@@ -27,6 +27,12 @@ The CLI reads app configuration without executing it.
 ## init
 
 Set up the framework provider, theme CSS, and `uitheme.json` configuration.
+For React, the CLI creates `theme-provider.tsx` (or `.jsx`) one folder above the
+installed controls, for example `src/components/theme-provider.tsx`. It exports a
+`ThemeProvider` that wraps `UIThemeProvider`.
+In a Vite entry, the CLI places `ThemeProvider` directly inside
+`<StrictMode>`, around your other providers. If your app already has a
+`ThemeProvider`, the CLI stops and tells you what to do.
 The first installation creates a shared `cn` utility when it is missing. The CLI
 reuses the utils alias in `components.json`, or uses `lib/utils` in the source
 folder. Later installs reuse it and repair a missing file. A valid callable `cn`
@@ -94,6 +100,13 @@ Use `--overwrite` only after reviewing the replacement plan.
 npx uitheme-cli add theme-toggle --overwrite --dry-run
 npx uitheme-cli add theme-toggle --overwrite --yes
 ```
+
+The CLI keeps a dependency that your app already has when its version range
+is compatible with the controls. Otherwise, the plan shows an update, for example
+`update lucide-react ^0.300.0 -> ^1.61.0`. A major update has a note, because it
+can change other imports from that package in your app. Review the plan before
+you confirm it. An older `uitheme-web` major is not updated; run
+[`migrate`](#migrate) first.
 
 If dependency installation fails, the CLI restores the touched source files,
 package manifests, and lockfiles.
