@@ -320,7 +320,7 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
       const selected = await io.select(
         'Select the React component base',
         ['base-ui', 'radix'],
-        'base-ui'
+        profile.base
       );
 
       if (selected && selected !== 'base-ui' && selected !== 'radix')
