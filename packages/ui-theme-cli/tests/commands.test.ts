@@ -182,7 +182,7 @@ describe('CLI commands in existing applications', () => {
           ? 'uitheme-web/nuxt'
           : framework === 'vite-vue'
             ? 'createUITheme'
-            : 'UIThemeSetup'
+            : '<ThemeProvider>'
       );
 
       if (framework === 'next') expect(source).toContain('className="keep"');
@@ -215,6 +215,30 @@ describe('CLI commands in existing applications', () => {
       ).toBe(source);
     }
   );
+  it('places the provider inside StrictMode and around other providers', async () => {
+    const cwd = await fixture(),
+      out = io();
+
+    await writeFile(
+      join(cwd, 'src/main.tsx'),
+      `import React from 'react';\nimport {createRoot} from 'react-dom/client';\nimport App from './App';\ncreateRoot(document.getElementById('root')!).render(\n  <React.StrictMode>\n    <Store>\n      <App />\n    </Store>\n  </React.StrictMode>\n);`
+    );
+    expect(
+      await runCli(['init', '--cwd', cwd, '--yes'], {
+        ...out,
+        runInstall: async () => {},
+      })
+    ).toBe(0);
+
+    const source = await readFile(join(cwd, 'src/main.tsx'), 'utf8');
+
+    expect(source).toContain(
+      "import { ThemeProvider } from './components/theme-provider';"
+    );
+    expect(source).toContain(
+      '  <React.StrictMode>\n    <ThemeProvider>\n      <Store>\n        <App />\n      </Store>\n    </ThemeProvider>\n  </React.StrictMode>'
+    );
+  });
   it('repairs a deleted generated provider on a later init', async () => {
     const cwd = await fixture(),
       out = io();
@@ -225,7 +249,7 @@ describe('CLI commands in existing applications', () => {
         runInstall: async () => {},
       })
     ).toBe(0);
-    const wrapper = join(cwd, 'src/components/uitheme-provider.tsx');
+    const wrapper = join(cwd, 'src/components/theme-provider.tsx');
     await rm(wrapper);
     expect(
       await runCli(['init', '--cwd', cwd, '--yes'], {
