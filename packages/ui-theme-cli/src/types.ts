@@ -55,6 +55,8 @@ export interface RegistryMeta extends RegistryVariant {
   component: string;
   webVersion: string;
   cliVersion: string;
+  /** Older ranges that an app's existing dependency may still satisfy. */
+  compatibleDependencies?: Record<string, string>;
 }
 
 export interface RegistryFile {
