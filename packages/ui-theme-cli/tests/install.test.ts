@@ -214,16 +214,23 @@ describe('installation plans and transactions', () => {
         ?.action
     ).toBe('skip');
   });
-  it('rejects user edits even when yes is set; overwrite is explicit', async () => {
+  it('keeps user edits without an answer, even when yes is set; overwrite is explicit', async () => {
     const { profile } = await fixture();
     await mkdir(profile.componentsDir, { recursive: true });
     await writeFile(
       join(profile.componentsDir, 'theme-toggle.tsx'),
       'user edit'
     );
-    await expect(
-      planRegistryInstall(profile, graph(), { yes: true })
-    ).rejects.toThrow(/overwrite|edited|exists/i);
+
+    const kept = (
+      await planRegistryInstall(profile, graph(), { yes: true })
+    ).files.find((file) => file.path.endsWith('theme-toggle.tsx'));
+
+    expect(kept).toMatchObject({
+      action: 'skip',
+      content: 'user edit',
+      kept: { reason: 'existing', asked: false },
+    });
 
     const plan = await planRegistryInstall(profile, graph(), {
       overwrite: true,
@@ -232,6 +239,37 @@ describe('installation plans and transactions', () => {
     expect(
       plan.files.find((file) => file.path.endsWith('theme-toggle.tsx'))?.action
     ).toBe('replace');
+  });
+  it('asks before it replaces a utils file without cn, and keeps it on request', async () => {
+    const { profile, cwd } = await fixture();
+    await writeFile(
+      join(cwd, 'tsconfig.json'),
+      '{"compilerOptions":{"paths":{"@/*":["./src/*"]}}}'
+    );
+    await mkdir(join(cwd, 'src/lib'), { recursive: true });
+    await writeFile(join(cwd, 'src/lib/utils.ts'), 'export const other = 1;\n');
+    const asked: string[] = [];
+
+    const plan = await planRegistryInstall(
+      { ...profile, aliasPrefix: '@' },
+      graph(),
+      {
+        resolveConflict: async (conflict) => {
+          asked.push(`${conflict.reason} ${conflict.path}`);
+
+          return 'keep';
+        },
+      }
+    );
+
+    expect(asked).toEqual(['no-cn src/lib/utils.ts']);
+    expect(
+      plan.files.find((file) => file.path.endsWith('utils.ts'))?.kept
+    ).toEqual({ reason: 'no-cn', asked: true });
+    expect(plan.manualSteps[0]).toContain('Export cn from src/lib/utils.ts');
+    expect(describePlan(plan)).toContain(
+      'keep src/lib/utils.ts (does not export a callable cn; --overwrite replaces it)'
+    );
   });
   it('updates a tracked unedited file and preserves user changes in other files', async () => {
     const { profile } = await fixture();
