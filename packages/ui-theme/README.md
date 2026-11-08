@@ -1,138 +1,99 @@
 # uitheme-web
 
-Theme state and animated appearance and color transitions for web applications.
-The runtime has no mandatory framework or UI primitive dependencies.
+https://github.com/user-attachments/assets/2819cf70-c474-478e-b821-6b26457c8d4a
+
+Animated light and dark mode for your web app, with support for color themes
+when one look isn't enough, so one app can carry several design systems. The
+controls come ready-made from the registry, installed via its CLI (or the shadcn
+CLI).
+
+- Light, dark and system modes
+- Color palettes that work on top of either mode
+- Seven built-in transitions, powered by the View Transitions API
+- Respects reduced motion, and falls back gracefully in older browsers
+- No flash on load with Next.js, TanStack Start and Nuxt
+- Remembers the choice and syncs it across tabs
+- React, Next.js, TanStack Start, Vue and Nuxt from one package
+- No Tailwind or design system required
+
+Try it on [ui-theme.dev](https://www.ui-theme.dev).
+
+## Install
 
 ```sh
-pnpm add uitheme-web
+npm install uitheme-web
 ```
 
-Install the framework in your app. Import only the adapter you use.
+## Use
 
-| Import                              | Purpose                                                         |
-| ----------------------------------- | --------------------------------------------------------------- |
-| `uitheme-web` or `uitheme-web/core` | Framework-neutral controller, transitions, types, and constants |
-| `uitheme-web/react`                 | React providers and hooks                                       |
-| `uitheme-web/next`                  | Next.js client provider                                         |
-| `uitheme-web/next/server`           | Server-safe pre-hydration script generator                      |
-| `uitheme-web/tanstack`              | Stateless TanStack Start server helpers                         |
-| `uitheme-web/vue`                   | Vue 3.5 plugin, provider, and composables                       |
-| `uitheme-web/vue/bootstrap`         | Server-safe pre-hydration script generator                      |
-| `uitheme-web/nuxt`                  | Nuxt 4 module                                                   |
-
-Core and React support ESM and CommonJS. Vue and Nuxt use ESM. React, React DOM,
-Vue, and Nuxt are optional peer dependencies. The selected adapter requires its
-framework in the app. Importing the core does not load a framework.
-
-## React
+Wrap your app in the provider, and choose a transition:
 
 ```tsx
-'use client';
-
-import { UIThemeProvider, useUITheme } from 'uitheme-web/react';
-
-function Toggle() {
-  const { resolvedTheme, switchTheme, mounted } = useUITheme();
-
-  return (
-    <button
-      disabled={!mounted}
-      onClick={(event) =>
-        void switchTheme(resolvedTheme === 'dark' ? 'light' : 'dark', {
-          element: event.currentTarget,
-        })
-      }
-    >
-      Change appearance
-    </button>
-  );
-}
+import { UIThemeProvider } from 'uitheme-web/react';
 
 export function App() {
   return (
-    <UIThemeProvider>
-      <Toggle />
+    <UIThemeProvider animationType="slide">
+      <YourApp />
     </UIThemeProvider>
   );
 }
 ```
 
-For Next.js, use `NextUIThemeProvider` from `uitheme-web/next`. It provides
-pre-hydration setup and accepts a CSP nonce. For TanStack Start, retain your
-existing server helpers and cookie callbacks. Each provider shares state with
-`useUITheme` from `uitheme-web/react`.
+Then switch themes from anywhere:
 
-## Vue
+```tsx
+import { useUITheme } from 'uitheme-web/react';
 
-```ts
-import { createApp } from 'vue';
-import { createUITheme } from 'uitheme-web/vue';
-import App from './App.vue';
+function ThemeToggle() {
+  const { resolvedTheme, switchTheme } = useUITheme();
 
-createApp(App)
-  .use(createUITheme({ colorThemes: ['default', 'ocean'] }))
-  .mount('#app');
+  return (
+    <button
+      onClick={() => switchTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+    >
+      Toggle theme
+    </button>
+  );
+}
 ```
 
-Use `useUITheme()` in setup. It returns readonly `theme`, `resolvedTheme`,
-`colorTheme`, and `mounted` refs, plus `setTheme`, `setColorTheme`, `switchTheme`,
-and `switchColorTheme`. `UIThemeProvider` can provide an isolated nested scope.
-Use `getThemeScript` from `uitheme-web/vue/bootstrap` in SSR document setup.
+That's it. Style dark mode with the `dark` class, like you already do.
 
-For Nuxt 4:
+## Don't want to build the toggle?
 
-```ts
-export default defineNuxtConfig({
-  modules: ['uitheme-web/nuxt'],
-  uiTheme: { colorThemes: ['default', 'ocean'] },
-});
-```
-
-The module provides composables, cookie persistence, and initial theme setup.
-It does not register styled controls. Automatic Nuxt 3 setup is unsupported.
-
-## State and styles
-
-`theme` is `light`, `dark`, or `system`. `colorTheme` is a separate palette key.
-Configure your CSS for the `dark` class and `theme-<palette>` classes. The runtime
-does not supply a design system or require Tailwind. Immediate `set*` actions
-change state without animation. Await `switch*` actions for animated changes.
-Pass the clicked element for a transition origin in viewport CSS pixels.
-
-The runtime respects reduced motion and falls back when browser View Transitions
-are unavailable. Keep provider instances stable. Each provider owns its state;
-server requests do not share a global theme store.
-
-## Optional styled controls
-
-Controls are editable app source. They are not runtime exports.
+Grab a ready-made one. The CLI sets up the provider and drops the control
+straight into your codebase, so it's yours to tweak:
 
 ```sh
-npx uitheme-cli init --dry-run
 npx uitheme-cli init
-npx uitheme-cli add theme-toggle theme-selector color-theme-selector
+npx uitheme-cli add theme-toggle
 ```
 
-The CLI requires an existing Tailwind 3.4 or 4 app. Choose Base UI or Radix for
-React, or Reka for Vue. The installer adds only the chosen controls and their
-required dependencies. Customize local files, root classes, and internal part
-classes. Keep transition settings in your app and pass them to the provider.
+Already on shadcn? [Add the registry](https://www.ui-theme.dev/docs/installation#install-with-shadcn)
+and use `npx shadcn@latest add @uitheme/theme-toggle`.
 
-## Migration from v1
+[Browse all the controls →](https://www.ui-theme.dev/docs/components)
 
-This is the v2 API. Packaged `UIThemeSwitcher`, `UIThemeSelector`, select
-primitives, and their prop types have moved out of the runtime. The old runtime
-binary has moved to `uitheme-cli`.
+## Using another framework?
 
-Run `npx uitheme-cli migrate --dry-run` to inspect supported import changes.
-For old styled controls, upgrade the runtime to `^2.0.0` on a migration branch,
-install the local controls, then review the migration preview. The app can have
-unresolved imports until the migration is complete. Custom props and unknown
-provider wiring require manual changes. `--yes` never accepts edited controls
-as verified replacements.
+Each one has a short guide:
+[Next.js](https://www.ui-theme.dev/docs/guides/nextjs) ·
+[TanStack Start](https://www.ui-theme.dev/docs/guides/tanstack-start) ·
+[Vue](https://www.ui-theme.dev/docs/guides/vue) ·
+[Nuxt](https://www.ui-theme.dev/docs/guides/nuxt)
 
-Replace `uitheme-vue` with `uitheme-web/vue`, `uitheme-vue/bootstrap` with
-`uitheme-web/vue/bootstrap`, and `uitheme-vue/nuxt` with `uitheme-web/nuxt`.
-The published Vue v1 package remains available. No bridge release is required.
+Building for mobile? Check out
+[`uitheme-rn`](https://www.npmjs.com/package/uitheme-rn) for React Native.
 
-See the [documentation](https://www.ui-theme.dev/docs) for integration guides.
+Coming from v1? The [migration guide](https://www.ui-theme.dev/docs/migration)
+walks you through it.
+
+## Documentation
+
+Palettes, transition options, the full API and more live at
+[ui-theme.dev/docs](https://www.ui-theme.dev/docs).
+
+## License
+
+MIT
