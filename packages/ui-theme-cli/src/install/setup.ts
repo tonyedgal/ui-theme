@@ -16,6 +16,7 @@ import {
   planFile,
   readOptional,
   serializeConfig,
+  settleConflict,
 } from './index.ts';
 import type { InstallPlan, PlannedFile, PlanOptions } from './index.ts';
 
@@ -45,7 +46,9 @@ function sourceFile(path: string, content: string): ts.SourceFile {
       compilerOptions: { jsx: ts.JsxEmit.Preserve },
     }).diagnostics?.length
   )
-    throw new Error('Source syntax requires manual provider setup');
+    throw new Error(
+      `${path} has a syntax error, so the CLI cannot add the provider. Fix the error and run init again, or add the provider yourself.`
+    );
 
   return file;
 }
@@ -323,18 +326,26 @@ async function reactProvider(
     });
 
   if (directProviderUsed) return;
-  const planned = await planFile(profile, wrapperPath, wrapper);
 
-  if (planned.action === 'replace' && !options.overwrite) {
-    manual.push(
-      `Existing provider file requires --overwrite: ${relative(profile.cwd, wrapperPath)}`
-    );
+  const planned = await settleConflict(
+    profile,
+    await planFile(profile, wrapperPath, wrapper),
+    'existing',
+    options
+  );
+
+  if (setupUsed && setupImported) {
+    files.push(planned);
 
     return;
   }
 
-  if (setupUsed && setupImported) {
+  // The kept file may export something else, so the CLI does not wire it.
+  if (planned.kept) {
     files.push(planned);
+    manual.push(
+      `Kept your ${relative(profile.cwd, wrapperPath)}. Wrap the application root in ${relative(profile.cwd, entry.path)} with the provider.`
+    );
 
     return;
   }
@@ -424,7 +435,9 @@ async function vueProvider(
   const mount = mounts[0].expression;
 
   if (!ts.isPropertyAccessExpression(mount))
-    throw new Error('Manual provider setup required');
+    throw new Error(
+      `Install createUITheme() on the Vue application in ${relative(profile.cwd, entry.path)}. Its mount call is custom.`
+    );
   const receiver = mount.expression;
   let known = false;
   walk(receiver, (node) => {
@@ -543,6 +556,21 @@ async function nuxtModule(
   files.push(await planFile(profile, entry.path, content));
 }
 
+// The code for a manual provider step. It uses the defaults of the generated
+// provider, so a manual setup behaves like an automatic one.
+function providerSnippet(profile: ProjectProfile): string {
+  switch (profile.framework) {
+    case 'nuxt':
+      return "Add the module to nuxt.config:\n\nexport default defineNuxtConfig({\n  modules: ['uitheme-web/nuxt'],\n});";
+    case 'vite-vue':
+      return "Install the plugin before mount:\n\nimport { createUITheme } from 'uitheme-web/vue';\n\ncreateApp(App)\n  .use(createUITheme({ defaultTheme: 'system', defaultColorTheme: 'default', colorThemes: ['default'] }))\n  .mount('#app');";
+    case 'next':
+      return "Create a client provider, and wrap the content of <body> with it:\n\n'use client';\n\nimport { NextUIThemeProvider } from 'uitheme-web/next';\n\nexport function ThemeProvider({ children }) {\n  return (\n    <NextUIThemeProvider defaultTheme=\"system\" defaultColorTheme=\"default\" colorThemes={['default']}>\n      {children}\n    </NextUIThemeProvider>\n  );\n}\n\n// app/layout\n<body>\n  <ThemeProvider>{children}</ThemeProvider>\n</body>";
+    default:
+      return `Wrap ${profile.framework === 'tanstack' ? 'the content of <body>' : 'the application root'} with the provider:\n\nimport { UIThemeProvider } from 'uitheme-web/react';\n\n<UIThemeProvider defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>\n  ${profile.framework === 'tanstack' ? '{children}' : '<App />'}\n</UIThemeProvider>`;
+  }
+}
+
 export async function planInit(
   profile: ProjectProfile,
   options: PlanOptions = {}
@@ -553,6 +581,7 @@ export async function planInit(
   const utility = await planSharedUtils(profile, options);
   profile = utility.profile;
   files.push(utility.file);
+  manualSteps.push(...utility.manualSteps);
 
   const original = await readOptional(profile.cssFile);
 
@@ -580,6 +609,8 @@ export async function planInit(
 
   files.push(await planFile(profile, profile.cssFile, css));
 
+  const providerSteps = manualSteps.length;
+
   try {
     if (profile.framework === 'nuxt')
       await nuxtModule(profile, files, manualSteps);
@@ -589,6 +620,9 @@ export async function planInit(
   } catch (error) {
     manualSteps.push(error instanceof Error ? error.message : String(error));
   }
+
+  if (manualSteps.length > providerSteps)
+    manualSteps.push(providerSnippet(profile));
 
   files.push(
     await planFile(

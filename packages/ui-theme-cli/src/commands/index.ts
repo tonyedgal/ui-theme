@@ -1,5 +1,5 @@
 import { relative, resolve, join } from 'node:path';
-import { detectProject } from '../project.ts';
+import { BaseMismatchError, detectProject } from '../project.ts';
 import { readConfig } from '../config.ts';
 import {
   createRegistryClient,
@@ -18,7 +18,12 @@ import {
 import { planInit } from '../install/setup.ts';
 import { cliVersion, installedWebVersion } from './version.ts';
 import { runMigration } from './migrate.ts';
-import type { InstallPlan, InstallRunner } from '../install/index.ts';
+import type {
+  ConflictReason,
+  ConflictResolver,
+  InstallPlan,
+  InstallRunner,
+} from '../install/index.ts';
 import type {
   ProjectOverrides,
   ProjectProfile,
@@ -31,7 +36,8 @@ export interface CliIO {
   env?: Record<string, string | undefined>;
   registry?: ReturnType<typeof createRegistryClient>;
   runInstall?: InstallRunner;
-  confirm?: (plan: InstallPlan) => Promise<boolean>;
+  /** Resolve undefined when nobody can answer, for example in CI. */
+  confirm?: (plan: InstallPlan) => Promise<boolean | undefined>;
   select?: (
     message: string,
     choices: string[],
@@ -48,6 +54,8 @@ interface Flags {
   json: boolean;
   help: boolean;
   components: string[];
+  /** The argument indexes of the component names. */
+  positions: number[];
   revision?: string;
   registry?: string;
 }
@@ -73,6 +81,7 @@ function parseFlags(args: string[]): Flags {
     json: false,
     help: false,
     components: [],
+    positions: [],
   };
 
   const valueOptions = [
@@ -97,6 +106,7 @@ function parseFlags(args: string[]): Flags {
 
     if (!argument.startsWith('-')) {
       flags.components.push(argument);
+      flags.positions.push(index);
       continue;
     }
 
@@ -199,7 +209,8 @@ function printablePlan(plan: InstallPlan) {
     revision: plan.revision,
     files: plan.files.map((file) => ({
       path: relative(plan.profile.cwd, file.path).replaceAll('\\', '/'),
-      action: file.action,
+      action: file.kept ? 'keep' : file.action,
+      ...(file.kept && { reason: file.kept.reason }),
     })),
     dependencies: plan.dependencies,
     dependencyInstalls: plan.dependencyInstalls?.map((install) => ({
@@ -213,23 +224,148 @@ function printablePlan(plan: InstallPlan) {
   };
 }
 
+function fileDiff(path: string, before: string | undefined, content: string) {
+  return [
+    `--- ${before === undefined ? '/dev/null' : path}`,
+    `+++ ${path}`,
+    ...(before ?? '').split('\n').map((line) => `-${line}`),
+    ...content.split('\n').map((line) => `+${line}`),
+  ].join('\n');
+}
+
 function diffPlan(plan: InstallPlan): string {
   return plan.files
     .filter((file) => file.action !== 'skip')
-    .map((file) => {
-      const path = relative(plan.profile.cwd, file.path).replaceAll('\\', '/');
-
-      return [
-        `--- ${file.before === undefined ? '/dev/null' : path}`,
-        `+++ ${path}`,
-        ...(file.before ?? '').split('\n').map((line) => `-${line}`),
-        ...file.content.split('\n').map((line) => `+${line}`),
-      ].join('\n');
-    })
+    .map((file) =>
+      fileDiff(
+        relative(plan.profile.cwd, file.path).replaceAll('\\', '/'),
+        file.before,
+        file.content
+      )
+    )
     .join('\n');
 }
 
-const help = `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <base-ui|radix|reka>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--registry <url>       Use another registry (env: UITHEME_REGISTRY_URL)\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without a confirmation prompt\n--overwrite            Permit replacing edited component files\n--json                 Print structured output\n\nEnvironment:\nUITHEME_REGISTRY_URL   Use another registry (--registry wins)\nUITHEME_WEB_VERSION    Install uitheme-web from a dist-tag, version, or .tgz path\n`;
+const conflictText: Record<ConflictReason, string> = {
+  edited: 'has changes since uitheme installed it',
+  existing: 'already exists and differs from the uitheme version',
+  'no-cn': 'does not export a callable cn, and the controls import one',
+};
+
+const keep = 'Keep my file',
+  overwrite = 'Overwrite',
+  showDiff = 'Show the diff';
+
+// Ask about each file that differs from the uitheme version. `--yes`,
+// `--dry-run` and a missing terminal never ask, so the CLI keeps the file.
+function conflictResolver(
+  flags: Flags,
+  io: CliIO,
+  stdout: (text: string) => void
+): ConflictResolver | undefined {
+  const select = io.select;
+
+  if (flags.yes || flags.dryRun || !select) return;
+
+  return async (conflict) => {
+    let choices = [keep, overwrite, showDiff];
+
+    while (true) {
+      const answer = await select(
+        `${conflict.path} ${conflictText[conflict.reason]}. Overwrite it?`,
+        choices,
+        keep
+      );
+
+      if (answer === undefined) return;
+
+      if (answer === overwrite) return 'overwrite';
+
+      if (answer !== showDiff) return 'keep';
+      stdout(fileDiff(conflict.path, conflict.before, conflict.content));
+      choices = [keep, overwrite];
+    }
+  };
+}
+
+const frameworkChoices = async (cwd: string) => {
+  const pkg = JSON.parse(
+    (await readOptional(join(cwd, 'package.json'))) ?? '{}'
+  );
+
+  const dependencies = { ...pkg.devDependencies, ...pkg.dependencies };
+  const choices: NonNullable<ProjectOverrides['framework']>[] = [];
+
+  if (dependencies.next) choices.push('next');
+
+  if (dependencies['@tanstack/react-start']) choices.push('tanstack');
+
+  if (dependencies.nuxt) choices.push('nuxt');
+
+  if (!choices.length && dependencies.vite) {
+    if (dependencies.react) choices.push('vite-react');
+
+    if (dependencies.vue) choices.push('vite-vue');
+  }
+
+  return choices;
+};
+
+// Detect the project, and ask when the framework is ambiguous or the saved
+// base does not fit the framework. Each answer sets an override, so each
+// question comes at most once.
+async function detectWithPrompts(
+  flags: Flags,
+  io: CliIO
+): Promise<ProjectProfile> {
+  while (true) {
+    try {
+      return await detectProject(flags.overrides);
+    } catch (error) {
+      if (!io.select || !(error instanceof Error)) throw error;
+
+      if (error instanceof BaseMismatchError) {
+        if (flags.overrides.base || flags.yes) throw error;
+
+        const choices: ProjectProfile['base'][] =
+          error.framework === 'nuxt' || error.framework === 'vite-vue'
+            ? ['reka']
+            : ['base-ui', 'radix'];
+
+        const selected = await io.select(
+          `uitheme.json saves the ${error.base} base, which does not work with ${error.framework}. Select the base to save instead`,
+          choices,
+          choices[0]
+        );
+
+        const base = choices.find((item) => item === selected);
+
+        if (!base) throw error;
+        flags.overrides.base = base;
+        continue;
+      }
+
+      if (!error.message.includes('ambiguous') || flags.overrides.framework)
+        throw error;
+
+      const choices = await frameworkChoices(
+        resolve(flags.overrides.cwd ?? process.cwd())
+      );
+
+      const selected = await io.select(
+        'Select the framework for this application',
+        choices
+      );
+
+      const framework = choices.find((item) => item === selected);
+
+      if (!framework) throw error;
+      flags.overrides.framework = framework;
+    }
+  }
+}
+
+const help = `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <base-ui|radix|reka>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--registry <url>       Use another registry (env: UITHEME_REGISTRY_URL)\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without questions; keeps files that differ\n--overwrite            Replace files that differ from the registry\n--json                 Print structured output\n\nEnvironment:\nUITHEME_REGISTRY_URL   Use another registry (--registry wins)\nUITHEME_WEB_VERSION    Install uitheme-web from a dist-tag, version, or .tgz path\n`;
 
 export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
   const stdout = io.stdout ?? console.log,
@@ -265,49 +401,7 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
       return 0;
     }
 
-    let profile: ProjectProfile;
-
-    try {
-      profile = await detectProject(flags.overrides);
-    } catch (error) {
-      if (
-        !io.select ||
-        !(error instanceof Error) ||
-        !error.message.includes('ambiguous')
-      )
-        throw error;
-      const cwd = resolve(flags.overrides.cwd ?? process.cwd());
-
-      const pkg = JSON.parse(
-        (await readOptional(join(cwd, 'package.json'))) ?? '{}'
-      );
-
-      const dependencies = { ...pkg.devDependencies, ...pkg.dependencies };
-      const choices: NonNullable<ProjectOverrides['framework']>[] = [];
-
-      if (dependencies.next) choices.push('next');
-
-      if (dependencies['@tanstack/react-start']) choices.push('tanstack');
-
-      if (dependencies.nuxt) choices.push('nuxt');
-
-      if (!choices.length && dependencies.vite) {
-        if (dependencies.react) choices.push('vite-react');
-
-        if (dependencies.vue) choices.push('vite-vue');
-      }
-
-      const selected = await io.select(
-        'Select the framework for this application',
-        choices
-      );
-
-      const framework = choices.find((item) => item === selected);
-
-      if (!framework) throw error;
-      flags.overrides.framework = framework;
-      profile = await detectProject(flags.overrides);
-    }
+    let profile = await detectWithPrompts(flags, io);
 
     if (
       command === 'init' &&
@@ -346,6 +440,46 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
       throw new Error(
         `Incompatible uitheme-web ${webVersion}. Run migration before installing v2 controls.`
       );
+
+    // The controls need the provider that init adds. uitheme.json is the
+    // sign that init or an earlier add ran in this application.
+    let setupCode = 0;
+
+    if (command === 'add' && !(await readConfig(profile.cwd))) {
+      const notSetUp = "UI-Theme isn't set up in this app yet.";
+
+      const answer =
+        io.select && !flags.yes && !flags.dryRun
+          ? await io.select(
+              `${notSetUp} The controls need its provider. Run init first?`,
+              ['Run init first', 'Add the controls only'],
+              'Run init first'
+            )
+          : undefined;
+
+      if (flags.dryRun)
+        stderr(`${notSetUp} Run \`uitheme init\` before you apply this plan.`);
+      else if (answer === undefined)
+        throw new Error(
+          `${notSetUp} Run \`uitheme init\` first, then add the controls.`
+        );
+      else if (answer === 'Run init first') {
+        setupCode = await runCli(
+          [
+            'init',
+            ...args
+              .slice(1)
+              .filter((_, index) => !flags.positions.includes(index)),
+          ],
+          io
+        );
+
+        // A failed or cancelled init leaves no uitheme.json.
+        if (setupCode === 1 || !(await readConfig(profile.cwd)))
+          return setupCode;
+        profile = await detectWithPrompts(flags, io);
+      }
+    }
 
     const env = io.env ?? process.env,
       origin = resolveRegistryOrigin({
@@ -397,7 +531,11 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
     let plan: InstallPlan;
 
     if (command === 'init')
-      plan = await planInit(profile, { ...flags, webDependency });
+      plan = await planInit(profile, {
+        ...flags,
+        webDependency,
+        resolveConflict: conflictResolver(flags, io, stdout),
+      });
     else {
       const names = flags.components.length
         ? flags.components
@@ -414,6 +552,7 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
         ...flags,
         webDependency,
         diff: command === 'diff',
+        resolveConflict: conflictResolver(flags, io, stdout),
       });
     }
 
@@ -427,11 +566,38 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
 
     if (flags.dryRun || command === 'diff') return 0;
 
-    if (!flags.yes && !(await io.confirm?.(plan)))
-      throw new Error(
-        'Confirmation required. Use --yes to apply this plan, or --dry-run to preview.'
-      );
+    if (!flags.yes) {
+      const confirmed = await io.confirm?.(plan);
+
+      if (confirmed === false) {
+        stdout('Cancelled. Nothing changed.');
+
+        return setupCode;
+      }
+
+      if (!confirmed)
+        throw new Error(
+          'Confirmation required. Use --yes to apply this plan, or --dry-run to preview.'
+        );
+    }
+
     await applyPlan(plan, { runInstall: io.runInstall });
+
+    // Files that nobody chose to keep exit with 2, so a script can find them.
+    const unanswered = plan.files
+      .filter((file) => file.kept && !file.kept.asked)
+      .map((file) =>
+        relative(plan.profile.cwd, file.path).replaceAll('\\', '/')
+      );
+
+    if (unanswered.length)
+      stdout(
+        [
+          'Kept these files, because they differ from the uitheme version:',
+          ...unanswered.map((path) => `  ${path}`),
+          'Run `uitheme diff` to compare them, or run again with --overwrite to replace them.',
+        ].join('\n')
+      );
 
     if (plan.manualSteps.length) {
       stdout('Setup status: manual-required. Complete the steps above.');
@@ -439,13 +605,15 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
       return 2;
     }
 
+    if (unanswered.length) return 2;
+
     stdout(
       command === 'init'
         ? 'Setup complete.'
         : `Installation complete (${plan.revision}).`
     );
 
-    return 0;
+    return setupCode;
   } catch (error) {
     stderr(error instanceof Error ? error.message : String(error));
 

@@ -3,7 +3,12 @@ import { dirname, join, resolve, extname, relative, sep } from 'node:path';
 import ts from 'typescript';
 import { isRecord } from '../config.ts';
 import type { ProjectProfile } from '../types.ts';
-import { componentOwner, planFile, readOptional } from './index.ts';
+import {
+  componentOwner,
+  planFile,
+  readOptional,
+  settleConflict,
+} from './index.ts';
 import type { PlanOptions } from './index.ts';
 
 async function jsonFile(path: string) {
@@ -66,6 +71,8 @@ function hasCnExport(path: string, options: ts.CompilerOptions) {
 
   return type.getCallSignatures().length > 0;
 }
+
+const noSteps: string[] = [];
 
 export async function planSharedUtils(
   profile: ProjectProfile,
@@ -219,6 +226,7 @@ export async function planSharedUtils(
       profile: planProfile,
       importPath,
       file: await planFile(planProfile, utility, existing),
+      manualSteps: noSteps,
       dependencies: [
         ...(/(?:from|import)\s*['"]clsx['"]/.test(existing)
           ? ['clsx@^2.1.1']
@@ -229,18 +237,27 @@ export async function planSharedUtils(
       ],
     };
 
-  if (existing !== undefined && !options.overwrite && !options.diff)
-    throw new Error(
-      `${utility} does not export a callable cn. Export cn from that file, or review a replacement with --overwrite --dry-run before applying --overwrite.`
-    );
   const javascript = ['.js', '.jsx', '.mjs'].includes(extname(utility));
   const content = `import { clsx${javascript ? '' : ', type ClassValue'} } from 'clsx';\nimport { twMerge } from 'tailwind-merge';\n\nexport function cn(...inputs${javascript ? '' : ': ClassValue[]'}) {\n  return twMerge(clsx(inputs));\n}\n`;
+
+  const file = await settleConflict(
+    planProfile,
+    await planFile(planProfile, utility, content),
+    'no-cn',
+    options
+  );
+
+  const local = relative(profile.cwd, utility).replaceAll('\\', '/');
 
   return {
     owner,
     profile: planProfile,
     importPath,
-    file: await planFile(planProfile, utility, content),
+    file,
+    // The controls import cn, so a kept file still needs the export.
+    manualSteps: file.kept
+      ? [`Export cn from ${local}. The controls import it:\n\n${content}`]
+      : [],
     dependencies: [
       'clsx@^2.1.1',
       `tailwind-merge@${profile.tailwind === 3 ? '^2.6.0' : '^3.0.0'}`,

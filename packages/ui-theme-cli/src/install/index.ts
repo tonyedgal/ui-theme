@@ -21,7 +21,34 @@ export interface PlannedFile {
   content: string;
   before: string | undefined;
   action: 'create' | 'replace' | 'skip';
+  /**
+   * The file on disk differs from the uitheme version, and the CLI keeps it.
+   * `asked` is true when the user chose to keep the file at a prompt.
+   */
+  kept?: { reason: ConflictReason; asked: boolean };
 }
+
+/**
+ * Why an existing file blocks a replacement: the user edited a file that the
+ * CLI installed, the CLI did not install the file, or the file has no `cn`.
+ */
+export type ConflictReason = 'edited' | 'existing' | 'no-cn';
+
+export interface FileConflict {
+  /** The path relative to the application, for messages. */
+  path: string;
+  reason: ConflictReason;
+  before: string;
+  content: string;
+}
+
+/**
+ * Ask the user what to do with a file that differs from the uitheme version.
+ * Return undefined when nobody can answer. The CLI then keeps the file.
+ */
+export type ConflictResolver = (
+  conflict: FileConflict
+) => Promise<'overwrite' | 'keep' | undefined>;
 
 export interface InstallPlan {
   profile: ProjectProfile;
@@ -38,6 +65,8 @@ export interface PlanOptions {
   overwrite?: boolean;
   yes?: boolean;
   diff?: boolean;
+  /** Ask about each file that differs. Without it, the CLI keeps the files. */
+  resolveConflict?: ConflictResolver;
   /** The uitheme-web dependency to install, from `resolveWebDependency`. */
   webDependency?: string;
 }
@@ -198,6 +227,37 @@ export async function planFile(
     before,
     action:
       before === content ? 'skip' : before === undefined ? 'create' : 'replace',
+  };
+}
+
+/**
+ * Settle a planned replacement of a file that the user owns. `--overwrite`
+ * and `diff` replace it. Otherwise the user decides, and the file stays when
+ * the user keeps it or nobody can answer.
+ */
+export async function settleConflict(
+  profile: ProjectProfile,
+  planned: PlannedFile,
+  reason: ConflictReason,
+  options: PlanOptions
+): Promise<PlannedFile> {
+  if (planned.action !== 'replace' || options.overwrite || options.diff)
+    return planned;
+
+  const answer = await options.resolveConflict?.({
+    path: relative(profile.cwd, planned.path).replaceAll('\\', '/'),
+    reason,
+    before: planned.before!,
+    content: planned.content,
+  });
+
+  if (answer === 'overwrite') return planned;
+
+  return {
+    ...planned,
+    content: planned.before!,
+    action: 'skip',
+    kept: { reason, asked: answer === 'keep' },
   };
 }
 
@@ -431,28 +491,37 @@ export async function planRegistryInstall(
               JSON.stringify(utility.importPath)
             );
 
-      const planned = await planFile(profile, destination, content);
       const local = relative(profile.cwd, destination).replaceAll('\\', '/');
+      const prior = files.get(destination);
+
+      if (prior && (prior.kept ? prior.before : prior.content) !== content)
+        throw new Error(`Conflicting registry destination: ${local}`);
 
       const tracked = Object.values(saved?.installed ?? {})
         .flatMap((record) => record.files)
         .find((record) => record.path === local);
 
+      let planned = prior ?? (await planFile(profile, destination, content));
+
+      // A tracked file that still has its installed hash is not edited, so
+      // the CLI updates it. Any other difference belongs to the user.
       if (
+        !prior &&
         planned.action === 'replace' &&
-        !options.overwrite &&
-        !options.diff &&
         (!tracked || hashContent(planned.before!) !== tracked.hash)
       )
-        throw new Error(
-          `Edited or existing file requires --overwrite: ${local}`
+        planned = await settleConflict(
+          profile,
+          planned,
+          tracked ? 'edited' : 'existing',
+          options
         );
-      const prior = files.get(destination);
-
-      if (prior && prior.content !== planned.content)
-        throw new Error(`Conflicting registry destination: ${local}`);
       files.set(destination, planned);
-      installedFiles.push({ path: local, hash: hashContent(content) });
+      // A kept file keeps its old hash, so the next run finds the edit again.
+      installedFiles.push({
+        path: local,
+        hash: planned.kept && tracked ? tracked.hash : hashContent(content),
+      });
     }
 
     if (!/^[a-z][a-z0-9-]*$/.test(meta.component))
@@ -491,7 +560,7 @@ export async function planRegistryInstall(
     files: [...files.values()],
     dependencies: resolved.install,
     dependencyUpdates: resolved.updates,
-    manualSteps: [],
+    manualSteps: [...utility.manualSteps],
     revision: graph.manifest.stable.revision,
   };
 
@@ -660,11 +729,20 @@ export async function applyPlan(
   }
 }
 
+const keptReasons: Record<ConflictReason, string> = {
+  edited: 'edited since installation',
+  existing: 'differs from the uitheme version',
+  'no-cn': 'does not export a callable cn',
+};
+
 export function describePlan(plan: InstallPlan): string {
-  const files = plan.files.map(
-    (file) =>
-      `${file.action} ${relative(plan.profile.cwd, file.path).replaceAll('\\', '/')}`
-  );
+  const files = plan.files.map((file) => {
+    const path = relative(plan.profile.cwd, file.path).replaceAll('\\', '/');
+
+    return file.kept
+      ? `keep ${path} (${keptReasons[file.kept.reason]}; --overwrite replaces it)`
+      : `${file.action} ${path}`;
+  });
 
   return [
     ...files,
