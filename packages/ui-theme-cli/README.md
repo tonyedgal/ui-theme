@@ -1,69 +1,87 @@
 # uitheme-cli
 
-Add animated theme controls to the app you already have, in two commands.
+Add animated theme controls to your app.
 
-```sh
+## Preview first
+
+Use the `--dry-run` flag on any command to see the plan without writing files.
+
+```bash
+npx uitheme-cli init --dry-run
+```
+
+## info
+
+Use the `info` command to see what the CLI detects in your app.
+
+```bash
+npx uitheme-cli info
+```
+
+## init
+
+Use the `init` command to set up UI-Theme in your app.
+
+The `init` command installs `uitheme-web`, adds the theme provider, and adds the
+theme CSS.
+
+```bash
 npx uitheme-cli init
+```
+
+## add
+
+Use the `add` command to add controls to your app.
+
+```bash
+npx uitheme-cli add [control]
+```
+
+### Example
+
+```bash
 npx uitheme-cli add theme-toggle
 ```
 
-`init` finds your framework, sets up the theme provider and your CSS, and
-installs [`uitheme-web`](https://www.npmjs.com/package/uitheme-web). `add`
-copies the control into your codebase. From there it's your code: restyle it,
-rename it, rewrite it.
+You can also add several controls at once.
 
-- Works with Next.js, TanStack Start, Vite (React or Vue) and Nuxt 4
-- Picks Radix or Base UI for React, and Reka for Vue, based on what your app
-  already uses
-- Matches your setup: TypeScript or JavaScript, Tailwind 3.4 or 4
-- Shows you the plan before it touches a file
-- Never overwrites a file you've edited
-- Keeps your existing dependency versions when they already work
-
-## The controls
-
-| Control                  | What it is                                    |
-| ------------------------ | --------------------------------------------- |
-| `theme-toggle`           | A button that flips between light and dark    |
-| `icon-theme-toggle`      | The same, with an animated sun and moon       |
-| `theme-switcher`         | System, light and dark, with a sliding marker |
-| `theme-selector`         | A menu for system, light and dark             |
-| `color-theme-selector`   | A menu for your color palettes                |
-| `theme-disclosure`       | Inline theme choices that expand in place     |
-| `color-theme-disclosure` | Inline palette choices that expand in place   |
-
-Add as many as you want in one go:
-
-```sh
+```bash
 npx uitheme-cli add theme-toggle color-theme-selector
 ```
 
-[See them all live →](https://www.ui-theme.dev/docs/components)
+If you've changed a file, the CLI asks before replacing it. Use `--overwrite` to
+replace it without asking.
 
-## Not sure what it'll do?
+## list
 
-Ask first. Nothing is written until you say so:
+Use the `list` command to see the available controls.
 
-```sh
-npx uitheme-cli info               # what the CLI detected in your app
-npx uitheme-cli init --dry-run     # the full plan, without changes
-npx uitheme-cli diff theme-toggle  # how your copy differs from the original
+```bash
+npx uitheme-cli list
 ```
 
-## Upgrading from v1?
+## diff
 
-`migrate` previews the import changes for you:
+Use the `diff` command to compare a control in your app with the registry
+version.
 
-```sh
+```bash
+npx uitheme-cli diff theme-toggle
+```
+
+## migrate
+
+Use the `migrate` command to move an app from UI-Theme v1 to v2.
+
+The `migrate` command previews the changes. Add `--yes` to apply them.
+
+```bash
 npx uitheme-cli migrate
 ```
 
-The [migration guide](https://www.ui-theme.dev/docs/migration) covers the rest.
-
 ## Documentation
 
-Every command, flag and option is in the
-[CLI reference](https://www.ui-theme.dev/docs/cli).
+Visit https://www.ui-theme.dev/docs/cli to view the documentation.
 
 ## License
 
