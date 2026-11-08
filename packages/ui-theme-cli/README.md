@@ -1,83 +1,70 @@
 # uitheme-cli
 
-Install editable UI-Theme controls in an existing web app. The runtime remains
-in `uitheme-web`; this CLI does not become an application runtime dependency.
+Add animated theme controls to the app you already have, in two commands.
 
 ```sh
-npx uitheme-cli info
-npx uitheme-cli init --dry-run
 npx uitheme-cli init
-npx uitheme-cli list
-npx uitheme-cli add theme-toggle theme-selector color-theme-selector
+npx uitheme-cli add theme-toggle
 ```
 
-Requires Node.js 22.18 or later, an existing Tailwind 3.4 or 4 app, and
-`uitheme-web` 2.x for registry controls. Supports Next App Router, TanStack Start,
-Vite React, Vite Vue, and Nuxt 4. It does not scaffold an app or upgrade Tailwind.
+`init` finds your framework, sets up the theme provider and your CSS, and
+installs [`uitheme-web`](https://www.npmjs.com/package/uitheme-web). `add`
+copies the control into your codebase. From there it's your code: restyle it,
+rename it, rewrite it.
 
-| Command        | Purpose                                           |
-| -------------- | ------------------------------------------------- |
-| `info`         | Show the detected app profile                     |
-| `init`         | Plan and apply framework/provider/CSS setup       |
-| `list`         | Show controls for the selected variant            |
-| `add <names>`  | Install controls and their selected dependencies  |
-| `diff <names>` | Show differences without changing files           |
-| `migrate`      | Preview safe legacy import and dependency changes |
+- Works with Next.js, TanStack Start, Vite (React or Vue) and Nuxt 4
+- Picks Radix or Base UI for React, and Reka for Vue, based on what your app
+  already uses
+- Matches your setup: TypeScript or JavaScript, Tailwind 3.4 or 4
+- Shows you the plan before it touches a file
+- Never overwrites a file you've edited
+- Keeps your existing dependency versions when they already work
 
-Use `--cwd apps/web` to select one app in a workspace. For React, the CLI
-selects Radix or Base UI from the app's dependencies, then from the shadcn
-style. Use `--base base-ui` or `--base radix` to choose. Vue uses `--base reka`. Use `--language ts` or
-`--language js`, and `--tailwind 3` or `--tailwind 4` to match your app.
+## The controls
 
-Flags override saved `uitheme.json`, then compatible component configuration,
-then detection. Use `--css`, `--tailwind-config`, `--components-dir`,
-`--alias-prefix`, or `--color-format css|hsl-channels` for explicit choices.
-Ambiguous supported frameworks require a choice. App configs are not executed.
+| Control                  | What it is                                    |
+| ------------------------ | --------------------------------------------- |
+| `theme-toggle`           | A button that flips between light and dark    |
+| `icon-theme-toggle`      | The same, with an animated sun and moon       |
+| `theme-switcher`         | System, light and dark, with a sliding marker |
+| `theme-selector`         | A menu for system, light and dark             |
+| `color-theme-selector`   | A menu for your color palettes                |
+| `theme-disclosure`       | Inline theme choices that expand in place     |
+| `color-theme-disclosure` | Inline palette choices that expand in place   |
 
-The hosted registry uses immutable revisions under
-[ui-theme.dev/r](https://www.ui-theme.dev/r/manifest.json).
-The alternate URL `https://uitheme.dev/r` redirects to the canonical host.
-`--revision <revision>` selects a recorded revision. All dependencies in one
-installation use the same revision. The CLI checks versions and source paths
-before writing. It records installed file hashes for later comparison.
-
-`--registry <url>` selects another registry, for example a local build. The
-`UITHEME_REGISTRY_URL` environment variable does the same for every command.
-The flag wins when you set both. The URL must use `https`, or `http` for
-`localhost`. The CLI prints the registry URL when it is not the hosted one.
+Add as many as you want in one go:
 
 ```sh
-UITHEME_REGISTRY_URL=http://localhost:4000/r npx uitheme-cli list
-npx uitheme-cli add theme-toggle --registry http://localhost:4000/r --dry-run
+npx uitheme-cli add theme-toggle color-theme-selector
 ```
 
-The CLI installs `uitheme-web@latest`. To test another runtime, set
-`UITHEME_WEB_VERSION` to a dist-tag, a version, or a packed `.tgz` file. The
-CLI always installs that value, even when the app already has `uitheme-web`.
-A prerelease counts as its release, so `2.0.0-rc.1` meets `^2.0.0`.
+[See them all live →](https://www.ui-theme.dev/docs/components)
+
+## Not sure what it'll do?
+
+Ask first. Nothing is written until you say so:
 
 ```sh
-UITHEME_WEB_VERSION=next npx uitheme-cli init
-UITHEME_WEB_VERSION=./uitheme-web-2.0.0.tgz npx uitheme-cli init
+npx uitheme-cli info               # what the CLI detected in your app
+npx uitheme-cli init --dry-run     # the full plan, without changes
+npx uitheme-cli diff theme-toggle  # how your copy differs from the original
 ```
 
-A `.tgz` path is relative to the folder where you run the command. The app's
-`package.json` then records a `file:` path to that tarball, so use it only for
-local tests. Keep `UITHEME_WEB_VERSION` set for later commands in that app.
+## Upgrading from v1?
 
-`--dry-run` and `--preview` do not write files or install packages. `--yes`
-skips confirmation but does not overwrite edited source. `--overwrite` permits
-replacement after you inspect the plan. A dependency that the app already has
-stays when its range is compatible. Otherwise, the plan shows an `update` line,
-with a note for a major update. Failed dependency installation restores
-touched source, manifests, and lockfiles. Explicit shared component destinations
-must be inside the detected workspace and have an owning package manifest.
+`migrate` previews the import changes for you:
 
-Migration defaults to a preview. Review the result before `migrate --yes`.
-Legacy custom controls and unknown provider contexts require manual changes.
-For v1 controls, upgrade the runtime to `^2.0.0` on a migration branch before
-`add`, replace local controls, then rerun the migration preview. Complete the
-source migration before building or deploying. The migration command does not
-run your package manager; update the lockfile after applying its manifest plan.
+```sh
+npx uitheme-cli migrate
+```
 
-See the [documentation](https://www.ui-theme.dev/docs/installation).
+The [migration guide](https://www.ui-theme.dev/docs/migration) covers the rest.
+
+## Documentation
+
+Every command, flag and option is in the
+[CLI reference](https://www.ui-theme.dev/docs/cli).
+
+## License
+
+MIT
