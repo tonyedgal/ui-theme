@@ -1,74 +1,75 @@
 # UI-Theme registry
 
-Private source workspace for the hosted UI-Theme control registry.
+The source for every UI-Theme control. The CLI, shadcn and the docs site all
+read from what this workspace builds. It's private and never goes to npm.
 
-`pnpm build` creates 84 records: seven components, three supported framework/base
-pairs, two Tailwind majors, and two languages. Vue uses Reka. React supports
-Base UI and Radix. Templates are the canonical source for docs and copied code.
+## Quick start
 
-`pnpm snapshot` freezes the current generated revision in `releases/v1`.
-Commit this archive when preparing a release. Clean builds restore these files
-before generating the current revision. Existing archive bytes cannot change.
-The revision includes generated payloads and the registry origin, so compiler
-changes cannot reuse an old URL with different content.
+From the repository root:
 
-The build also writes a shadcn layer at `{style}/{name}.json`. It has one
-TypeScript, Tailwind 4 record per React component for each shadcn style:
-`new-york`, `new-york-v4` and `default`, plus the `radix-*` styles, use Radix,
-and the `base-*` styles use Base UI. These records follow the stable revision
-and are not frozen. React Aria (`aria-*`) styles are not served. When shadcn
-adds a style, add its name to `shadcnStyles` in `src/build.ts`.
+```sh
+pnpm registry:dev
+```
 
-shadcn records list shared libraries by package name only, for example
-`lucide-react`. shadcn writes every versioned spec into the app's
-`package.json`, so a bare name keeps the app's version. `uitheme-web@^2.0.0`
-keeps its range, because the controls need the v2 runtime.
+That builds the registry, serves it at `http://127.0.0.1:4000/r`, and rebuilds
+whenever a template changes. Point the CLI or shadcn at it to try your changes
+in a real app. [CONTRIBUTING.md](../../CONTRIBUTING.md#running-the-registry-locally)
+walks you through it.
 
-Each style folder also has a `registry.json` index without file content.
-`shadcn search @uitheme` reads it, and the shadcn registry directory requires
-it.
+Changed `src/build.ts`? Restart the server. It only watches the templates.
 
-Run `pnpm test:registry:shadcn` from the repository root to check this layer
-with the shadcn CLI. The check runs `shadcn add --dry-run` and
-`shadcn search` for each style against a local build. It writes no files in
-your app, but it needs network access because shadcn fetches its own `utils`
-item. The logs are in `test-results/registry-shadcn`.
+## Where things live
 
-Each record contains absolute URLs. To serve a build from another address, run
-`pnpm build --origin <url>`, for example `--origin http://localhost:4000/r`.
-Then serve `dist/` at that URL and pass the same URL to the CLI `--registry`
-flag. This build has a different revision. Run `pnpm build` again before you
-build the website. `--origin` and `--snapshot` cannot be used together.
+- `src/templates/<framework>/<base>/` holds one file per control, plus
+  `metadata.json` with the control's title, description and dependencies.
+  React has `radix` and `base-ui`. Vue has `reka`.
+- `src/build.ts` turns the templates into registry records.
+- `releases/v1/` holds frozen snapshots. Never edit them.
+- `dist/` is the build output. The website copies it at build time.
 
-The website stages these artifacts at build time. It does not fetch source from
-another server while serving a request. Do not publish this private workspace.
+One build makes 84 records: seven controls, three framework and base pairs,
+Tailwind 3 and 4, and TypeScript and JavaScript.
 
-## Compatible dependency ranges
+## Changing a control
 
-Each `metadata.json` lists the install spec for a dependency, for example
-`lucide-react@^1.61.0`. `compatibleDependencies` adds an older range that an
-app's existing dependency may satisfy, for example `>=0.397.0 <2.0.0`. The CLI
-keeps an app's dependency inside that range and updates a dependency outside
-it.
+1. Make the change in every base: `react/radix`, `react/base-ui` and
+   `vue/reka`.
+2. Run `pnpm registry:dev` and install the control in an app to see it work.
+3. Run the tests (below).
 
-The lowest version of each range must have every named import that the
-templates use, and accept the React or Vue versions that `uitheme-web`
-supports. `pnpm test:registry:minimum` installs that version and checks both.
-Run it after you add an import from one of these packages, and raise the range
-when it fails. It needs network access.
+Adding an import from a shared library such as `lucide-react`? Check that its
+`compatibleDependencies` range in `metadata.json` still holds. The minimum
+version check tells you if it doesn't, and you raise the range.
 
-## Inline expansion
+## Testing
 
-Theme Selector and Color Theme Selector use floating menus only. Theme
-Disclosure and Color Theme Disclosure are separate registry items. They contain
-inline radio choices and a bounded scroll area. Selectors do not install
-disclosure files. Set `direction="up"` on a disclosure to place choices above
-the trigger. The default direction is `down`.
+| Command                                 | What it checks                                              |
+| --------------------------------------- | ----------------------------------------------------------- |
+| `pnpm --filter @ui-theme/registry test` | The build output and its records                            |
+| `pnpm test:registry:shadcn`             | Every shadcn style installs and shows up in `shadcn search` |
+| `pnpm test:registry:minimum`            | The oldest compatible version of each library still works   |
 
-Each control ships its main component file. Icon Theme Toggle also installs
-Theme Toggle. All controls reuse the configured shared `cn` utility. Transition
-props use the public `ThemeControlTransitionProps` type from `uitheme-web`.
-The runtime owns animation settings and preserves provider defaults when a
-control passes undefined settings. Do not add local transition helpers.
+The last two need network access. Their logs land in `test-results/`.
 
-Theme-changing controls accept `animationType`, `duration`, and `slideDirection` directly. `icon-theme-toggle` animates sun/moon icons. `theme-switcher` offers system/light/dark radio choices. Motion uses local Tailwind transitions and respects reduced motion.
+## The shadcn layer
+
+The build also writes one record per React control for each shadcn style, at
+`{style}/{name}.json`, plus a `registry.json` index for `shadcn search`.
+`radix-*`, `new-york`, `new-york-v4` and `default` use Radix. `base-*` uses
+Base UI. React Aria styles aren't served.
+
+When shadcn ships a new style, add it to `shadcnStyles` in `src/build.ts`.
+
+These records list shared libraries by name only, so an app keeps the versions
+it already has. `uitheme-web@^2.0.0` keeps its range, because the controls need
+v2.
+
+## Releasing
+
+Run `pnpm snapshot` to freeze the current build into `releases/v1/`, and commit
+the result. A snapshot never changes once it's written. Each revision hash
+covers the records and the registry URL, so new content always gets a new URL.
+
+Records use absolute URLs. To serve a build from somewhere else, run
+`pnpm build --origin <url>`. That build gets its own revision, so run
+`pnpm build` again before you build the website.
