@@ -28,7 +28,7 @@ const code = await runCli(process.argv.slice(2), {
     }
   },
   confirm: async () => {
-    if (!process.stdin.isTTY || !process.stdout.isTTY) return false;
+    if (!process.stdin.isTTY || !process.stdout.isTTY) return;
 
     const prompt = createInterface({
       input: process.stdin,
