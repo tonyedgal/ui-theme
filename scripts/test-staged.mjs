@@ -35,6 +35,10 @@ const snapshot = mkdtempSync(join(tmpdir(), 'uitheme-staged-'));
 
 const snapshotEnv = { ...process.env, CI: '1' };
 
+// The snapshot validates a temporary copy. Its release decision must not
+// replace the outputs of a GitHub Actions step that runs this script.
+delete snapshotEnv.GITHUB_OUTPUT;
+
 for (const name of execFileSync('git', ['rev-parse', '--local-env-vars'], {
   cwd: root,
   encoding: 'utf8',
