@@ -17,45 +17,41 @@ https://github.com/user-attachments/assets/2819cf70-c474-478e-b821-6b26457c8d4a
   </a>
 </p>
 
-Light, dark, and color themes for web apps, with animated view transitions.
-`uitheme-web` supports React, Next.js, TanStack Start, Vue 3.5, and Nuxt 4.
-React Native uses `uitheme-rn`.
+UI-Theme started as a nicer way to switch between light and dark mode. Then it
+added color themes for when one look isn't enough, so one app can carry several
+design systems and move between them smoothly.
+
+UI-Theme doesn't stop at theming, it also comes with pre-built components served
+from its registry and installed via its CLI (or the shadcn CLI): toggles,
+switchers and selectors that land in your codebase as your own code.
+
+It's built for any framework: React, Next.js, TanStack Start, Vue, Nuxt and
+React Native are ready now, and more are coming.
 
 [Documentation](https://www.ui-theme.dev/docs) ·
 [Components](https://www.ui-theme.dev/docs/components) ·
 [Live demo](https://www.ui-theme.dev)
 
-## Install
+## Get started
 
-Use one of these three paths. Each path uses the `uitheme-web` runtime.
+Pick the path that suits your app. They all run on the same `uitheme-web`
+runtime.
 
-### 1. Runtime only
-
-Install the package, add a provider, and build your own controls with the hooks.
+**Just the runtime.** Bring your own buttons, and use the hooks:
 
 ```sh
 npm install uitheme-web
 ```
 
-See [Installation](https://www.ui-theme.dev/docs/installation) for each
-framework.
-
-### 2. UI-Theme CLI
-
-The CLI detects your framework, sets up the provider and CSS, and copies
-editable controls into your app.
+**Ready-made controls.** The CLI sets everything up and copies the controls into
+your codebase:
 
 ```sh
 npx uitheme-cli init
-npx uitheme-cli add theme-toggle color-theme-selector
+npx uitheme-cli add theme-toggle
 ```
 
-See the [CLI reference](https://www.ui-theme.dev/docs/cli).
-
-### 3. shadcn
-
-For a React app with shadcn and Tailwind 4, add the registry to
-`components.json`:
+**Already on shadcn?** Add the registry to `components.json`:
 
 ```json
 {
@@ -65,28 +61,27 @@ For a React app with shadcn and Tailwind 4, add the registry to
 }
 ```
 
-Then add a control:
+Then add a control. Radix and Base UI styles both work:
 
 ```sh
 npx shadcn@latest add @uitheme/theme-toggle
 ```
 
-shadcn installs `uitheme-web`. Add the UI-Theme provider to your app as the
-[installation guide](https://www.ui-theme.dev/docs/installation) shows. Radix
-and Base UI styles are supported.
+The [installation guide](https://www.ui-theme.dev/docs/installation) shows how
+to add the provider for each framework.
 
 ## Packages
 
-| Package                                  | Purpose                                         |
-| ---------------------------------------- | ----------------------------------------------- |
-| [`uitheme-web`](./packages/ui-theme)     | Theme runtime, providers, hooks, and animations |
-| [`uitheme-cli`](./packages/ui-theme-cli) | Setup, editable controls, and migration         |
-| [`uitheme-rn`](./packages/ui-theme-rn)   | React Native appearance and palettes            |
+| Package                                  | Purpose                                        |
+| ---------------------------------------- | ---------------------------------------------- |
+| [`uitheme-web`](./packages/ui-theme)     | Themes and transitions for the web             |
+| [`uitheme-cli`](./packages/ui-theme-cli) | Adds ready-made controls to your app           |
+| [`uitheme-rn`](./packages/ui-theme-rn)   | Themes and screen transitions for React Native |
 
 ## Contributing
 
-Read [CONTRIBUTING.md](./CONTRIBUTING.md) to set up the repository, run the
-checks, and open a pull request.
+Found a bug, or have an idea? Contributions are welcome.
+[CONTRIBUTING.md](./CONTRIBUTING.md) gets you from clone to pull request.
 
 ## License
 
