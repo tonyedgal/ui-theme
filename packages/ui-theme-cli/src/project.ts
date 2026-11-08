@@ -5,7 +5,24 @@ import { resolve, dirname, join, relative, isAbsolute } from 'node:path';
 import ts from 'typescript';
 import semver from 'semver';
 import { readConfig, relativeProjectPath, isRecord } from './config.ts';
-import type { Framework, ProjectOverrides, ProjectProfile } from './types.ts';
+import type {
+  Base,
+  Framework,
+  ProjectOverrides,
+  ProjectProfile,
+} from './types.ts';
+
+/** The saved or selected component base does not fit the framework. */
+export class BaseMismatchError extends Error {
+  readonly framework: Framework;
+  readonly base: Base;
+
+  constructor(message: string, framework: Framework, base: Base) {
+    super(message);
+    this.framework = framework;
+    this.base = base;
+  }
+}
 
 const exists = async (p: string) =>
   access(p).then(
@@ -360,8 +377,20 @@ export async function detectProject(
     framework === 'nuxt' || framework === 'vite-vue'
       ? base !== 'reka'
       : base === 'reka'
-  )
-    throw new Error('Component base is incompatible with selected framework');
+  ) {
+    const fits =
+      framework === 'nuxt' || framework === 'vite-vue'
+        ? '--base reka'
+        : '--base base-ui or --base radix';
+
+    throw new BaseMismatchError(
+      overrides.base
+        ? `--base ${base} does not work with ${framework}. Use ${fits}.`
+        : `uitheme.json saves the ${base} base, which does not work with ${framework}. Run again with ${fits} to switch.`,
+      framework,
+      base
+    );
+  }
 
   const tailwindConfigFile =
     overrides.tailwindConfigFile ??
