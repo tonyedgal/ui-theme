@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
 import { runCli } from '../src/commands/index';
+import type { RegistryGraph } from '../src/types';
 
 const roots: string[] = [];
 
@@ -431,5 +432,335 @@ customBootstrap();`
       })
     ).toBe(1);
     expect(unsafe.output()).toContain('Invalid UITHEME_REGISTRY_URL');
+  });
+});
+
+const source = 'export const ThemeToggle = () => null;';
+
+// A registry with one theme-toggle item for the Base UI variant.
+function registryWith(content = source) {
+  const graph: RegistryGraph = {
+    manifest: {
+      schemaVersion: 1,
+      stable: {
+        revision: 'abc12345',
+        index: '/r/v1/abc12345/registry.json',
+        webVersion: '^2.0.0',
+        cliVersion: '^1.0.0',
+      },
+    },
+    items: [
+      {
+        name: 'theme-toggle',
+        type: 'registry:ui',
+        title: 'Theme toggle',
+        description: '',
+        dependencies: [],
+        registryDependencies: [],
+        files: [{ path: 'theme-toggle.tsx', content, type: 'registry:ui' }],
+        meta: {
+          uiTheme: {
+            schemaVersion: 1,
+            revision: 'abc12345',
+            component: 'theme-toggle',
+            framework: 'react',
+            base: 'base-ui',
+            tailwind: 4,
+            language: 'ts',
+            webVersion: '^2.0.0',
+            cliVersion: '^1.0.0',
+          },
+        },
+      },
+    ],
+  };
+
+  return {
+    manifest: async () => graph.manifest,
+    list: async () => graph.items,
+    resolve: async () => graph,
+  };
+}
+
+// Answer each prompt from the list, and record the questions.
+function answers(...replies: (string | undefined)[]) {
+  const asked: string[] = [];
+
+  return {
+    asked,
+    select: async (message: string) => {
+      asked.push(message);
+
+      return replies.shift();
+    },
+  };
+}
+
+const runInstall = async () => {};
+
+// pnpm puts its store on NODE_PATH, so pin the runtime that the app resolves.
+async function appWithRuntime() {
+  const cwd = await fixture(),
+    runtime = join(cwd, 'node_modules/uitheme-web');
+
+  await mkdir(runtime, { recursive: true });
+  await writeFile(
+    join(runtime, 'package.json'),
+    '{"name":"uitheme-web","version":"2.0.0"}'
+  );
+
+  return cwd;
+}
+
+async function installedApp() {
+  const cwd = await appWithRuntime();
+  await runCli(['init', '--cwd', cwd, '--yes'], { ...io(), runInstall });
+  await runCli(['add', 'theme-toggle', '--cwd', cwd, '--yes'], {
+    ...io(),
+    runInstall,
+    registry: registryWith(),
+  });
+
+  const toggle = join(cwd, 'src/components/ui/theme-toggle.tsx');
+  await writeFile(toggle, 'my edit');
+
+  return { cwd, toggle };
+}
+
+describe('files that differ from the uitheme version', () => {
+  it('keeps an edited control when the user keeps it, with its old hash', async () => {
+    const { cwd, toggle } = await installedApp(),
+      out = io(),
+      prompt = answers('Keep my file');
+
+    const before = await readFile(join(cwd, 'uitheme.json'), 'utf8');
+
+    expect(
+      await runCli(['add', 'theme-toggle', '--cwd', cwd], {
+        ...out,
+        ...prompt,
+        runInstall,
+        confirm: async () => true,
+        registry: registryWith('new source'),
+      })
+    ).toBe(0);
+    expect(prompt.asked[0]).toContain(
+      'src/components/ui/theme-toggle.tsx has changes since uitheme installed it'
+    );
+    expect(out.output()).toContain('keep src/components/ui/theme-toggle.tsx');
+    expect(await readFile(toggle, 'utf8')).toBe('my edit');
+    expect(
+      JSON.parse(await readFile(join(cwd, 'uitheme.json'), 'utf8')).installed
+    ).toEqual(JSON.parse(before).installed);
+  });
+  it('replaces an edited control after the user reads the diff', async () => {
+    const { cwd, toggle } = await installedApp(),
+      out = io(),
+      prompt = answers('Show the diff', 'Overwrite');
+
+    expect(
+      await runCli(['add', 'theme-toggle', '--cwd', cwd], {
+        ...out,
+        ...prompt,
+        runInstall,
+        confirm: async () => true,
+        registry: registryWith('new source'),
+      })
+    ).toBe(0);
+    expect(prompt.asked).toHaveLength(2);
+    expect(out.output()).toContain('-my edit\n+new source');
+    expect(await readFile(toggle, 'utf8')).toBe('new source');
+  });
+  it('keeps edited files without an answer and exits with 2', async () => {
+    for (const [args, select] of [
+      [['--yes'], undefined],
+      [['--yes'], answers('Overwrite').select],
+      [[], async () => undefined],
+    ] as const) {
+      const { cwd, toggle } = await installedApp(),
+        out = io();
+
+      expect(
+        await runCli(['add', 'theme-toggle', '--cwd', cwd, ...args], {
+          ...out,
+          select,
+          runInstall,
+          confirm: async () => true,
+          registry: registryWith('new source'),
+        })
+      ).toBe(2);
+      expect(await readFile(toggle, 'utf8')).toBe('my edit');
+      expect(out.output()).toContain(
+        'Kept these files, because they differ from the uitheme version:\n  src/components/ui/theme-toggle.tsx'
+      );
+    }
+  });
+  it('replaces edited files with --overwrite, and marks them in a preview', async () => {
+    const { cwd, toggle } = await installedApp(),
+      preview = io();
+
+    expect(
+      await runCli(['add', 'theme-toggle', '--cwd', cwd, '--dry-run'], {
+        ...preview,
+        select: async () => {
+          throw Error('a preview must not ask');
+        },
+        registry: registryWith('new source'),
+      })
+    ).toBe(0);
+    expect(preview.output()).toContain(
+      'keep src/components/ui/theme-toggle.tsx (edited since installation; --overwrite replaces it)'
+    );
+
+    expect(
+      await runCli(
+        ['add', 'theme-toggle', '--cwd', cwd, '--yes', '--overwrite'],
+        { ...io(), runInstall, registry: registryWith('new source') }
+      )
+    ).toBe(0);
+    expect(await readFile(toggle, 'utf8')).toBe('new source');
+  });
+  it('asks about an existing provider file during init', async () => {
+    const cwd = await fixture(),
+      wrapper = join(cwd, 'src/components/theme-provider.tsx');
+
+    await mkdir(join(cwd, 'src/components'), { recursive: true });
+    await writeFile(wrapper, 'export const Mine = 1;');
+
+    const kept = io();
+
+    expect(
+      await runCli(['init', '--cwd', cwd], {
+        ...kept,
+        ...answers('base-ui', 'Keep my file'),
+        runInstall,
+        confirm: async () => true,
+      })
+    ).toBe(2);
+    expect(await readFile(wrapper, 'utf8')).toBe('export const Mine = 1;');
+    expect(kept.output()).toContain(
+      'Kept your src/components/theme-provider.tsx'
+    );
+    expect(kept.output()).toContain(
+      "import { UIThemeProvider } from 'uitheme-web/react';"
+    );
+
+    expect(
+      await runCli(['init', '--cwd', cwd], {
+        ...io(),
+        // uitheme.json saves the base now, so only the file question comes.
+        ...answers('Overwrite'),
+        runInstall,
+        confirm: async () => true,
+      })
+    ).toBe(0);
+    expect(await readFile(wrapper, 'utf8')).toContain('UIThemeProvider');
+    expect(await readFile(join(cwd, 'src/main.tsx'), 'utf8')).toContain(
+      '<ThemeProvider>'
+    );
+  });
+});
+
+describe('guided next steps', () => {
+  it('reports a declined confirmation as a cancel, not an error', async () => {
+    const cwd = await fixture(),
+      out = io();
+
+    expect(
+      await runCli(['init', '--cwd', cwd, '--base', 'base-ui'], {
+        ...out,
+        confirm: async () => false,
+      })
+    ).toBe(0);
+    expect(out.output()).toContain('Cancelled. Nothing changed.');
+    expect(out.output()).not.toContain('--yes');
+    await expect(readFile(join(cwd, 'uitheme.json'))).rejects.toThrow();
+  });
+  it('offers init when add runs in an app that is not set up', async () => {
+    const cwd = await appWithRuntime(),
+      out = io(),
+      prompt = answers('Run init first', 'base-ui');
+
+    expect(
+      await runCli(['add', 'theme-toggle', '--cwd', cwd], {
+        ...out,
+        ...prompt,
+        runInstall,
+        confirm: async () => true,
+        registry: registryWith(),
+      })
+    ).toBe(0);
+    expect(prompt.asked[0]).toContain("UI-Theme isn't set up in this app yet");
+    expect(out.output()).toContain('Setup complete.');
+    expect(await readFile(join(cwd, 'src/main.tsx'), 'utf8')).toContain(
+      '<ThemeProvider>'
+    );
+    expect(
+      await readFile(join(cwd, 'src/components/ui/theme-toggle.tsx'), 'utf8')
+    ).toBe(source);
+  });
+  it('adds only the controls when the user says so, and stops without a terminal', async () => {
+    const cwd = await appWithRuntime();
+
+    expect(
+      await runCli(['add', 'theme-toggle', '--cwd', cwd], {
+        ...io(),
+        ...answers('Add the controls only'),
+        runInstall,
+        confirm: async () => true,
+        registry: registryWith(),
+      })
+    ).toBe(0);
+    expect(await readFile(join(cwd, 'src/main.tsx'), 'utf8')).not.toContain(
+      'ThemeProvider'
+    );
+
+    const fresh = await appWithRuntime(),
+      out = io();
+
+    expect(
+      await runCli(['add', 'theme-toggle', '--cwd', fresh, '--yes'], {
+        ...out,
+        runInstall,
+        registry: registryWith(),
+      })
+    ).toBe(1);
+    expect(out.output()).toContain('Run `uitheme init` first');
+  });
+  it('offers to switch a saved base that does not fit the framework', async () => {
+    const cwd = await fixture();
+
+    await writeFile(
+      join(cwd, 'uitheme.json'),
+      JSON.stringify({ schemaVersion: 1, base: 'reka' })
+    );
+
+    const stuck = io();
+    expect(await runCli(['info', '--cwd', cwd], stuck)).toBe(1);
+    expect(stuck.output()).toContain(
+      'uitheme.json saves the reka base, which does not work with vite-react. Run again with --base base-ui or --base radix to switch.'
+    );
+
+    const out = io(),
+      prompt = answers('radix');
+
+    expect(await runCli(['info', '--cwd', cwd], { ...out, ...prompt })).toBe(0);
+    expect(prompt.asked[0]).toContain('Select the base to save instead');
+    expect(JSON.parse(out.output()).base).toBe('radix');
+  });
+  it('prints the provider code for a manual provider step', async () => {
+    const cwd = await fixture(),
+      out = io();
+
+    await writeFile(
+      join(cwd, 'src/main.tsx'),
+      `const sketch = customRenderer(); sketch.render(<App />);`
+    );
+    expect(
+      await runCli(['init', '--cwd', cwd, '--yes'], { ...out, runInstall })
+    ).toBe(2);
+    expect(out.output()).toContain(
+      "manual-required: Wrap the application root with the provider:\n\nimport { UIThemeProvider } from 'uitheme-web/react';"
+    );
   });
 });
