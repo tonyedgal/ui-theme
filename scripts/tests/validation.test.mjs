@@ -126,6 +126,8 @@ function snapshotCheck(staged, working, passes) {
     const tree = git('write-tree');
     const bin = join(root, 'test-bin');
     mkdirSync(bin);
+    const output = join(root, 'github-output.txt');
+    writeFileSync(output, 'release=true\n');
     writeFileSync(
       join(bin, 'pnpm'),
       `#!/bin/sh\nif [ "$1" = install ]; then exit 0; fi\nif [ "$(cat packages/ui-theme-rn/src/provider.tsx)" = broken ]; then exit 17; fi\nexit 0\n`,
@@ -135,10 +137,15 @@ function snapshotCheck(staged, working, passes) {
     const result = spawnSync(process.execPath, ['scripts/test-staged.mjs'], {
       cwd: root,
       encoding: 'utf8',
-      env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+      env: {
+        ...process.env,
+        GITHUB_OUTPUT: output,
+        PATH: `${bin}:${process.env.PATH}`,
+      },
     });
 
     assert.equal(result.status === 0, passes, result.stdout + result.stderr);
+    assert.equal(readFileSync(output, 'utf8'), 'release=true\n');
     assert.equal(readFileSync(source, 'utf8'), working);
     assert.equal(git('write-tree'), tree);
   } finally {
