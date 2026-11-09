@@ -85,7 +85,6 @@ jobs:
     if: github.repository_owner == 'tonyedgal' && github.ref == 'refs/heads/main' && needs.ci.outputs.release-needed == 'true' && needs.ci.outputs.pending-changesets == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
     permissions:
-      actions: write
       contents: write
       pull-requests: write
     steps:
@@ -119,14 +118,6 @@ jobs:
           version: pnpm changeset:version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Pull request events from GITHUB_TOKEN start no workflows, but a manual
-      # dispatch does. This runs the full matrix on the version branch.
-      - name: Start full release validation
-        if: steps.changesets.outputs.pullRequestNumber != ''
-        run: gh workflow run full-validation.yml --ref changeset-release/main
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
     name: Publish to npm
