@@ -99,7 +99,7 @@ describe('CLI commands in existing applications', () => {
     expect(out.output()).toContain(pkg.version);
   });
   it('rejects an installed v1 web runtime before contacting the registry', async () => {
-    const cwd = await fixture(),
+    const cwd = await appWithRuntime('1.4.0'),
       out = io();
 
     const pkg = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8'));
@@ -499,14 +499,14 @@ function answers(...replies: (string | undefined)[]) {
 const runInstall = async () => {};
 
 // pnpm puts its store on NODE_PATH, so pin the runtime that the app resolves.
-async function appWithRuntime() {
+async function appWithRuntime(version = '2.0.0') {
   const cwd = await fixture(),
     runtime = join(cwd, 'node_modules/uitheme-web');
 
   await mkdir(runtime, { recursive: true });
   await writeFile(
     join(runtime, 'package.json'),
-    '{"name":"uitheme-web","version":"2.0.0"}'
+    JSON.stringify({ name: 'uitheme-web', version })
   );
 
   return cwd;
