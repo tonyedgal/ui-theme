@@ -296,7 +296,7 @@ remote CI. Push and publish only within the human's explicit authorization.
 | Each commit          | lint-staged: eslint and prettier on the staged files.                                                                                             |
 | On request           | `pnpm test:commit` validates the staged snapshot. `pnpm test:local` runs every local check, browser suites and release consumers included.        |
 | Each pull request    | CI builds, typechecks, and tests the affected packages and the website. Changes to runtime or registry code also run the Chromium browser suites. |
-| Version pull request | The full release validation runs every browser engine and the release consumers. A maintainer can also start it from the Actions tab.             |
+| Version pull request | The full release validation waits for maintainer approval, then runs every browser engine and the release consumers. It must pass to merge.       |
 | Publish              | The npm publish job waits for maintainer approval.                                                                                                |
 
 The apps in `apps/examples/` show usage and are tested by hand. The checks do
