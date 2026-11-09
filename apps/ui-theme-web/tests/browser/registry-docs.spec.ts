@@ -1,4 +1,15 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+// A click right after `load` can land before hydration and do nothing.
+// Repeat it until the client navigation reaches the base page.
+async function selectBase(page: Page, name: string, base: string) {
+  await expect(async () => {
+    await page.getByRole('link', { name, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/docs/components/${base}/`), {
+      timeout: 1_000,
+    });
+  }).toPass();
+}
 
 test('registry links resolve to a pinned, complete local artifact', async ({
   request,
@@ -66,7 +77,7 @@ test('base selection keeps the preview, installation command and copied source a
   await expect(page.getByTestId('registry-source')).toContainText(
     '@base-ui/react'
   );
-  await page.getByRole('link', { name: 'Radix UI', exact: true }).click();
+  await selectBase(page, 'Radix UI', 'radix');
   await expect(page.getByTestId('install-command')).toContainText(
     '--base radix'
   );
@@ -105,7 +116,7 @@ test('Vue selects only Reka and migration explains the v1 boundary', async ({
   page,
 }) => {
   await page.goto('/docs/components/base-ui/theme-toggle');
-  await page.getByRole('link', { name: 'Vue / Reka', exact: true }).click();
+  await selectBase(page, 'Vue / Reka', 'reka');
   await expect(
     page.getByRole('link', { name: 'Vue / Reka', exact: true })
   ).toHaveAttribute('aria-current', 'page');
