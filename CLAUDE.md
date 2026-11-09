@@ -113,6 +113,14 @@ Use the existing design as a guide. Keep margins, padding, icon spacing, and
 control sizes consistent. Preserve the existing hero and install snippet unless
 changing them is part of the request. Use the shared theme library for examples.
 
+`apps/ui-theme-web/instrumentation-client.ts` initializes PostHog once, only in
+production on `www.ui-theme.dev`. It captures pageviews on every route,
+including client navigation and back/forward, plus autocapture, session
+recordings with console logs and network timing, heatmaps, dead clicks, web
+vitals, and exceptions. Do not initialize a second client or add manual
+pageview captures. The build needs `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and
+`NEXT_PUBLIC_POSTHOG_HOST`. Local and preview hosts do not send events.
+
 The website has its own generated Next.js agent guidance in
 `apps/ui-theme-web/AGENTS.md`. Read the relevant bundled Next.js documentation
 under that app's `node_modules/next/dist/docs/` before changing Next.js code.
