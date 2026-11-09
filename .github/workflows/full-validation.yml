@@ -1,8 +1,13 @@
 name: Full release validation
 
-# Runs by hand from the Actions tab. The release workflow also starts it on the
-# version pull request branch each time Changesets opens or updates that branch.
+# Runs only after a maintainer approves it. On the version pull request, each
+# new head waits in the `full-validation` environment until a reviewer starts
+# it. Other pull requests skip the job, which counts as a passing check. A
+# maintainer can also run it from the Actions tab on any branch.
 on:
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -15,12 +20,17 @@ permissions:
 jobs:
   validate:
     name: Full validation
-    if: github.repository_owner == 'tonyedgal'
+    if: github.repository_owner == 'tonyedgal' && (github.event_name == 'workflow_dispatch' || github.head_ref == 'changeset-release/main')
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    environment: full-validation
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host --init
+    # Firefox refuses to start as root when $HOME belongs to another user.
+    # GitHub sets $HOME to /github/home, which the image gives to pwuser.
+    env:
+      HOME: /root
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
