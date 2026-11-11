@@ -120,9 +120,49 @@ jobs:
         with:
           version-script: pnpm changeset:version
 
+  pack:
+    name: Pack packages
+    needs: ci
+    if: github.repository_owner == 'tonyedgal' && github.ref == 'refs/heads/main' && needs.ci.outputs.release-needed == 'true' && needs.ci.outputs.pending-changesets == 'false' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      pack-dir-artifact-id: ${{ steps.pack.outputs.pack-dir-artifact-id }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Setup Node.js 24.x
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build:packages
+
+      # pnpm pack does not run prepublishOnly, so the package smoke tests run here.
+      - name: Test packed packages
+        run: |
+          pnpm --filter uitheme-web test:package
+          pnpm --filter uitheme-cli test:package
+          pnpm --filter uitheme-rn test:package
+
+      - name: Pack packages
+        id: pack
+        uses: changesets/action/pack@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+
   publish:
     name: Publish to npm
-    needs: ci
+    needs: [ci, pack]
     if: github.repository_owner == 'tonyedgal' && github.ref == 'refs/heads/main' && needs.ci.outputs.release-needed == 'true' && needs.ci.outputs.pending-changesets == 'false' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
     # The npm environment holds the publish job until a maintainer approves it.
@@ -132,7 +172,6 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: write
-      pull-requests: write
       id-token: write
     steps:
       - name: Checkout Repo
@@ -149,17 +188,17 @@ jobs:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Setup npm 11.x
+      - name: Setup npm 11.21.1
         run: |
-          npm install -g npm@11
+          npm install -g npm@11.21.1
           npm --version
 
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
+      # a script input makes the action ignore pack-dir-artifact-id.
       - name: Publish to npm
         id: changesets
-        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        uses: changesets/action/publish@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          publish-script: pnpm changeset:publish
-          version-script: pnpm changeset:version
+          pack-dir-artifact-id: ${{ needs.pack.outputs.pack-dir-artifact-id }}
