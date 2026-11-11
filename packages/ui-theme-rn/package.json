@@ -96,8 +96,7 @@
   ],
   "publishConfig": {
     "access": "public",
-    "provenance": true,
-    "tag": "alpha"
+    "provenance": true
   },
   "scripts": {
     "build": "tsup",
