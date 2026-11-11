@@ -20,7 +20,7 @@ permissions:
 jobs:
   validate:
     name: Full validation
-    if: github.repository_owner == 'tonyedgal' && (github.event_name == 'workflow_dispatch' || github.head_ref == 'changeset-release/main')
+    if: github.repository_owner == 'tonyedgal' && (github.event_name == 'workflow_dispatch' || (github.head_ref == 'changeset-release/main' && github.event.pull_request.head.repo.full_name == github.repository))
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: full-validation
@@ -34,6 +34,8 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
