@@ -532,4 +532,30 @@ describe('installation plans and transactions', () => {
       'uitheme-web@next',
     ]);
   });
+
+  it('rejects a uitheme-web dependency that is not a version, tag, or tarball', async () => {
+    const { profile } = await fixture();
+
+    await expect(
+      missingDependencies(profile, ['uitheme-web@https://example.com/x.tgz'])
+    ).rejects.toThrow(/Unsafe registry dependency/);
+    await expect(
+      missingDependencies(profile, ['uitheme-web@git+ssh://example.com/x'])
+    ).rejects.toThrow(/Unsafe registry dependency/);
+    await expect(
+      missingDependencies(profile, ['uitheme-web@npm:other-package'])
+    ).rejects.toThrow(/Unsafe registry dependency/);
+
+    expect(await missingDependencies(profile, ['uitheme-web@next'])).toEqual([
+      'uitheme-web@next',
+    ]);
+    expect(
+      await missingDependencies(profile, ['uitheme-web@2.0.0-rc.1'])
+    ).toEqual(['uitheme-web@2.0.0-rc.1']);
+    expect(
+      await missingDependencies(profile, [
+        'uitheme-web@file:/tmp/uitheme-web-2.0.0.tgz',
+      ])
+    ).toEqual(['uitheme-web@file:/tmp/uitheme-web-2.0.0.tgz']);
+  });
 });
