@@ -297,12 +297,22 @@ function dependencySpec(spec: string) {
       spec
     );
 
-  if (spec.startsWith('uitheme-web@'))
+  if (spec.startsWith('uitheme-web@')) {
+    const value = spec.slice('uitheme-web@'.length);
+
+    if (
+      !/^[a-z][a-z0-9._-]*$/i.test(value) &&
+      !semver.validRange(value) &&
+      !(value.startsWith('file:') && value.endsWith('.tgz'))
+    )
+      throw new Error(`Unsafe registry dependency: ${spec}`);
+
     return {
       name: 'uitheme-web',
       version: spec === defaultWebDependency ? '^2.0.0' : undefined,
       explicit: spec !== defaultWebDependency,
     };
+  }
 
   const version = match?.[2];
 
