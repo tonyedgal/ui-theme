@@ -86,7 +86,7 @@ jobs:
   version:
     name: Version pull request
     needs: ci
-    if: github.repository_owner == 'tonyedgal' && github.ref == 'refs/heads/main' && needs.ci.outputs.release-needed == 'true' && needs.ci.outputs.pending-changesets == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.repository_owner == 'tonyedgal' && github.ref == 'refs/heads/main' && needs.ci.outputs.pending-changesets == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
