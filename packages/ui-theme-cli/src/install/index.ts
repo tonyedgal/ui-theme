@@ -8,8 +8,8 @@ import {
   rmdir,
 } from 'node:fs/promises';
 import { resolve, relative, dirname, isAbsolute, join } from 'node:path';
-import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import spawn from 'cross-spawn';
 import semver from 'semver';
 import { planSharedUtils } from './shared-utils.ts';
 import { readConfig } from '../config.ts';
