@@ -109,10 +109,11 @@ export const ColorThemeSelector = React.forwardRef<
             alignItemWithTrigger={false}
             sideOffset={6}
             align="start"
+            className="isolate z-50"
           >
             <Select.Popup
               className={cn(
-                'z-50 min-w-[var(--anchor-width)] max-h-[min(20rem,var(--available-height,20rem))] overflow-y-auto overscroll-contain rounded-[var(--radius)] border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none [scrollbar-width:thin]',
+                'min-w-[var(--anchor-width)] max-h-[min(20rem,var(--available-height,20rem))] overflow-y-auto overscroll-contain rounded-[var(--radius)] border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none [scrollbar-width:thin]',
                 'data-[border-style=shadow]:[--shadow-border-edge:theme(colors.border)] data-[border-style=shadow]:[--shadow-border-focus:theme(colors.ring)] data-[border-style=shadow]:border-transparent data-[border-style=shadow]:focus-visible:border-transparent data-[border-style=shadow]:ring-0 data-[border-style=shadow]:focus-visible:ring-0 data-[border-style=shadow]:shadow-[0_0_4px_rgb(0_0_0_/_0.25),inset_0_0_0_1px_var(--shadow-border-edge)] data-[border-style=shadow]:forced-colors:outline data-[border-style=shadow]:forced-colors:outline-1 data-[border-style=shadow]:forced-colors:outline-[CanvasText] data-[border-style=shadow]:forced-colors:focus-visible:outline-2 data-[border-style=shadow]:forced-colors:focus-visible:outline-[Highlight]',
                 classes?.content
               )}
