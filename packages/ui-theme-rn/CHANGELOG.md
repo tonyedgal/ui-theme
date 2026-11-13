@@ -1,5 +1,11 @@
 # uitheme-rn
 
+## 1.0.2-next.0
+
+### Patch Changes
+
+- 1555020: The package metadata no longer sets an unused `alpha` publish tag.
+
 ## 1.0.1
 
 ### Patch Changes
