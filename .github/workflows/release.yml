@@ -81,6 +81,16 @@ jobs:
               break
             fi
           done
+          # After `changeset pre exit`, the changesets for the final versions
+          # are in .changeset/pre/ and not in .changeset/.
+          if [ -f .changeset/pre.json ] && grep -q '"mode": *"exit"' .changeset/pre.json; then
+            for file in .changeset/pre/*.md; do
+              if [ -f "$file" ]; then
+                pending=true
+                break
+              fi
+            done
+          fi
           echo "pending=$pending" >> "$GITHUB_OUTPUT"
 
   version:
