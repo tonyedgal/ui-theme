@@ -112,6 +112,23 @@ const builtInBases = [
       },
     },
   },
+  {
+    id: 'ui-sdk',
+    displayName: 'UI SDK',
+    shortName: 'UI SDK',
+    frameworks: {
+      react: {
+        templates: 'react/ui-sdk',
+        packages: ['@ui-sdk/react'],
+        requires: {
+          package: 'react',
+          range: '>=19',
+          note: 'Upgrade React to 19, or choose another base with --base.',
+        },
+        css: { layer: 'ui-sdk' },
+      },
+    },
+  },
 ] as const satisfies readonly BaseDefinition[];
 
 export type Base = (typeof builtInBases)[number]['id'];
