@@ -18,7 +18,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/detection*.test.ts tests/registry*.test.ts && vitest run tests/install.test.ts tests/tailwind.test.ts tests/commands.test.ts tests/migrate.test.ts",
+    "test": "node --test tests/detection*.test.ts tests/registry*.test.ts && vitest run tests/install.test.ts tests/tailwind.test.ts tests/commands.test.ts tests/migrate.test.ts tests/write.test.ts",
     "test:package": "node scripts/smoke-package.mjs",
     "prepublishOnly": "pnpm build && pnpm test:package"
   },
