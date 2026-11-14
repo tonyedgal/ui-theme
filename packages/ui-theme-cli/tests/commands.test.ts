@@ -9,6 +9,7 @@ import {
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
+import { baseFlagHint } from '../src/bases';
 import { runCli } from '../src/commands/index';
 import type { RegistryGraph } from '../src/types';
 
@@ -873,7 +874,7 @@ describe('guided next steps', () => {
     const stuck = io();
     expect(await runCli(['info', '--cwd', cwd], stuck)).toBe(1);
     expect(stuck.output()).toContain(
-      'uitheme.json saves the reka base, which does not work with vite-react. Run again with --base base-ui or --base radix to switch.'
+      `uitheme.json saves the reka base, which does not work with vite-react. Run again with ${baseFlagHint('react')} to switch.`
     );
 
     const out = io(),
