@@ -25,8 +25,10 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import {
   buildRegistry,
+  controls,
   shadcnStyles,
 } from '../packages/ui-theme-registry/src/build.ts';
+import { findBase } from '../packages/ui-theme-cli/src/bases.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -48,7 +50,13 @@ const unservedStyles = ['aria-nova'];
 const installedStyle = (style) =>
   style === 'new-york' ? 'new-york-v4' : style;
 
-const baseDependencies = { radix: 'radix-ui', 'base-ui': '@base-ui/react' };
+// The primitive package of each base that a shadcn style selects.
+const baseDependencies = Object.fromEntries(
+  [...new Set(shadcnStyles.values())].map((base) => [
+    base,
+    findBase(base).frameworks.react.packages[0],
+  ])
+);
 
 let server;
 
@@ -231,7 +239,11 @@ try {
       );
     });
 
-    assert.equal(items.length, 8, `${label}: expected 8 controls`);
+    assert.equal(
+      items.length,
+      controls.length,
+      `${label}: expected ${controls.length} controls`
+    );
 
     const app = join(temporary, label);
     writeApp(app, style, origin);
