@@ -650,7 +650,10 @@ const app =
       <NextControls />
     </NextUIThemeProvider>
   ) : provider === 'vite' ? (
-    <ViteUIThemeProvider {...config}>
+    <ViteUIThemeProvider
+      {...config}
+      disableTransitionOnChange={params.has('disableTransitions')}
+    >
       <ViteControls />
     </ViteUIThemeProvider>
   ) : provider === 'tanstack' ? (

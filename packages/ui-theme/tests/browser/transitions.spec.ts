@@ -1223,7 +1223,7 @@ test('rejected server callback is reported without an unhandled rejection', asyn
   expect(errors).toEqual([]);
 });
 
-for (const provider of ['hook', 'next']) {
+for (const provider of ['hook', 'next', 'ui', 'vite']) {
   test(`${provider} injected styles apply under a nonce-based CSP`, async ({
     page,
   }) => {
@@ -1319,4 +1319,34 @@ test('the CSS keyframe fallback style carries the CSP nonce', async ({
 
   expect(nonce).toEqual(['uitheme-test']);
   await settle(page);
+});
+
+test('vite disableTransitionOnChange style carries the CSP nonce', async ({
+  page,
+}) => {
+  await open(page, 'provider=vite&disableTransitions&nonce=uitheme-test');
+
+  const nonces = await page.evaluate(async () => {
+    const added: string[] = [];
+
+    const observer = new MutationObserver((records) => {
+      for (const record of records)
+        for (const node of record.addedNodes)
+          if (
+            node instanceof HTMLStyleElement &&
+            node.textContent?.includes('transition:none')
+          )
+            added.push(node.nonce);
+    });
+
+    observer.observe(document.head, { childList: true });
+    window.themeFixture.state.setTheme('dark');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    observer.disconnect();
+
+    return added;
+  });
+
+  expect(nonces).toEqual(['uitheme-test']);
+  await expect(page.locator('html')).toHaveClass(/dark/);
 });
