@@ -2,6 +2,7 @@
 
 import { SharedThemeContext } from './shared-theme-context';
 import { getThemeLogoOptions } from '../../core/logo';
+import { createStyle } from '../../core/style';
 
 import React, {
   createContext,
@@ -64,6 +65,8 @@ export type ViteUIThemeProviderProps = ThemeAnimationOptions & {
   globalClassName?: string;
   /** Prefix for color theme classes */
   colorThemePrefix?: string;
+  /** CSP nonce for the `<style>` elements this provider and its transitions inject */
+  nonce?: string;
 };
 
 /**
@@ -99,6 +102,7 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
   colorStorageKey = 'ui-color-theme',
   globalClassName = 'dark',
   colorThemePrefix = 'theme-',
+  nonce,
 }) => {
   const themeState = useTheme({
     themes,
@@ -117,12 +121,13 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
     colorStorageKey,
     globalClassName: attribute === 'class' ? globalClassName : undefined,
     colorThemePrefix,
+    nonce,
   });
 
   const applyTransitionDisable = useCallback(() => {
     if (!disableTransitionOnChange) return () => {};
 
-    const css = document.createElement('style');
+    const css = createStyle(nonce);
     css.textContent = `*,*::before,*::after{-webkit-transition:none!important;-moz-transition:none!important;-o-transition:none!important;-ms-transition:none!important;transition:none!important}`;
     document.head.appendChild(css);
 
@@ -133,7 +138,7 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
         document.head.removeChild(css);
       }, 1);
     };
-  }, [disableTransitionOnChange]);
+  }, [disableTransitionOnChange, nonce]);
 
   const wrappedSetTheme = useCallback(
     (theme: Theme) => {
