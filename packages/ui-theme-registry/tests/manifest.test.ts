@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildRegistry, controls, shadcnStylesFor } from '../src/build.ts';
 import {
+  baseFlagHint,
   baseManifest,
   setBaseManifest,
   type BaseDefinition,
@@ -100,7 +101,11 @@ test('the CLI accepts, lists, and detects a base that only the manifest adds', a
   try {
     const output: string[] = [];
     await runCli(['--help'], { stdout: (line) => output.push(line) });
-    assert.match(output.join('\n'), /--base <base-ui\|radix\|reka\|fake-kit>/);
+    assert.ok(
+      output
+        .join('\n')
+        .includes(`--base <${bases.map((base) => base.id).join('|')}>`)
+    );
 
     const react = await app(join(root, 'react'), {
       vite: '7',
@@ -147,10 +152,7 @@ test('the CLI accepts, lists, and detects a base that only the manifest adds', a
     await runCli(['info', '--cwd', react, '--base', 'reka'], {
       stderr: (line) => errors.push(line),
     });
-    assert.match(
-      errors.join('\n'),
-      /Use --base base-ui, --base radix or --base fake-kit\./
-    );
+    assert.ok(errors.join('\n').includes(`Use ${baseFlagHint('react')}.`));
   } finally {
     restore();
     await rm(root, { recursive: true, force: true });
