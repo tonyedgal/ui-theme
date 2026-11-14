@@ -1,12 +1,13 @@
 /* eslint-disable anti-slop/no-runtime-typeof, anti-slop/no-unsafe-dictionary-type -- parse untrusted project configuration at this boundary */
-import { readFileSync, statSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { dirname, join, resolve, sep } from 'node:path';
 import {
   createPathsMatcher,
   findTsconfig,
   parseTsconfig,
   type TsConfigResult,
 } from 'get-tsconfig';
+import { resolveExports, type PathConditions } from 'resolve-pkg-maps';
 import { isRecord } from './config.ts';
 import { parseJsonc } from './jsonc.ts';
 
@@ -105,4 +106,97 @@ export function probeModule(base: string): string | undefined {
   );
 
   return candidates.find(isFile);
+}
+
+// the package's real directory, written under the same path prefix as `from`
+function realPackage(root: string, from: string): string {
+  const real = realpathSync(root);
+
+  for (let directory = from; ; directory = dirname(directory)) {
+    const prefix = realpathSync(directory);
+
+    if (real === prefix || real.startsWith(prefix + sep))
+      return directory + real.slice(prefix.length);
+
+    if (dirname(directory) === directory) return real;
+  }
+}
+
+// source-first condition sets; a later set only runs when the earlier ones find no file
+const conditionSets = [
+  ['source', 'development', 'import', 'module', 'default'],
+  ['require', 'node', 'default'],
+  ['types', 'default'],
+];
+
+export interface PackageModule {
+  /** The resolved file, or undefined when the package has no such subpath. */
+  file: string | undefined;
+  /** The package's real directory is outside every node_modules directory. */
+  workspace: boolean;
+}
+
+/**
+ * Resolve a bare specifier through node_modules above `from`, following the
+ * package symlink and its `exports`, or probing files when it has none.
+ */
+export function resolvePackage(
+  specifier: string,
+  from: string
+): PackageModule | undefined {
+  const match = /^((?:@[^/]+\/)?[^/@.][^/]*)(\/.*)?$/.exec(specifier);
+
+  if (!match) return;
+  const [, name, rest = ''] = match;
+
+  for (let directory = from; ; directory = dirname(directory)) {
+    const root = join(directory, 'node_modules', name);
+    const manifestPath = join(root, 'package.json');
+
+    if (isFile(manifestPath)) {
+      const real = realPackage(root, from);
+      const workspace = !real.split(sep).includes('node_modules');
+      let manifest: Record<string, unknown> = {};
+
+      try {
+        const parsed = JSON.parse(readFileSync(manifestPath, 'utf8'));
+
+        if (isRecord(parsed)) manifest = parsed;
+      } catch {
+        // an unreadable manifest resolves like one without exports
+      }
+
+      if (manifest.exports === undefined || manifest.exports === null)
+        return { file: probeModule(join(real, rest)), workspace };
+
+      const found: string[] = [];
+
+      for (const conditions of conditionSets) {
+        let targets: string[] = [];
+
+        try {
+          // SAFETY: resolveExports validates the exports shape and throws on an invalid one
+          targets = resolveExports(
+            manifest.exports as PathConditions,
+            rest.slice(1),
+            conditions
+          );
+        } catch {
+          continue;
+        }
+
+        for (const target of targets) {
+          const file = probeModule(resolve(real, target));
+
+          if (file && !/\.d\.[cm]?ts$/.test(file)) return { file, workspace };
+
+          if (file) found.push(file);
+        }
+      }
+
+      return { file: found[0], workspace };
+    }
+
+    if (dirname(directory) === directory) return;
+  }
 }
