@@ -207,7 +207,13 @@ try {
   const web = candidate('uitheme-web', webVersion);
   const cli = candidate('uitheme-cli', cliVersion);
 
-  for (const name of ['semver', 'typescript', 'postcss'])
+  // Link every runtime dependency of the packed CLI, so that a new dependency
+  // cannot be missing from this check.
+  const cliManifest = JSON.parse(
+    readFileSync(join(cli, 'package.json'), 'utf8')
+  );
+
+  for (const name of Object.keys(cliManifest.dependencies ?? {}))
     link(cli, name, packageDirectory(cliRequire, name));
   assert.match(
     command(
