@@ -6,7 +6,7 @@
   "scripts": {
     "build": "node src/build.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/build.test.ts",
+    "test": "node --test tests/build.test.ts tests/manifest.test.ts",
     "test:browser": "playwright test",
     "snapshot": "node src/build.ts --snapshot"
   },
