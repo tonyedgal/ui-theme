@@ -1,7 +1,7 @@
 'use client';
 
 import { notifyServerChange } from './server-notifications';
-import { serializeScriptValue } from './serialize-script-value';
+import { buildThemeScript } from '../../core/theme-script';
 import { SharedThemeContext } from './shared-theme-context';
 import { useHydrated } from '../hooks/use-hydrated';
 import { getThemeLogoOptions } from '../../core/logo';
@@ -115,6 +115,10 @@ export type TanStackUIThemeProviderProps = ThemeAnimationOptions & {
  * Props for the TanStackStartThemeScript component
  */
 export interface TanStackStartThemeScriptProps {
+  /** Allowed stored themes; other stored values use `defaultTheme`. */
+  themes?: readonly Theme[];
+  /** Allowed stored color themes; other stored values use `defaultColorTheme`. */
+  colorThemes?: readonly ColorTheme[];
   /** Storage key for theme preference in localStorage */
   storageKey?: string;
   /** Storage key for color theme preference in localStorage */
@@ -137,65 +141,6 @@ export interface TanStackStartThemeScriptProps {
    */
   systemThemeMode?: SystemThemeMode;
 }
-
-/**
- * Generates the pre-hydration script content for flash prevention.
- * This script runs synchronously before React hydrates.
- */
-const generateTanStackPreHydrationScript = (
-  storageKey: string,
-  colorStorageKey: string,
-  defaultTheme: Theme,
-  defaultColorTheme: ColorTheme,
-  globalClassName: string,
-  colorThemePrefix: string,
-  systemThemeMode: SystemThemeMode
-): string => {
-  return `
-(function() {
-  try {
-    var theme = localStorage.getItem(${serializeScriptValue(storageKey)}) || ${serializeScriptValue(defaultTheme)};
-    var colorTheme = localStorage.getItem(${serializeScriptValue(colorStorageKey)}) || ${serializeScriptValue(defaultColorTheme)};
-    var el = document.documentElement;
-    var resolved;
-    if (theme === 'system') {
-      if (${serializeScriptValue(systemThemeMode)} === 'css') {
-        el.classList.remove(${serializeScriptValue(globalClassName)});
-        el.classList.remove('auto');
-        el.classList.remove('system');
-        el.classList.add('system');
-        el.style.colorScheme = '';
-      } else {
-        resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        if (resolved === 'dark') {
-          el.classList.add(${serializeScriptValue(globalClassName)});
-        } else {
-          el.classList.remove(${serializeScriptValue(globalClassName)});
-        }
-        el.classList.remove('system');
-        el.classList.remove('auto');
-        el.style.colorScheme = resolved;
-      }
-    } else {
-      resolved = theme;
-      el.classList.remove('system');
-      el.classList.remove('auto');
-      if (resolved === 'dark') {
-        el.classList.add(${serializeScriptValue(globalClassName)});
-      } else {
-        el.classList.remove(${serializeScriptValue(globalClassName)});
-      }
-      el.style.colorScheme = resolved;
-    }
-    if (colorTheme && colorTheme !== 'default') {
-      el.classList.add(${serializeScriptValue(colorThemePrefix)} + colorTheme);
-    }
-  } catch (e) {
-    console.warn('Theme pre-hydration script failed:', e);
-  }
-})();
-`;
-};
 
 /**
  * Pre-hydration script for TanStack Start applications.
@@ -224,6 +169,8 @@ const generateTanStackPreHydrationScript = (
 export const TanStackStartThemeScript: React.FC<TanStackStartThemeScriptProps> =
   React.memo(
     ({
+      themes = ['light', 'dark', 'system'],
+      colorThemes,
       storageKey = STORAGE_KEY,
       colorStorageKey = COLOR_STORAGE_KEY,
       defaultTheme = 'system',
@@ -233,15 +180,21 @@ export const TanStackStartThemeScript: React.FC<TanStackStartThemeScriptProps> =
       nonce,
       systemThemeMode = 'js',
     }: TanStackStartThemeScriptProps) => {
-      const scriptContent = generateTanStackPreHydrationScript(
+      const scriptContent = buildThemeScript({
         storageKey,
         colorStorageKey,
+        themes,
+        colorThemes: colorThemes ?? null,
         defaultTheme,
         defaultColorTheme,
         globalClassName,
         colorThemePrefix,
-        systemThemeMode
-      );
+        storage: true,
+        dataTheme: false,
+        systemClasses: true,
+        systemCss: systemThemeMode === 'css',
+        palette: 'custom',
+      });
 
       return (
         <script
