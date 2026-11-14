@@ -1,5 +1,6 @@
 /* eslint-disable anti-slop/no-runtime-typeof, anti-slop/no-unknown-parameters -- parse untrusted JSON and HTTP input at this boundary */
 import semver from 'semver';
+import { baseIds, supportsFramework } from './bases.ts';
 import { isRecord } from './config.ts';
 import type {
   HttpClient,
@@ -93,24 +94,22 @@ function validateVariant(value: unknown): RegistryVariant {
   if (
     !isRecord(value) ||
     !['react', 'vue'].includes(String(value.framework)) ||
-    !['base-ui', 'radix', 'reka'].includes(String(value.base)) ||
+    !baseIds().some((base) => base === value.base) ||
     ![3, 4].includes(Number(value.tailwind)) ||
     typeof value.tailwind !== 'number' ||
     !['ts', 'js'].includes(String(value.language))
   )
     throw new Error('Invalid registry variant');
 
-  if (value.framework === 'vue' ? value.base !== 'reka' : value.base === 'reka')
+  const framework = value.framework === 'react' ? 'react' : 'vue';
+  const base = baseIds().find((id) => id === value.base);
+
+  if (!base || !supportsFramework(base, framework))
     throw new Error('Incompatible registry base');
 
   return {
-    framework: value.framework === 'react' ? 'react' : 'vue',
-    base:
-      value.base === 'base-ui'
-        ? 'base-ui'
-        : value.base === 'radix'
-          ? 'radix'
-          : 'reka',
+    framework,
+    base,
     tailwind: value.tailwind === 3 ? 3 : 4,
     language: value.language === 'ts' ? 'ts' : 'js',
   };

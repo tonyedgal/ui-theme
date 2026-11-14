@@ -5,6 +5,7 @@ import { basename, dirname, join, resolve, isAbsolute } from 'node:path';
 import nodePath from 'node:path';
 import { isInside } from './paths.ts';
 import type { PathApi } from './paths.ts';
+import { baseIds } from './bases.ts';
 import type { ProjectProfile, SavedConfig } from './types.ts';
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -83,7 +84,7 @@ export function validateConfig(value: unknown): SavedConfig {
     language: ['ts', 'js'],
     packageManager: ['npm', 'pnpm', 'yarn', 'bun'],
     tailwind: [3, 4],
-    base: ['base-ui', 'radix', 'reka'],
+    base: baseIds(),
     colorFormat: ['css', 'hsl-channels'],
   } satisfies Record<string, readonly unknown[]>;
 

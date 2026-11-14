@@ -4,6 +4,12 @@ import { createRequire } from 'node:module';
 import nodePath from 'node:path';
 import { resolve, dirname, join } from 'node:path';
 import semver from 'semver';
+import {
+  baseFlagHint,
+  detectBase,
+  registryFramework,
+  supportsFramework,
+} from './bases.ts';
 import { readConfig, relativeProjectPath, isRecord } from './config.ts';
 import { parseJsonc } from './jsonc.ts';
 import { isInside, stripWildcard } from './paths.ts';
@@ -41,31 +47,6 @@ interface AppJson {
   style?: string;
   aliases?: { components?: string; ui?: string };
   tailwind?: { css?: string; config?: string };
-}
-
-// Choose the React base from the primitives that the app already installs.
-// When the app has both or neither, a shadcn `base-*` style selects Base UI and
-// any other shadcn style selects Radix. Without either signal, use Base UI.
-function installedReactBase(
-  dependencies: Record<string, string>,
-  style: string | undefined
-): 'base-ui' | 'radix' {
-  const names = Object.keys(dependencies);
-
-  const radix = names.some(
-    (name) => name === 'radix-ui' || name.startsWith('@radix-ui/')
-  );
-
-  const baseUi = names.some(
-    (name) => name === '@base-ui/react' || name === '@base-ui-components/react'
-  );
-
-  if (radix !== baseUi) return radix ? 'radix' : 'base-ui';
-
-  if (style && !style.startsWith('aria-'))
-    return style.startsWith('base-') ? 'base-ui' : 'radix';
-
-  return 'base-ui';
 }
 
 async function json(path: string): Promise<AppJson | undefined> {
@@ -350,19 +331,10 @@ export async function detectProject(
   const base =
     overrides.base ??
     saved?.base ??
-    (framework === 'nuxt' || framework === 'vite-vue'
-      ? 'reka'
-      : installedReactBase(dependencies, existing?.style));
+    detectBase(registryFramework(framework), dependencies, existing?.style);
 
-  if (
-    framework === 'nuxt' || framework === 'vite-vue'
-      ? base !== 'reka'
-      : base === 'reka'
-  ) {
-    const fits =
-      framework === 'nuxt' || framework === 'vite-vue'
-        ? '--base reka'
-        : '--base base-ui or --base radix';
+  if (!supportsFramework(base, registryFramework(framework))) {
+    const fits = baseFlagHint(registryFramework(framework));
 
     throw new BaseMismatchError(
       overrides.base
