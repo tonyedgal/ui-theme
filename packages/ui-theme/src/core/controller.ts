@@ -79,6 +79,8 @@ export type ThemeControllerOptions = ThemeTransitionSettings &
     initialTheme?: Theme;
     initialColorTheme?: string;
     systemThemeMode?: SystemThemeMode;
+    /** CSP nonce for the `<style>` elements injected for transitions. */
+    nonce?: string;
   };
 
 export interface ThemeControllerSnapshot extends ThemeState {
@@ -395,6 +397,7 @@ export const createThemeController = (
       animationType,
       blurAmount: settings.blurAmount ?? DEFAULT_BLUR_AMOUNT,
       styleId: settings.styleId ?? DEFAULT_STYLE_ID,
+      nonce: options.nonce,
     };
 
     if (animationType === ThemeAnimationType.SLIDE) {
@@ -613,7 +616,7 @@ export const createThemeController = (
         window.removeEventListener('storage', onStorage);
       };
 
-      injectBaseStyles();
+      injectBaseStyles(options.nonce);
       preload();
       publish();
 
