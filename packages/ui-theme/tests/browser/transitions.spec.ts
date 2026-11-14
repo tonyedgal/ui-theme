@@ -1222,3 +1222,101 @@ test('rejected server callback is reported without an unhandled rejection', asyn
   await expect(page.locator('html')).toHaveClass(/dark/);
   expect(errors).toEqual([]);
 });
+
+for (const provider of ['hook', 'next']) {
+  test(`${provider} injected styles apply under a nonce-based CSP`, async ({
+    page,
+  }) => {
+    await page.route('**/*', async (route) => {
+      if (route.request().resourceType() !== 'document') {
+        await route.continue();
+
+        return;
+      }
+
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        headers: {
+          ...response.headers(),
+          'content-security-policy': "style-src 'nonce-uitheme-test'",
+        },
+      });
+    });
+
+    const applied = (selector: string) =>
+      page.evaluate((query) => {
+        const style = document.querySelector<HTMLStyleElement>(query);
+
+        return Boolean(style?.sheet && style.sheet.cssRules.length > 0);
+      }, selector);
+
+    // Negative control: without the nonce the policy blocks the styles.
+    await open(page, `provider=${provider}`);
+    expect(await applied('#ui-theme-base-style')).toBe(false);
+
+    await open(
+      page,
+      `provider=${provider}&nonce=uitheme-test&animation=svg-logo&logo=/logo.svg&duration=6000`
+    );
+    expect(await applied('#ui-theme-base-style')).toBe(true);
+    expect(
+      await page.evaluate(() => {
+        document.documentElement.setAttribute('data-ui-theme-transition', '');
+        const value = getComputedStyle(document.body).transitionProperty;
+        document.documentElement.removeAttribute('data-ui-theme-transition');
+
+        return value;
+      })
+    ).toBe('none');
+
+    await page.evaluate(() => window.themeFixture.preloadLogo());
+    await page.locator('#freeze').click();
+    void page.evaluate(() => window.themeFixture.state.toggleTheme());
+    await expect(page.locator('[data-ui-theme-logo-style]')).toHaveCount(1);
+    expect(await applied('[data-ui-theme-logo-style]')).toBe(true);
+    await page.evaluate(() =>
+      window.themeFixture.inspection.transitions.at(-1)!.skipTransition()
+    );
+    await settle(page);
+  });
+}
+
+test('the CSS keyframe fallback style carries the CSP nonce', async ({
+  page,
+}) => {
+  await open(page, 'nonce=uitheme-test&duration=100');
+
+  const nonce = await page.evaluate(async () => {
+    const animate = Element.prototype.animate;
+    const added: HTMLStyleElement[] = [];
+
+    const observer = new MutationObserver((records) => {
+      for (const record of records)
+        for (const node of record.addedNodes)
+          if (node instanceof HTMLStyleElement) added.push(node);
+    });
+
+    observer.observe(document.head, { childList: true });
+    Element.prototype.animate = function (frames, options) {
+      const rest = options && options !== Number(options) ? { ...options } : {};
+      delete rest.pseudoElement;
+
+      return animate.call(this, frames, rest);
+    };
+
+    try {
+      await window.themeFixture.state.toggleTheme();
+    } finally {
+      Element.prototype.animate = animate;
+      observer.disconnect();
+    }
+
+    return added.flatMap((style) =>
+      style.textContent?.includes('ui-theme-reveal-') ? [style.nonce] : []
+    );
+  });
+
+  expect(nonce).toEqual(['uitheme-test']);
+  await settle(page);
+});

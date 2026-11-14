@@ -71,6 +71,7 @@ const config = {
   ...logoOptions,
   logoWidth: dimension(params.get('logoWidth')),
   logoHeight: dimension(params.get('logoHeight')),
+  nonce: params.get('nonce') ?? undefined,
 } satisfies UseThemeProps;
 
 const provider = params.get('provider') ?? 'hook';
