@@ -16,8 +16,10 @@ export interface ComponentBaseEntry {
 }
 
 // One page set per base and framework pair, from the base manifest.
-export const componentBases: ComponentBaseEntry[] = baseVariants().map(
-  ({ framework, base }) => {
+// ui-sdk has no website preview or docs yet, so the site does not list it.
+export const componentBases: ComponentBaseEntry[] = baseVariants()
+  .filter(({ base }) => base !== 'ui-sdk')
+  .map(({ framework, base }) => {
     const definition = findBase(base)!;
 
     const shared = Object.keys(definition.frameworks).length > 1;
@@ -32,8 +34,7 @@ export const componentBases: ComponentBaseEntry[] = baseVariants().map(
           : definition.displayName,
       label: definition.shortName,
     };
-  }
-);
+  });
 
 export function componentBase(name: ComponentBase): ComponentBaseEntry {
   const entry = componentBases.find((item) => item.name === name);
