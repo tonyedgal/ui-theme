@@ -134,17 +134,12 @@ export const getSlideFromCoords = (direction: SlideDirection) => {
  * the integer viewport) scales the percentages with the box, so the final
  * shape still covers every corner.
  */
-const getViewportSize = () => ({
-  width: window.innerWidth,
-  height: window.innerHeight,
-});
-
 const percentX = (x: number) => (x / window.innerWidth) * 100;
 
 const percentY = (y: number) => (y / window.innerHeight) * 100;
 
 const getCircleRadius = (x: number, y: number): number => {
-  const { width, height } = getViewportSize();
+  const { innerWidth: width, innerHeight: height } = window;
 
   return (
     Math.hypot(
@@ -166,15 +161,17 @@ const getSnapshotScale = () => {
     '::view-transition-new(root)'
   );
 
+  const { innerWidth: width, innerHeight: height } = window;
+
   return {
-    x: (parseFloat(snapshot.width) || window.innerWidth) / window.innerWidth,
-    y: (parseFloat(snapshot.height) || window.innerHeight) / window.innerHeight,
+    x: (parseFloat(snapshot.width) || width) / width,
+    y: (parseFloat(snapshot.height) || height) / height,
   };
 };
 
 /** circle() percentages resolve against hypot(width, height) / sqrt(2). */
 const radiusPercent = (radius: number) => {
-  const { width, height } = getViewportSize();
+  const { innerWidth: width, innerHeight: height } = window;
 
   return (radius / (Math.hypot(width, height) / Math.SQRT2)) * 100;
 };
@@ -393,7 +390,7 @@ export const createTriangleAnimation = (config: AnimationConfig): Animation => {
 
 /** The fixed logo has its own snapshot; only the page reveal grows beneath it. */
 export const createSvgLogoAnimation = (config: AnimationConfig): Animation => {
-  const { width, height } = getViewportSize();
+  const { innerWidth: width, innerHeight: height } = window;
 
   return createCircleAnimation({ ...config, x: width / 2, y: height / 2 });
 };
