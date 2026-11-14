@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import type { ThemeColors } from './palettes';
+import { isCssColor } from './validators';
 
 /** Tailwind semantic names, shared by both optional styling adapters. */
 export const themeVariableNames = {
@@ -12,18 +12,16 @@ export const themeVariableNames = {
   onAccent: '--color-primary-foreground',
 } as const;
 
-const cssColor = z.string().trim().min(1);
-
 export function toThemeVariables(colors: ThemeColors) {
   const read = (key: keyof ThemeColors) => {
-    const result = cssColor.safeParse(colors[key]);
+    const color = colors[key];
 
-    if (!result.success)
+    if (!isCssColor(color))
       throw new Error(
         `CSS styling requires a string color for ${key}. Use native styles for platform color objects.`
       );
 
-    return result.data;
+    return color.trim();
   };
 
   return {
@@ -46,14 +44,14 @@ export function toThemeVariables(colors: ThemeColors) {
 
 export function colorsFromVariables(values: readonly unknown[]): ThemeColors {
   const read = (index: number, key: keyof ThemeColors) => {
-    const result = cssColor.safeParse(values[index]);
+    const color = values[index];
 
-    if (!result.success)
+    if (!isCssColor(color))
       throw new Error(
         `Missing CSS color ${themeVariableNames[key]}. Define all seven semantic variables in the selected theme.`
       );
 
-    return result.data;
+    return color.trim();
   };
 
   return {

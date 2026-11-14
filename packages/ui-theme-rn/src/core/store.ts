@@ -4,10 +4,39 @@ import type {
   ThemeStoreOptions,
   ResolvedTheme,
 } from './types';
-import { z } from 'zod';
 
 export function isTheme(value: unknown): value is Theme {
   return value === 'light' || value === 'dark' || value === 'system';
+}
+
+export type StoredRecord = {
+  version?: unknown;
+  theme?: unknown;
+  colorTheme?: unknown;
+};
+
+export type StoredPreferences = {
+  version: 1;
+  theme?: Theme;
+  colorTheme?: string;
+};
+
+export function isStoredRecord(value: unknown): value is StoredRecord {
+  return value instanceof Object && !Array.isArray(value);
+}
+
+// undefined means the whole record is unusable; a bad field falls back to undefined
+export function parseStoredPreferences(
+  record: StoredRecord,
+  colorThemes: readonly string[]
+): StoredPreferences | undefined {
+  if (record.version !== 1) return undefined;
+
+  return {
+    version: 1,
+    theme: isTheme(record.theme) ? record.theme : undefined,
+    colorTheme: colorThemes.find((name) => name === record.colorTheme),
+  };
 }
 
 /** One store per provider. No global state, native imports, or browser APIs. */
@@ -24,16 +53,6 @@ export function createThemeStore(options: ThemeStoreOptions) {
   }
 
   const storageKey = options.storageKey ?? 'uitheme-rn:preferences';
-
-  const storedPreferences = z.object({
-    version: z.literal(1),
-    theme: z.enum(['light', 'dark', 'system']).optional().catch(undefined),
-    colorTheme: z
-      .string()
-      .refine((name) => colorThemes.includes(name))
-      .optional()
-      .catch(undefined),
-  });
 
   const listeners = new Set<() => void>();
 
@@ -95,10 +114,13 @@ export function createThemeStore(options: ThemeStoreOptions) {
       const value = await options.storage?.getItem(storageKey);
 
       if (value) {
-        const result = storedPreferences.safeParse(JSON.parse(value));
+        const record = JSON.parse(value);
 
-        if (!result.success) return;
-        const saved = result.data;
+        const saved = isStoredRecord(record)
+          ? parseStoredPreferences(record, colorThemes)
+          : undefined;
+
+        if (!saved) return;
         update({
           theme:
             !dirtyTheme && saved.theme !== undefined

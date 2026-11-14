@@ -4,7 +4,6 @@ import {
   type ReactNode,
   type ComponentRef,
 } from 'react';
-import { z } from 'zod';
 import type { useNativeVariable as NativeVariableHook } from 'react-native-css/native';
 import { Platform, View } from 'react-native';
 import {
@@ -20,6 +19,7 @@ import {
   type ThemeColors,
 } from 'uitheme-rn';
 import { colorsFromVariables } from './css-variables';
+import { assertDomElement } from './validators';
 import type { ThemeStyleScopes } from './styling-types';
 
 // SAFETY: NativeWind exposes a native-only hook with a zero-argument web stub.
@@ -73,7 +73,8 @@ function WebCSSColors({
     (view: ComponentRef<typeof View> | null) => {
       if (!scope || !view) return;
       // SAFETY: React Native Web forwards a View ref to its host DOM element.
-      const element = z.instanceof(Element).parse(view);
+      assertDomElement(view);
+      const element = view;
       const style = globalThis.getComputedStyle(element);
       setColors(
         colorsFromVariables(
