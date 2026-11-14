@@ -109,6 +109,8 @@ export type TanStackUIThemeProviderProps = ThemeAnimationOptions & {
   onServerColorThemeChange?: (colorTheme: string) => Promise<void> | void;
   /** Observe failed cookie/server notifications; defaults to console.error. */
   onServerError?: (error: Error) => void;
+  /** CSP nonce for the `<style>` elements injected for transitions */
+  nonce?: string;
 };
 
 /**
@@ -260,6 +262,7 @@ export const TanStackUIThemeProvider: React.FC<
   onServerThemeChange,
   onServerColorThemeChange,
   onServerError,
+  nonce,
 }) => {
   const isHydrated = useHydrated();
   const hasServerTheme = serverTheme !== undefined;
@@ -291,6 +294,7 @@ export const TanStackUIThemeProvider: React.FC<
     systemThemeMode,
     initialTheme,
     initialColorTheme: serverColorTheme,
+    nonce,
     onThemeChange: (value) => {
       void notifyServerChange(onServerThemeChange, value, onServerError);
     },
