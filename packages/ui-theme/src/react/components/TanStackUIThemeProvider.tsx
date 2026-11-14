@@ -1,7 +1,7 @@
 'use client';
 
 import { notifyServerChange } from './server-notifications';
-import { buildThemeScript } from '../../core/theme-script';
+import { DARK, js, themeScript } from '../../core/theme-script';
 import { SharedThemeContext } from './shared-theme-context';
 import { useHydrated } from '../hooks/use-hydrated';
 import { getThemeLogoOptions } from '../../core/logo';
@@ -180,21 +180,20 @@ export const TanStackStartThemeScript: React.FC<TanStackStartThemeScriptProps> =
       nonce,
       systemThemeMode = 'js',
     }: TanStackStartThemeScriptProps) => {
-      const scriptContent = buildThemeScript({
-        storageKey,
-        colorStorageKey,
-        themes,
-        colorThemes: colorThemes ?? null,
-        defaultTheme,
-        defaultColorTheme,
-        globalClassName,
-        colorThemePrefix,
-        storage: true,
-        dataTheme: false,
-        systemClasses: true,
-        systemCss: systemThemeMode === 'css',
-        palette: 'custom',
-      });
+      const css = systemThemeMode === 'css';
+
+      // CSS mode leaves a system theme to media queries and marks it with a class.
+      const scriptContent = themeScript(
+        true,
+        [storageKey, themes, defaultTheme],
+        [colorStorageKey, colorThemes ?? null, defaultColorTheme],
+        css ? 't=="dark"' : DARK,
+        `l.toggle(${js(globalClassName)},q);l.remove("auto","system");${
+          css
+            ? 't=="system"&&l.add("system");d.style.colorScheme=t=="system"?"":q?"dark":"light"'
+            : 'd.style.colorScheme=q?"dark":"light"'
+        };p!="default"&&l.add(${js(colorThemePrefix)}+p)`
+      );
 
       return (
         <script

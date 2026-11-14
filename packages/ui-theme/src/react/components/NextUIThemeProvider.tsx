@@ -1,6 +1,6 @@
 'use client';
 
-import { buildThemeScript } from '../../core/theme-script';
+import { DARK, js, themeScript } from '../../core/theme-script';
 import { SharedThemeContext } from './shared-theme-context';
 import { useHydrated } from '../hooks/use-hydrated';
 import { getThemeLogoOptions } from '../../core/logo';
@@ -108,21 +108,17 @@ const ThemePreHydrationScript = React.memo(
     colorThemePrefix,
     nonce,
   }: ThemePreHydrationScriptProps) => {
-    const scriptContent = buildThemeScript({
-      storageKey,
-      colorStorageKey,
-      themes,
-      colorThemes,
-      defaultTheme,
-      defaultColorTheme,
-      globalClassName,
-      colorThemePrefix,
-      storage: true,
-      dataTheme: attribute === 'data-theme',
-      systemClasses: false,
-      systemCss: false,
-      palette: 'add',
-    });
+    const scriptContent = themeScript(
+      true,
+      [storageKey, themes, defaultTheme],
+      [colorStorageKey, colorThemes, defaultColorTheme],
+      DARK,
+      `${
+        attribute === 'data-theme'
+          ? 'd.setAttribute("data-theme",q?"dark":"light")'
+          : `l.toggle(${js(globalClassName)},q)`
+      };d.style.colorScheme=q?"dark":"light";l.add(${js(colorThemePrefix)}+p)`
+    );
 
     return (
       <script
