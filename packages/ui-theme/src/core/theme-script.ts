@@ -29,74 +29,44 @@ export interface ThemeScriptConfig {
 const PALETTE_MODES = { add: 0, custom: 1, exclusive: 2 } as const;
 
 /**
- * Runs inline in the page, so it must not reference anything outside its body.
- * It is serialized with Function.prototype.toString and takes positional
- * arguments to keep the inline script small.
+ * The inline runtime, kept as source text: serializing a compiled function
+ * breaks when a consumer's SSR build rewrites globals such as `document`.
+ * Arguments: storage key, color storage key, themes, color themes (or null),
+ * default theme, default color theme, dark class, palette prefix, then the
+ * 0/1 flags storage, dataTheme, systemClasses, systemCss and the palette mode
+ * (0 add, 1 add unless `default`, 2 toggle every configured palette).
  */
-const applyStoredTheme = (
-  storageKey: string,
-  colorStorageKey: string,
-  themes: readonly string[],
-  colorThemes: readonly string[] | null,
-  defaultTheme: string,
-  defaultColorTheme: string,
-  globalClassName: string,
-  colorThemePrefix: string,
-  storage: 0 | 1,
-  dataTheme: 0 | 1,
-  systemClasses: 0 | 1,
-  systemCss: 0 | 1,
-  palette: 0 | 1 | 2
-) => {
-  try {
-    const read = (
-      key: string,
-      values: readonly string[] | null,
-      fallback: string
-    ) => {
-      try {
-        const value = storage && localStorage.getItem(key);
+const RUNTIME = `(function(k,K,t,c,d,D,g,p,s,a,x,y,m){try{
+var r=function(n,v,f){try{var o=s&&localStorage.getItem(n);return o&&(v?v.indexOf(o)>-1:!/\\s/.test(o))?o:f}catch(e){return f}},
+h=document.documentElement,l=h.classList,T=r(k,t,d),P=r(K,c,D),z=T==="system"&&y,
+q=T==="dark"||T==="system"&&!z&&matchMedia("(prefers-color-scheme: dark)").matches;
+a?h.setAttribute("data-theme",q?"dark":"light"):l.toggle(g,q);
+x&&l.remove("auto","system");z&&l.add("system");
+h.style.colorScheme=z?"":q?"dark":"light";
+if(m==2)(c||[]).forEach(function(v){l.toggle(p+v,v===P)});else if(!m||P!=="default")l.add(p+P)
+}catch(e){console.warn("Theme pre-hydration script failed:",e)}})`.replace(
+  /\n/g,
+  ''
+);
 
-        return value && (values ? values.includes(value) : !/\s/.test(value))
-          ? value
-          : fallback;
-      } catch {
-        return fallback;
-      }
-    };
-
-    const root = document.documentElement;
-    const classes = root.classList;
-    const theme = read(storageKey, themes, defaultTheme);
-    const selected = read(colorStorageKey, colorThemes, defaultColorTheme);
-    const css = theme === 'system' && systemCss;
-
-    const dark =
-      theme === 'dark' ||
-      (theme === 'system' &&
-        !css &&
-        matchMedia('(prefers-color-scheme: dark)').matches);
-
-    if (dataTheme) root.setAttribute('data-theme', dark ? 'dark' : 'light');
-    else classes.toggle(globalClassName, dark);
-
-    if (systemClasses) classes.remove('auto', 'system');
-
-    if (css) classes.add('system');
-    root.style.colorScheme = css ? '' : dark ? 'dark' : 'light';
-
-    if (palette === 2)
-      for (const value of colorThemes ?? [])
-        classes.toggle(colorThemePrefix + value, value === selected);
-    else if (!palette || selected !== 'default')
-      classes.add(colorThemePrefix + selected);
-  } catch (error) {
-    console.warn('Theme pre-hydration script failed:', error);
-  }
-};
+type RuntimeArgs = [
+  string,
+  string,
+  readonly string[],
+  readonly string[] | null,
+  string,
+  string,
+  string,
+  string,
+  0 | 1,
+  0 | 1,
+  0 | 1,
+  0 | 1,
+  0 | 1 | 2,
+];
 
 /** Encode JSON for an inline script without allowing an HTML closing tag. */
-const serialize = (value: Parameters<typeof applyStoredTheme>) =>
+const serialize = (value: RuntimeArgs) =>
   JSON.stringify(value)
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')
@@ -106,7 +76,7 @@ const serialize = (value: Parameters<typeof applyStoredTheme>) =>
 
 /** Builds the one inline no-flash script shared by every provider. */
 export const buildThemeScript = (c: ThemeScriptConfig): string => {
-  const args: Parameters<typeof applyStoredTheme> = [
+  const args: RuntimeArgs = [
     c.storageKey,
     c.colorStorageKey,
     c.themes,
@@ -122,5 +92,5 @@ export const buildThemeScript = (c: ThemeScriptConfig): string => {
     PALETTE_MODES[c.palette],
   ];
 
-  return `(${applyStoredTheme.toString()})(${serialize(args).slice(1, -1)})`;
+  return `${RUNTIME}(${serialize(args).slice(1, -1)})`;
 };
