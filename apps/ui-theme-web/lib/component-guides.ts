@@ -20,9 +20,11 @@ export function componentApi(doc: ComponentDoc, base: ComponentBase) {
       description:
         doc.name === 'theme-switcher'
           ? 'Style root, item, and selection indicator parts.'
-          : doc.name === 'theme-toggle' || doc.name === 'icon-theme-toggle'
-            ? 'Style the root and trigger parts.'
-            : 'Style root, trigger, content, item, and label parts.',
+          : doc.name === 'tactile-theme-toggle'
+            ? 'Style the root, track, and thumb parts.'
+            : doc.name === 'theme-toggle' || doc.name === 'icon-theme-toggle'
+              ? 'Style the root and trigger parts.'
+              : 'Style root, trigger, content, item, and label parts.',
     },
     {
       name: 'disabled',
@@ -85,6 +87,12 @@ export function componentApi(doc: ComponentDoc, base: ComponentBase) {
       description:
         'Change palette labels. Values must already exist in the provider’s colorThemes.',
     });
+
+  if (doc.name === 'tactile-theme-toggle')
+    rows.splice(
+      rows.findIndex((row) => row.name === 'borderStyle'),
+      1
+    );
 
   if (doc.category === 'disclosures') {
     rows.splice(

@@ -1,0 +1,97 @@
+---
+title: Tactile Theme Toggle
+description: Switch between light and dark with a tactile switch that shows a sun or moon icon.
+---
+
+## Preview
+
+<RegistryLivePreview />
+
+## Examples
+
+<RegistryExamples />
+
+## When to use
+
+- Use a physical, on/off switch for light and dark mode.
+- Use a control that shows the current mode on its thumb: a sun for light and a moon for dark.
+
+## When not to use
+
+- People need to choose the system preference. Use Theme Switcher or Theme Selector.
+- The control changes a palette. Use Color Theme Selector.
+
+## Installation
+
+Set up [uitheme-web](/docs/installation) in an existing Tailwind app. Then install the component.
+The control has no primitive dependency. It uses Lucide icons and reuses the shared `cn` utility.
+
+<RegistryInstallation />
+
+<RegistryReact>
+
+To install with shadcn, first [add the UI-Theme registry](/docs/installation#install-with-shadcn)
+to `components.json`.
+
+<RegistryShadcnInstallation />
+
+</RegistryReact>
+
+## Usage
+
+Use the control inside your theme provider. Import it from your app’s component directory.
+
+<RegistryUsage />
+
+## API reference
+
+These props belong to the installed control. Its page transition settings override the provider for this action only.
+
+<RegistryApi />
+
+## Keyboard
+
+| Key           | Action                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------- |
+| Enter / Space | Toggle the resolved light/dark theme. Keyboard activation changes the theme without the page animation. |
+
+## Accessibility
+
+- The control is a button with `role="switch"`. `aria-checked` is `true` in dark mode.
+- The default accessible label is “Dark theme”. If you change it, name the checked state, not the action.
+- The track, thumb, and icons are decorative and hidden from assistive technology.
+- The control stays disabled until the theme provider mounts.
+- Reduced motion removes the icon rotation and scale. The thumb travel and the icon fade take 120ms.
+- In forced-colors mode, the control keeps a visible border.
+
+## Theme behavior
+
+The switch is off in resolved light mode and on in resolved dark mode. The thumb shows a sun in light mode and a moon in dark mode. All colors come from your theme tokens, so the switch follows the active color palette. Activation replaces a system preference with the opposite resolved theme. The clicked switch sets the page transition origin.
+
+## AI Agent notes
+
+- Use `uitheme-web/react` for React or `uitheme-web/vue` for Vue. Keep the theme provider around the control.
+- Keep page transitions in the control’s `animationType` and `duration` props. Do not add a standalone transition-settings control.
+- Use the shared theme tokens. Do not hardcode a color. The track uses `bg-input` when off and `bg-primary` when on. The thumb uses `bg-background` and `text-muted-foreground`.
+- Keep `role="switch"`, `aria-checked`, the label, focus styles, the disabled state, and reduced-motion behavior when you edit the source.
+- All sizes use `em`. Change the size with a font-size class on the root, not with fixed widths.
+
+<RegistryAgentCopy />
+
+## Source
+
+The CLI reuses your shared `cn` utility. If it is missing, installation creates it
+at the configured utils path. Existing utilities are checked before a replacement
+is offered.
+
+These are the files the CLI installs. The control installs one main component file.
+
+<RegistrySource />
+
+## Customization
+
+The default size is `text-[1.5em]` on the root. Set another font size through `className` or `classes.root` to scale the switch, for example `text-base`.
+
+Use `classes.track` and `classes.thumb` to restyle those parts. Your classes replace default classes through the local merge helper.
+
+Use `slideDirection` only when `animationType` is `ThemeAnimationType.SLIDE`. Set both props on the control when you need a slide direction override.
