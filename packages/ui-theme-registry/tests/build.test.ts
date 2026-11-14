@@ -38,7 +38,7 @@ test('builder rejects incomplete sources instead of emitting placeholders', asyn
   }
 });
 
-test('builds all 84 variants reproducibly from sources with only selected base dependencies', async () => {
+test('builds all 96 variants reproducibly from sources with only selected base dependencies', async () => {
   const root = await mkdtemp(join(tmpdir(), 'uitheme-registry-all-'));
 
   try {
@@ -59,6 +59,7 @@ test('builds all 84 variants reproducibly from sources with only selected base d
           'theme-selector',
           'color-theme-selector',
           'icon-theme-toggle',
+          'tactile-theme-toggle',
           'theme-switcher',
           'theme-disclosure',
           'color-theme-disclosure',
@@ -99,7 +100,7 @@ test('builds all 84 variants reproducibly from sources with only selected base d
       second = await buildRegistry({ sourceDir, outDir });
 
     assert.equal(first.revision, second.revision);
-    assert.equal(first.index.items.length, 84);
+    assert.equal(first.index.items.length, 96);
 
     const react = first.index.items.find(
       (i) =>
@@ -130,7 +131,7 @@ test('builds all 84 variants reproducibly from sources with only selected base d
 
     for (const [style, base] of shadcnStyles) {
       const files = await readdir(join(outDir, style));
-      assert.equal(files.length, 8, style);
+      assert.equal(files.length, 9, style);
 
       // shadcn search reads the index; the directory forbids file content in it
       const index = JSON.parse(
