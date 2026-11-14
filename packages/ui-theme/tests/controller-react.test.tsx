@@ -1,5 +1,12 @@
 // @vitest-environment jsdom
-import { StrictMode, act, useLayoutEffect } from 'react';
+import {
+  StrictMode,
+  act,
+  memo,
+  useLayoutEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import { createRoot, hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
@@ -215,3 +222,105 @@ for (const Provider of [
     );
   });
 }
+
+/** A parent whose own state change re-renders the provider it creates. */
+const Parent = ({ render }: { render: () => ReactNode }) => {
+  const [tick, setTick] = useState(0);
+
+  return (
+    <>
+      <button data-tick={tick} onClick={() => setTick(tick + 1)} />
+      {render()}
+    </>
+  );
+};
+
+const rerenderParent = () =>
+  act(async () =>
+    container.querySelector<HTMLButtonElement>('[data-tick]')!.click()
+  );
+
+for (const strict of [false, true]) {
+  for (const Provider of [
+    UIThemeProvider,
+    NextUIThemeProvider,
+    ViteUIThemeProvider,
+    TanStackUIThemeProvider,
+  ]) {
+    test(`${Provider.name} context stays stable when a parent re-renders${strict ? ' in StrictMode' : ''}`, async () => {
+      const onRender = vi.fn();
+
+      const Consumer = memo(function Consumer() {
+        const current = useUITheme();
+
+        useLayoutEffect(() => onRender());
+
+        return <span>{current.theme}</span>;
+      });
+
+      const tree = (
+        <Parent
+          render={() => (
+            <Provider defaultTheme="light">
+              <Consumer />
+            </Provider>
+          )}
+        />
+      );
+
+      await act(async () =>
+        root.render(strict ? <StrictMode>{tree}</StrictMode> : tree)
+      );
+      const settled = onRender.mock.calls.length;
+      await rerenderParent();
+      await rerenderParent();
+      expect(onRender).toHaveBeenCalledTimes(settled);
+      expect(container.querySelector('span')?.textContent).toBe('light');
+    });
+  }
+}
+
+test('useTheme returns the same value across unrelated renders', async () => {
+  const values = new Set<UseThemeReturn>();
+
+  const Owner = () => {
+    const [tick, setTick] = useState(0);
+    const current = useTheme({ defaultTheme: 'light' });
+
+    useLayoutEffect(() => {
+      values.add(current);
+    });
+
+    return <button data-tick={tick} onClick={() => setTick(tick + 1)} />;
+  };
+
+  await act(async () => root.render(<Owner />));
+  const settled = values.size;
+  await rerenderParent();
+  expect(values.size).toBe(settled);
+});
+
+test('providers read systemTheme from the controller without calling matchMedia in render', async () => {
+  const matchMedia = vi.fn(window.matchMedia);
+  vi.stubGlobal('matchMedia', matchMedia);
+
+  const Consumer = () => <span>{useUITheme().systemTheme}</span>;
+
+  await act(async () =>
+    root.render(
+      <Parent
+        render={() => (
+          <TanStackUIThemeProvider>
+            <NextUIThemeProvider>
+              <Consumer />
+            </NextUIThemeProvider>
+          </TanStackUIThemeProvider>
+        )}
+      />
+    )
+  );
+  matchMedia.mockClear();
+  await rerenderParent();
+  expect(matchMedia).not.toHaveBeenCalled();
+  expect(container.querySelector('span')?.textContent).toBe('light');
+});
