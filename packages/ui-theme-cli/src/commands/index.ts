@@ -460,11 +460,23 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
       if (base) profile = { ...profile, base };
     }
 
+    const requirement = await (
+      await import('../project.ts')
+    ).baseRequirementError(profile);
+
     if (command === 'info') {
-      stdout(JSON.stringify(profile, null, 2));
+      stdout(
+        JSON.stringify(
+          requirement ? { ...profile, unmetRequirement: requirement } : profile,
+          null,
+          2
+        )
+      );
 
       return 0;
     }
+
+    if (requirement && command !== 'list') throw new Error(requirement);
 
     const webVersion = await installedWebVersion(profile);
 

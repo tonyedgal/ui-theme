@@ -7,6 +7,7 @@
  * than one framework; never infer the framework from a base id.
  */
 
+import semver from 'semver';
 import type { Framework } from './types.ts';
 
 export type RegistryFramework = 'react' | 'vue';
@@ -46,6 +47,15 @@ export interface BaseFrameworkSupport {
     range: string;
     /** A note for the user when the requirement is not met. */
     note: string;
+  };
+  /** CSS that the app's global stylesheet must hold for this base. */
+  css?: {
+    /**
+     * A cascade layer that the base adds rules to at runtime. The CLI declares
+     * it with `@layer <name>;` at the top of the stylesheet, so it comes
+     * before every other layer and the app's styles win over it.
+     */
+    layer: string;
   };
 }
 
@@ -221,4 +231,48 @@ export function detectBase(
 /** The registry framework of an app framework. */
 export function registryFramework(framework: Framework): RegistryFramework {
   return framework === 'nuxt' || framework === 'vite-vue' ? 'vue' : 'react';
+}
+
+/**
+ * The message for a requirement of the base that the app does not meet, or
+ * undefined. An installed version wins over the declared range. A declared
+ * range fails only when no version in it satisfies the requirement, so a dist
+ * tag such as `latest` passes.
+ */
+export function unmetRequirement(
+  base: string,
+  framework: RegistryFramework,
+  app: { installed?: string; declared?: string }
+): string | undefined {
+  const definition = findBase(base),
+    requires = definition?.frameworks[framework]?.requires;
+
+  if (!definition || !requires) return;
+
+  const declared = app.declared?.replace(/^workspace:/, '');
+
+  const found = app.installed
+    ? semver.satisfies(app.installed, requires.range, {
+        includePrerelease: true,
+      })
+      ? undefined
+      : app.installed
+    : declared === undefined
+      ? 'not installed'
+      : semver.validRange(declared) &&
+          !semver.intersects(declared, requires.range)
+        ? declared
+        : undefined;
+
+  if (found === undefined) return;
+
+  return `${definition.displayName} requires ${requires.package} ${requires.range}; found ${found === 'not installed' ? 'no ' + requires.package : `${requires.package} ${found}`}. ${requires.note}`;
+}
+
+/** The cascade layer that a base needs declared in the app's stylesheet. */
+export function baseCssLayer(
+  base: string,
+  framework: RegistryFramework
+): string | undefined {
+  return findBase(base)?.frameworks[framework]?.css?.layer;
 }

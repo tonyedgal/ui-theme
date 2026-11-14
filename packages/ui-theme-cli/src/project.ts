@@ -7,8 +7,10 @@ import semver from 'semver';
 import {
   baseFlagHint,
   detectBase,
+  findBase,
   registryFramework,
   supportsFramework,
+  unmetRequirement,
 } from './bases.ts';
 import { readConfig, relativeProjectPath, isRecord } from './config.ts';
 import { parseJsonc } from './jsonc.ts';
@@ -398,4 +400,34 @@ export async function detectProject(
         : 'css'),
     configFile: join(cwd, 'uitheme.json'),
   };
+}
+
+/** The unmet requirement of the profile's base, as a one-line message. */
+export async function baseRequirementError(
+  profile: ProjectProfile
+): Promise<string | undefined> {
+  const framework = registryFramework(profile.framework),
+    name = findBase(profile.base)?.frameworks[framework]?.requires?.package;
+
+  if (!name) return;
+
+  const pkg = await json(join(profile.cwd, 'package.json'));
+  let installed: string | undefined;
+
+  try {
+    const manifest: unknown = createRequire(join(profile.cwd, 'package.json'))(
+      `${name}/package.json`
+    );
+
+    // eslint-disable-next-line anti-slop/no-runtime-typeof -- parse the installed package JSON version
+    if (isRecord(manifest) && typeof manifest.version === 'string')
+      installed = manifest.version;
+  } catch {
+    installed = undefined;
+  }
+
+  return unmetRequirement(profile.base, framework, {
+    installed,
+    declared: pkg?.dependencies?.[name] ?? pkg?.devDependencies?.[name],
+  });
 }
