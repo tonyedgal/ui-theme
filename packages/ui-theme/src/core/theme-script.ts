@@ -4,7 +4,7 @@ export interface ThemeScriptConfig {
   colorStorageKey: string;
   /** Allowed stored themes; anything else falls back to `defaultTheme`. */
   themes: readonly string[];
-  /** Allowed stored palettes; `null` accepts any single class token. */
+  /** Allowed stored palettes; `null` accepts any stored value, as before. */
   colorThemes: readonly string[] | null;
   defaultTheme: string;
   defaultColorTheme: string;
@@ -26,37 +26,8 @@ export interface ThemeScriptConfig {
   palette: 'add' | 'custom' | 'exclusive';
 }
 
-const PALETTE_MODES = { add: 0, custom: 1, exclusive: 2 } as const;
-
-/**
- * The inline runtime, kept as source text: serializing a compiled function
- * breaks when a consumer's SSR build rewrites globals such as `document`.
- * Arguments: storage key, color storage key, themes, color themes (or null),
- * default theme, default color theme, dark class, palette prefix, then the
- * 0/1 flags storage, dataTheme, systemClasses, systemCss and the palette mode
- * (0 add, 1 add unless `default`, 2 toggle every configured palette).
- */
-// prettier-ignore
-const RUNTIME = `(function(k,K,t,c,d,D,g,p,s,a,x,y,m){try{var r=function(n,v,f){try{var o=s&&localStorage.getItem(n);return o&&(v?v.indexOf(o)>-1:!/\\s/.test(o))?o:f}catch(e){return f}},h=document.documentElement,l=h.classList,T=r(k,t,d),P=r(K,c,D),z=T=="system"&&y,q=T=="dark"||T=="system"&&!z&&matchMedia("(prefers-color-scheme: dark)").matches;a?h.setAttribute("data-theme",q?"dark":"light"):l.toggle(g,q);x&&l.remove("auto","system");z&&l.add("system");h.style.colorScheme=z?"":q?"dark":"light";m>1?(c||[]).forEach(function(v){l.toggle(p+v,v==P)}):(m&&P=="default")||l.add(p+P)}catch(e){console.warn(e)}})`;
-
-type RuntimeArgs = [
-  string,
-  string,
-  readonly string[],
-  readonly string[] | null,
-  string,
-  string,
-  string,
-  string,
-  0 | 1,
-  0 | 1,
-  0 | 1,
-  0 | 1,
-  0 | 1 | 2,
-];
-
-/** Encode JSON for an inline script without allowing an HTML closing tag. */
-const serialize = (value: RuntimeArgs) =>
+/** Encode a value as a JavaScript literal that cannot close an HTML script. */
+const js = (value: string | readonly string[]) =>
   JSON.stringify(value)
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')
@@ -64,23 +35,58 @@ const serialize = (value: RuntimeArgs) =>
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
 
-/** Builds the one inline no-flash script shared by every provider. */
+/**
+ * Builds the inline no-flash script from only the statements this
+ * configuration needs. The result is source text, not a serialized function,
+ * because SSR builds may rewrite globals such as `document` inside functions.
+ * Locals: d root, l class list, g storage read, t theme, p palette, q dark.
+ */
 export const buildThemeScript = (c: ThemeScriptConfig): string => {
-  const args: RuntimeArgs = [
-    c.storageKey,
-    c.colorStorageKey,
-    c.themes,
-    c.colorThemes,
-    c.defaultTheme,
-    c.defaultColorTheme,
-    c.globalClassName,
-    c.colorThemePrefix,
-    c.storage ? 1 : 0,
-    c.dataTheme ? 1 : 0,
-    c.systemClasses ? 1 : 0,
-    c.systemCss ? 1 : 0,
-    PALETTE_MODES[c.palette],
+  // A stored value is kept only when it is in the inlined allowed list.
+  const read = (
+    key: string,
+    list: readonly string[] | null,
+    fallback: string
+  ) =>
+    !c.storage
+      ? js(fallback)
+      : list
+        ? `(v=g(${js(key)}),${js(list)}.includes(v)?v:${js(fallback)})`
+        : `g(${js(key)})||${js(fallback)}`;
+
+  const css = c.systemClasses && c.systemCss;
+  const system = c.themes.includes('system');
+
+  const dark = css
+    ? 't=="dark"'
+    : system
+      ? 't=="dark"||t=="system"&&matchMedia("(prefers-color-scheme: dark)").matches'
+      : 't=="dark"';
+
+  const statements = [
+    `var ${[
+      'd=document.documentElement',
+      'l=d.classList',
+      c.storage &&
+        'v,g=function(k){try{return localStorage.getItem(k)}catch(e){}}',
+      `t=${read(c.storageKey, c.themes, c.defaultTheme)}`,
+      `p=${read(c.colorStorageKey, c.colorThemes, c.defaultColorTheme)}`,
+      `q=${dark}`,
+    ]
+      .filter(Boolean)
+      .join(',')}`,
+    c.dataTheme
+      ? 'd.setAttribute("data-theme",q?"dark":"light")'
+      : `l.toggle(${js(c.globalClassName)},q)`,
+    c.systemClasses && 'l.remove("auto","system")',
+    css && 't=="system"&&l.add("system")',
+    css
+      ? 'd.style.colorScheme=t=="system"?"":q?"dark":"light"'
+      : 'd.style.colorScheme=q?"dark":"light"',
+    c.palette === 'exclusive'
+      ? `${js(c.colorThemes ?? [])}.forEach(function(v){l.toggle(${js(c.colorThemePrefix)}+v,v==p)})`
+      : `${c.palette === 'custom' ? 'p!="default"&&' : ''}l.add(${js(c.colorThemePrefix)}+p)`,
   ];
 
-  return `${RUNTIME}(${serialize(args).slice(1, -1)})`;
+  return `(function(){try{${statements.filter(Boolean).join(';')}}catch(e){console.warn(e)}})()`;
 };
