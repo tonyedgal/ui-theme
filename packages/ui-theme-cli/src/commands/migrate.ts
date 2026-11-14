@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { lstat, readdir, readFile, writeFile } from 'node:fs/promises';
+import { lstat, readdir, readFile } from 'node:fs/promises';
 import {
   basename,
   dirname,
@@ -10,7 +10,7 @@ import {
 } from 'node:path';
 import { parseArgs } from 'node:util';
 import type { CliIO } from './index.ts';
-import { readConfig } from '../config.ts';
+import { readConfig, writeFileAtomic } from '../config.ts';
 import {
   rewriteManifest,
   rewriteSource,
@@ -258,11 +258,11 @@ export async function runMigration(
     try {
       for (const change of changes) {
         touched.push(change);
-        await writeFile(change.file, change.after, 'utf8');
+        await writeFileAtomic(change.file, change.after);
       }
     } catch (error) {
       for (const change of touched.reverse())
-        await writeFile(change.file, change.before, 'utf8');
+        await writeFileAtomic(change.file, change.before);
       throw error;
     }
 

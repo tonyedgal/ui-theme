@@ -1,18 +1,10 @@
 import { createHash } from 'node:crypto';
-import {
-  readFile,
-  writeFile,
-  mkdir,
-  lstat,
-  unlink,
-  rmdir,
-} from 'node:fs/promises';
+import { readFile, mkdir, lstat, unlink, rmdir } from 'node:fs/promises';
 import { resolve, relative, dirname, isAbsolute, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import spawn from 'cross-spawn';
 import semver from 'semver';
-import { planSharedUtils } from './shared-utils.ts';
-import { readConfig } from '../config.ts';
+import { readConfig, writeFileAtomic } from '../config.ts';
 import { assertSafePath } from '../registry.ts';
 import type { ProjectProfile, RegistryGraph, SavedConfig } from '../types.ts';
 
@@ -447,6 +439,7 @@ export async function planRegistryInstall(
   const files = new Map<string, PlannedFile>();
   const web = options.webDependency ?? defaultWebDependency;
   const dependencies: string[] = [web];
+  const { planSharedUtils } = await import('./shared-utils.ts');
   const utility = await planSharedUtils(profile, options);
   const owner = utility.owner;
   profile = utility.profile;
@@ -690,7 +683,7 @@ export async function applyPlan(
 
       await mkdir(dirname(file.path), { recursive: true });
       changed.push(file);
-      await writeFile(file.path, file.content);
+      await writeFileAtomic(file.path, file.content);
     }
 
     await (options.runInstall ?? runPackageInstall)(
@@ -715,7 +708,7 @@ export async function applyPlan(
           await unlink(path).catch((problem) => {
             if (problem.code !== 'ENOENT') throw problem;
           });
-        else await writeFile(path, before);
+        else await writeFileAtomic(path, before);
       } catch (failure) {
         failures.push(failure);
       }

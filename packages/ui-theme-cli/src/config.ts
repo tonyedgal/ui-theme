@@ -1,10 +1,47 @@
 /* eslint-disable anti-slop/no-runtime-typeof, anti-slop/no-unknown-parameters, anti-slop/no-unsafe-dictionary-type -- parse untrusted JSON and HTTP input at this boundary */
-import { readFile, writeFile } from 'node:fs/promises';
-import { resolve, relative, isAbsolute } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { chmod, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import {
+  basename,
+  dirname,
+  join,
+  resolve,
+  relative,
+  isAbsolute,
+} from 'node:path';
 import type { ProjectProfile, SavedConfig } from './types.ts';
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export async function writeFileAtomic(
+  path: string,
+  content: string | Uint8Array,
+  move: typeof rename = rename
+): Promise<void> {
+  const temporary = join(
+    dirname(path),
+    `.${basename(path)}.${randomBytes(6).toString('hex')}.tmp`
+  );
+
+  let mode: number | undefined;
+
+  try {
+    mode = (await stat(path)).mode & 0o7777;
+  } catch (error) {
+    if (!(isRecord(error) && error.code === 'ENOENT')) throw error;
+  }
+
+  try {
+    await writeFile(temporary, content, { flag: 'wx' });
+
+    if (mode !== undefined) await chmod(temporary, mode);
+    await move(temporary, path);
+  } catch (error) {
+    await rm(temporary, { force: true });
+    throw error;
+  }
 }
 
 export function validateConfig(value: unknown): SavedConfig {
@@ -154,5 +191,5 @@ export async function writeConfig(
         key === 'componentsDir' ? workspaceRoot : cwd
       );
   validateConfig(value);
-  await writeFile(configFile, `${JSON.stringify(value, null, 2)}\n`);
+  await writeFileAtomic(configFile, `${JSON.stringify(value, null, 2)}\n`);
 }
