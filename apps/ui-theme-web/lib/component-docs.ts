@@ -44,6 +44,14 @@ export const componentDocs = [
       'Animate between sun and moon icons while changing the UI theme.',
   },
   {
+    name: 'tactile-theme-toggle',
+    category: 'toggles',
+    title: 'Tactile Theme Toggle',
+    exportName: 'TactileThemeToggle',
+    description:
+      'Switch between light and dark with a tactile switch that shows a sun or moon icon.',
+  },
+  {
     name: 'theme-switcher',
     category: 'switchers',
     title: 'Theme Switcher',
@@ -142,7 +150,7 @@ export function componentExamples(doc: ComponentDoc): ComponentExample[] {
       direction: 'up',
     });
 
-  if (doc.category !== 'disclosures')
+  if (doc.category !== 'disclosures' && doc.name !== 'tactile-theme-toggle')
     examples.push({
       id: 'shadow-borders',
       title: 'Shadow borders',

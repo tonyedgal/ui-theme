@@ -26,11 +26,13 @@ import {
 } from '@/lib/component-docs';
 import { ThemeToggle as BaseThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/theme-toggle';
 import { IconThemeToggle as BaseIconThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/icon-theme-toggle';
+import { TactileThemeToggle as BaseTactileThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/tactile-theme-toggle';
 import { ThemeSwitcher as BaseThemeSwitcher } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/theme-switcher';
 import { ThemeSelector as BaseThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/theme-selector';
 import { ColorThemeSelector as BaseColorThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/color-theme-selector';
 import { ThemeToggle as RadixThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/radix/theme-toggle';
 import { IconThemeToggle as RadixIconThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/radix/icon-theme-toggle';
+import { TactileThemeToggle as RadixTactileThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/radix/tactile-theme-toggle';
 import { ThemeSwitcher as RadixThemeSwitcher } from '../../../packages/ui-theme-registry/src/templates/react/radix/theme-switcher';
 import { ThemeSelector as RadixThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/theme-selector';
 import { ColorThemeSelector as RadixColorThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/color-theme-selector';
@@ -122,6 +124,9 @@ function RegistryContent({
 
   const IconThemeToggle =
     base === 'radix' ? RadixIconThemeToggle : BaseIconThemeToggle;
+
+  const TactileThemeToggle =
+    base === 'radix' ? RadixTactileThemeToggle : BaseTactileThemeToggle;
 
   const ThemeSwitcher =
     base === 'radix' ? RadixThemeSwitcher : BaseThemeSwitcher;
@@ -217,6 +222,11 @@ function RegistryContent({
                 borderStyle={previewBorderStyle}
                 effect={example?.effect}
               />
+            </div>
+          )}
+          {component === 'tactile-theme-toggle' && (
+            <div className="flex justify-center">
+              <TactileThemeToggle {...transition} />
             </div>
           )}
           {component === 'theme-switcher' && (
