@@ -306,10 +306,12 @@ export const createThemeController = (
     try {
       write();
     } catch (error) {
-      if (!adapter.onBrowserStorageError) throw error;
-      adapter.onBrowserStorageError(
-        error instanceof Error ? error : new Error(String(error))
-      );
+      // Blocked or full storage (private mode, quota, sandboxed frames) must
+      // not lose the change: keep it in memory and still apply it.
+      const failure = error instanceof Error ? error : new Error(String(error));
+
+      if (adapter.onBrowserStorageError) adapter.onBrowserStorageError(failure);
+      else console.warn('Unable to persist the theme preference:', failure);
     }
   };
 
