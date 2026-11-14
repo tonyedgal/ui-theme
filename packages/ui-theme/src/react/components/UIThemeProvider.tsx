@@ -47,6 +47,8 @@ export type UIThemeProviderProps = ThemeAnimationOptions & {
   storageKey?: string;
   /** Storage key for color theme */
   colorStorageKey?: string;
+  /** CSP nonce for the `<style>` elements injected for transitions */
+  nonce?: string;
 };
 
 /**
@@ -75,6 +77,7 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
   duration = DEFAULT_DURATION,
   storageKey,
   colorStorageKey,
+  nonce,
 }) => {
   const mounted = useHydrated();
 
@@ -93,6 +96,7 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
     duration,
     storageKey,
     colorStorageKey,
+    nonce,
   });
 
   const contextValue = useMemo<UIThemeContextType>(
