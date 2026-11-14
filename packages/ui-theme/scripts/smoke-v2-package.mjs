@@ -103,8 +103,38 @@ try {
     assert.equal(typeof getThemeScript, 'function');
   `
   );
+
+  for (const name of ['react', 'react-dom', 'nuxt']) {
+    symlinkSync(
+      realpathSync(resolve(packageRoot, 'node_modules', name)),
+      join(directory, 'node_modules', name)
+    );
+  }
+
+  run(
+    'all-subpaths',
+    `
+    import assert from 'node:assert/strict';
+    import { createRequire } from 'node:module';
+    const require = createRequire(import.meta.url);
+    const subpaths = ['uitheme-web', 'uitheme-web/core', 'uitheme-web/react', 'uitheme-web/next', 'uitheme-web/next/server', 'uitheme-web/tanstack', 'uitheme-web/vue', 'uitheme-web/vue/bootstrap'];
+    for (const subpath of subpaths) {
+      const esm = await import(subpath);
+      const cjs = require(subpath);
+      assert.deepEqual(Object.keys(cjs).filter((key) => key !== 'default' && key !== '__esModule').sort(), Object.keys(esm).filter((key) => key !== 'default').sort(), subpath);
+    }
+    const nuxt = await import('uitheme-web/nuxt');
+    assert.equal(typeof nuxt.default, 'function');
+    assert.throws(() => require.resolve('uitheme-web/nuxt'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' });
+    const core = { esm: await import('uitheme-web/core'), cjs: require('uitheme-web/core') };
+    const vue = { esm: await import('uitheme-web/vue'), cjs: require('uitheme-web/vue') };
+    assert.equal(vue.esm.preloadThemeLogo, core.esm.preloadThemeLogo);
+    assert.equal(vue.cjs.preloadThemeLogo, core.cjs.preloadThemeLogo);
+    assert.notEqual(core.esm.preloadThemeLogo, core.cjs.preloadThemeLogo);
+  `
+  );
   console.log(
-    'Packed core, React-only, and Vue-only consumers passed without unrelated frameworks or primitive libraries.'
+    'Packed core, React-only, Vue-only, and all-subpath require and import consumers passed.'
   );
 } finally {
   rmSync(directory, { recursive: true, force: true });
