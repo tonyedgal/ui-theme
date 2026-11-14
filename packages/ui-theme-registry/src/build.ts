@@ -4,9 +4,14 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import ts from 'typescript';
 import type { RegistryFile } from '../../ui-theme-cli/src/types.ts';
+import {
+  baseManifest,
+  baseVariants,
+  type BaseDefinition,
+} from '../../ui-theme-cli/src/bases.ts';
 import { transform } from '@unovue/detypes';
 
-const controls = [
+export const controls = [
   'theme-toggle',
   'icon-theme-toggle',
   'tactile-theme-toggle',
@@ -16,12 +21,6 @@ const controls = [
   'theme-disclosure',
   'color-theme-disclosure',
 ];
-
-const variants = [
-  ['react', 'base-ui'],
-  ['react', 'radix'],
-  ['vue', 'reka'],
-] as const;
 
 interface SourceFile {
   source: string;
@@ -65,21 +64,25 @@ const shadcnStyleNames = [
   'sera',
 ];
 
-export const shadcnStyles = new Map<string, 'radix' | 'base-ui'>([
-  ['new-york', 'radix'],
-  // When an app on Tailwind 4 selects new-york, shadcn installs the files from
-  // new-york-v4.
-  ['new-york-v4', 'radix'],
-  ['default', 'radix'],
-  ...shadcnStyleNames.map((name): [string, 'radix'] => [
-    `radix-${name}`,
-    'radix',
-  ]),
-  ...shadcnStyleNames.map((name): [string, 'base-ui'] => [
-    `base-${name}`,
-    'base-ui',
-  ]),
-]);
+// Each served style maps to the React base whose manifest entry names it or
+// prefixes it.
+export function shadcnStylesFor(bases: readonly BaseDefinition[]) {
+  const styles = new Map<string, string>();
+
+  for (const base of bases) {
+    const shadcn = base.frameworks.react?.shadcn;
+
+    for (const style of shadcn?.styles ?? []) styles.set(style, base.id);
+
+    if (shadcn?.prefix)
+      for (const name of shadcnStyleNames)
+        styles.set(`${shadcn.prefix}${name}`, base.id);
+  }
+
+  return styles;
+}
+
+export const shadcnStyles = shadcnStylesFor(baseManifest());
 
 const installationDocs = 'https://www.ui-theme.dev/docs/installation';
 
@@ -231,8 +234,11 @@ export async function buildRegistry(
     outDir?: string;
     origin?: string;
     releaseDir?: string;
+    bases?: readonly BaseDefinition[];
   } = {}
 ) {
+  const bases = options.bases ?? baseManifest();
+
   const sourceDir =
       options.sourceDir ??
       fileURLToPath(new URL('./templates', import.meta.url)),
@@ -252,20 +258,24 @@ export async function buildRegistry(
     item: import('../../ui-theme-cli/src/types.ts').RegistryItem;
   }[] = [];
 
-  for (const [framework, base] of variants) {
+  for (const {
+    framework,
+    base,
+    support: { templates },
+  } of baseVariants(bases)) {
     const root = `${framework}/${base}`,
       metaSource = sources.find(
-        ([path]) => path === `${root}/metadata.json`
+        ([path]) => path === `${templates}/metadata.json`
       )?.[1];
 
-    if (!metaSource) throw new Error(`Missing template metadata: ${root}`);
+    if (!metaSource) throw new Error(`Missing template metadata: ${templates}`);
     const metadata: Metadata = JSON.parse(metaSource);
 
     for (const component of controls) {
       const meta = metadata.components?.[component];
 
       if (!meta?.files?.length || !meta.title || !meta.description)
-        throw new Error(`Incomplete template: ${root}/${component}`);
+        throw new Error(`Incomplete template: ${templates}/${component}`);
 
       for (const tailwind of [3, 4] as const)
         for (const language of ['ts', 'js'] as const) {
@@ -280,12 +290,12 @@ export async function buildRegistry(
               if (file.target) safe(file.target);
 
               let content = sources.find(
-                ([path]) => path === `${root}/${file.source}`
+                ([path]) => path === `${templates}/${file.source}`
               )?.[1];
 
               if (content === undefined || !content.trim())
                 throw new Error(
-                  `Missing template source: ${root}/${file.source}`
+                  `Missing template source: ${templates}/${file.source}`
                 );
               content = content.replaceAll(
                 '{{tailwindMajor}}',
@@ -300,7 +310,7 @@ export async function buildRegistry(
               if (language === 'js')
                 content = await javascriptSource(
                   content,
-                  join(sourceDir, root, file.source)
+                  join(sourceDir, templates, file.source)
                 );
 
               if (/\{\{\w+\}\}/.test(content))
@@ -428,7 +438,12 @@ export async function buildRegistry(
     await writeFile(path, serialized);
   }
 
-  const styleFiles = await writeShadcnStyles(outDir, origin, records);
+  const styleFiles = await writeShadcnStyles(
+    outDir,
+    origin,
+    records,
+    shadcnStylesFor(bases)
+  );
 
   return {
     revision,
@@ -450,11 +465,12 @@ async function writeShadcnStyles(
   records: {
     path: string;
     item: import('../../ui-theme-cli/src/types.ts').RegistryItem;
-  }[]
+  }[],
+  styles: Map<string, string>
 ) {
   const written: string[] = [];
 
-  for (const [style, base] of shadcnStyles) {
+  for (const [style, base] of styles) {
     await rm(join(outDir, style), { recursive: true, force: true });
     await mkdir(join(outDir, style), { recursive: true });
 
