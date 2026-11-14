@@ -4,7 +4,7 @@ import { SharedThemeContext } from './shared-theme-context';
 import { useHydrated } from '../hooks/use-hydrated';
 import { getThemeLogoOptions } from '../../core/logo';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, ReactNode } from 'react';
 import { useTheme } from '../hooks/use-theme';
 import type { UseThemeReturn } from '../types';
 import {
@@ -95,8 +95,14 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
     colorStorageKey,
   });
 
-  const switchThemeFromElement = (theme: Theme, element: Element) =>
-    themeState.switchTheme(theme, { element });
+  const contextValue = useMemo<UIThemeContextType>(
+    () => ({
+      ...themeState,
+      switchThemeFromElement: (theme: Theme, element: Element) =>
+        themeState.switchTheme(theme, { element }),
+    }),
+    [themeState]
+  );
 
   if (!mounted) {
     const loadingContextValue: UIThemeContextType = {
@@ -129,11 +135,6 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
       </UIThemeContext.Provider>
     );
   }
-
-  const contextValue: UIThemeContextType = {
-    ...themeState,
-    switchThemeFromElement,
-  };
 
   return (
     <UIThemeContext.Provider value={contextValue}>

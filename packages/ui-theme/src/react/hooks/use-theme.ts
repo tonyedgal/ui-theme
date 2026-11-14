@@ -1,5 +1,6 @@
 import {
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -56,18 +57,23 @@ export const useTheme = (props: UseThemeProps = {}): UseThemeReturn => {
     return controller.mount();
   }, [controller, binding]);
 
-  return {
-    ...snapshot,
-    ref,
-    setTheme: controller.setTheme,
-    setColorTheme: controller.setColorTheme,
-    switchTheme: controller.switchTheme,
-    switchColorTheme: controller.switchColorTheme,
-    toggleTheme: controller.toggleTheme,
-    toggleLightTheme: controller.toggleLightTheme,
-    toggleDarkTheme: controller.toggleDarkTheme,
-    toggleColorTheme: controller.toggleColorTheme,
-    createColorThemeToggle: controller.createColorThemeToggle,
-    isColorThemeActive: controller.isColorThemeActive,
-  };
+  // The store returns the same snapshot until state changes, so consumers of
+  // this value (and of provider contexts built from it) skip unrelated renders.
+  return useMemo(
+    () => ({
+      ...snapshot,
+      ref,
+      setTheme: controller.setTheme,
+      setColorTheme: controller.setColorTheme,
+      switchTheme: controller.switchTheme,
+      switchColorTheme: controller.switchColorTheme,
+      toggleTheme: controller.toggleTheme,
+      toggleLightTheme: controller.toggleLightTheme,
+      toggleDarkTheme: controller.toggleDarkTheme,
+      toggleColorTheme: controller.toggleColorTheme,
+      createColorThemeToggle: controller.createColorThemeToggle,
+      isColorThemeActive: controller.isColorThemeActive,
+    }),
+    [snapshot, controller]
+  );
 };
