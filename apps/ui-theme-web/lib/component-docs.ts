@@ -1,8 +1,49 @@
-export const componentBases = [
-  { name: 'base-ui', title: 'Base UI', framework: 'react' },
-  { name: 'radix', title: 'Radix UI', framework: 'react' },
-  { name: 'reka', title: 'Vue / Reka', framework: 'vue' },
-] as const;
+import {
+  baseVariants,
+  findBase,
+  type Base,
+  type RegistryFramework,
+} from '../../../packages/ui-theme-cli/src/bases';
+
+export interface ComponentBaseEntry {
+  /** The URL segment. It is the base id when the base has one framework. */
+  name: string;
+  base: Base;
+  framework: RegistryFramework;
+  title: string;
+  /** A short base name for tight labels. */
+  label: string;
+}
+
+// One page set per base and framework pair, from the base manifest.
+export const componentBases: ComponentBaseEntry[] = baseVariants().map(
+  ({ framework, base }) => {
+    const definition = findBase(base)!;
+
+    const shared = Object.keys(definition.frameworks).length > 1;
+
+    return {
+      name: shared ? `${base}-${framework}` : base,
+      base,
+      framework,
+      title:
+        framework === 'vue'
+          ? `Vue / ${definition.shortName}`
+          : definition.displayName,
+      label: definition.shortName,
+    };
+  }
+);
+
+export function componentBase(name: ComponentBase): ComponentBaseEntry {
+  const entry = componentBases.find((item) => item.name === name);
+
+  if (!entry) throw new Error(`Unknown component base: ${name}`);
+
+  return entry;
+}
+
+const isVue = (base: ComponentBase) => componentBase(base).framework === 'vue';
 
 export const componentCategories = [
   {
@@ -94,7 +135,7 @@ export const componentGroups = componentCategories.map((category) => ({
   components: componentDocs.filter((doc) => doc.category === category.name),
 }));
 
-export type ComponentBase = (typeof componentBases)[number]['name'];
+export type ComponentBase = string;
 
 export type ComponentDoc = Omit<
   (typeof componentDocs)[number],
@@ -201,7 +242,7 @@ export function componentUsage(
 
   if (example?.borderStyle)
     attributes.push(
-      base === 'reka'
+      isVue(base)
         ? `border-style="${example.borderStyle}"`
         : `borderStyle="${example.borderStyle}"`
     );
@@ -220,17 +261,17 @@ export function componentUsage(
 
     if (example.slideDirection)
       attributes.push(
-        base === 'reka'
+        isVue(base)
           ? `slide-direction="${example.slideDirection}"`
           : `slideDirection="${example.slideDirection}"`
       );
     attributes.push(
-      base === 'reka'
+      isVue(base)
         ? ':animation-type="ThemeAnimationType.SLIDE"'
         : 'animationType={ThemeAnimationType.SLIDE}'
     );
     attributes.push(
-      base === 'reka'
+      isVue(base)
         ? `:duration="${example.duration}"`
         : `duration={${example.duration}}`
     );
@@ -243,10 +284,10 @@ export function componentUsage(
     );
 
   if (doc.category === 'disclosures') {
-    const indent = base === 'reka' ? '    ' : '      ';
+    const indent = isVue(base) ? '    ' : '      ';
     source = source.replace(
       new RegExp(`${indent}(<${doc.exportName}[^\\n]* />)`),
-      `${indent}<div class${base === 'reka' ? '' : 'Name'}="flex h-96 flex-col ${example?.direction === 'up' ? 'justify-end' : 'justify-start'}">\n${indent}  $1\n${indent}</div>`
+      `${indent}<div class${isVue(base) ? '' : 'Name'}="flex h-96 flex-col ${example?.direction === 'up' ? 'justify-end' : 'justify-start'}">\n${indent}  $1\n${indent}</div>`
     );
   }
 
@@ -255,12 +296,12 @@ export function componentUsage(
 
 function defaultComponentUsage(doc: ComponentDoc, base: ComponentBase) {
   const options = doc.name.startsWith('color-theme-')
-    ? base === 'reka'
+    ? isVue(base)
       ? " :color-themes=\"['default', 'caffeine']\""
       : " colorThemes={['default', 'caffeine']}"
     : '';
 
-  return base === 'reka'
+  return isVue(base)
     ? `<script setup lang="ts">\nimport { UIThemeProvider } from 'uitheme-web/vue';\nimport ${doc.exportName} from '@/components/ui/${doc.name}.vue';\n</script>\n\n<template>\n  <UIThemeProvider${options}>\n    <${doc.exportName} />\n  </UIThemeProvider>\n</template>`
     : `'use client';\n\nimport { UIThemeProvider } from 'uitheme-web/react';\nimport { ${doc.exportName} } from '@/components/ui/${doc.name}';\n\nexport function Example() {\n  return (\n    <UIThemeProvider${options}>\n      <${doc.exportName} />\n    </UIThemeProvider>\n  );\n}`;
 }

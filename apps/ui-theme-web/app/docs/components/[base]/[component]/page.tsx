@@ -111,7 +111,10 @@ export default async function Page({
   const records = await Promise.all(
     registry.records
       .filter(
-        (record) => record.base === base.name && record.component === doc.name
+        (record) =>
+          record.base === base.base &&
+          record.framework === base.framework &&
+          record.component === doc.name
       )
       .map(async (record) => ({
         ...record,
@@ -134,7 +137,11 @@ export default async function Page({
             `${language}:${example?.id ?? 'default'}`,
             await highlightCode(
               language === 'js' ? source.replace(' lang="ts"', '') : source,
-              base.name === 'reka' ? 'vue' : language === 'js' ? 'jsx' : 'tsx'
+              base.framework === 'vue'
+                ? 'vue'
+                : language === 'js'
+                  ? 'jsx'
+                  : 'tsx'
             ),
           ];
         })
@@ -157,7 +164,7 @@ export default async function Page({
   const commands = Object.fromEntries(
     await Promise.all(
       records.map(async (record) => {
-        const command = `npx uitheme-cli add ${doc.name} --base ${base.name} --tailwind ${record.tailwind} --language ${record.language}`;
+        const command = `npx uitheme-cli add ${doc.name} --base ${base.base} --tailwind ${record.tailwind} --language ${record.language}`;
 
         return [
           `${record.tailwind}:${record.language}`,
