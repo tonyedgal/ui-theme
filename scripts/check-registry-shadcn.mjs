@@ -231,7 +231,7 @@ try {
       );
     });
 
-    assert.equal(items.length, 7, `${label}: expected 7 controls`);
+    assert.equal(items.length, 8, `${label}: expected 8 controls`);
 
     const app = join(temporary, label);
     writeApp(app, style, origin);
