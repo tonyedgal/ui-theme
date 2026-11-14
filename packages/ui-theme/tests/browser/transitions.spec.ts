@@ -90,9 +90,82 @@ async function expectOrigin(page: Page, origin: { x: number; y: number }) {
     ? String(frames.clipPath[0])
     : String(frames.clipPath);
 
-  const coords = clip.match(/^circle\(0px at ([\d.e+-]+)px ([\d.e+-]+)px\)$/)!;
-  expect(Number(coords[1])).toBeCloseTo(origin.x, 3);
-  expect(Number(coords[2])).toBeCloseTo(origin.y, 3);
+  const coords = clip.match(/^circle\(0% at ([\d.e+-]+)% ([\d.e+-]+)%\)$/)!;
+
+  const viewport = await page.evaluate(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }));
+
+  expect((Number(coords[1]) / 100) * viewport.width).toBeCloseTo(origin.x, 3);
+  expect((Number(coords[2]) / 100) * viewport.height).toBeCloseTo(origin.y, 3);
+}
+
+async function lastFrames(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.themeFixture.inspection.animations.length)
+    )
+    .toBeGreaterThan(0);
+
+  return page.evaluate(
+    () => window.themeFixture.inspection.animations.at(-1)!.frames
+  );
+}
+
+/** Numbers in the first keyframe of one property. */
+const firstNumbers = (frames: PropertyIndexedKeyframes, property: string) => {
+  const value = frames[property];
+
+  return [
+    ...String(Array.isArray(value) ? value[0] : value).matchAll(
+      /-?[\d.]+(?:e[+-]?\d+)?/g
+    ),
+  ].map(Number);
+};
+
+/** Bounding box, in viewport CSS px, of pixels painted in the dark background. */
+async function darkBounds(page: Page) {
+  const png = (await page.screenshot()).toString('base64');
+
+  return page.evaluate(async (data) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${data}`;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext('2d')!;
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, image.width, image.height).data;
+    const scale = image.width / window.innerWidth;
+    let [left, top, right, bottom] = [Infinity, Infinity, -1, -1];
+
+    for (let y = 0; y < image.height; y++) {
+      for (let x = 0; x < image.width; x++) {
+        const i = (y * image.width + x) * 4;
+
+        // #122433, the fixture's dark background, not its #162a35 text.
+        if (
+          Math.abs(pixels[i] - 0x12) < 3 &&
+          Math.abs(pixels[i + 1] - 0x24) < 3 &&
+          Math.abs(pixels[i + 2] - 0x33) < 3
+        ) {
+          left = Math.min(left, x);
+          right = Math.max(right, x);
+          top = Math.min(top, y);
+          bottom = Math.max(bottom, y);
+        }
+      }
+    }
+
+    return {
+      left: left / scale,
+      top: top / scale,
+      right: (right + 1) / scale,
+      bottom: (bottom + 1) / scale,
+    };
+  }, png);
 }
 
 test('declared ref stays in viewport CSS pixels under transformed parents and scrolling', async ({
@@ -554,6 +627,142 @@ test('clicked element overrides the ref without mutating it, including fixed mob
   ).toBe('ref-toggle');
   await settle(page);
 });
+
+test('triangle, blur circle and polygon gradient keyframes start at the origin', async ({
+  page,
+}) => {
+  const origin = { x: 125.5, y: 230.25 };
+
+  await open(page, 'animation=triangle&duration=100');
+  await page.evaluate(
+    (point) => window.themeFixture.state.toggleTheme({ origin: point }),
+    origin
+  );
+  const triangle = await lastFrames(page);
+  const vertices = firstNumbers(triangle, 'clipPath');
+  const viewport = page.viewportSize()!;
+  expect(vertices).toHaveLength(6);
+
+  for (let i = 0; i < 6; i += 2) {
+    expect((vertices[i] / 100) * viewport.width).toBeCloseTo(origin.x, 3);
+    expect((vertices[i + 1] / 100) * viewport.height).toBeCloseTo(origin.y, 3);
+  }
+
+  await settle(page);
+
+  await open(page, 'animation=blur-circle&duration=100');
+  await page.evaluate(
+    (point) => window.themeFixture.state.toggleTheme({ origin: point }),
+    origin
+  );
+  const blur = await lastFrames(page);
+  expect(firstNumbers(blur, 'maskPosition')).toEqual([origin.x, origin.y]);
+  await settle(page);
+
+  await open(
+    page,
+    'animation=polygon-gradient&direction=bottom-right&duration=100'
+  );
+  await page.evaluate(() => window.themeFixture.state.toggleTheme());
+  const polygon = await lastFrames(page);
+  expect(firstNumbers(polygon, 'maskPosition')).toEqual([
+    viewport.width,
+    viewport.height,
+  ]);
+  await settle(page);
+});
+
+for (const animation of [
+  'circle',
+  'triangle',
+  'blur-circle',
+  'polygon-gradient',
+]) {
+  test(`root zoom keeps the ${animation} reveal on the clicked element`, async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName === 'firefox',
+      'Firefox page screenshots omit active view transitions'
+    );
+
+    // Root zoom gives ::view-transition-new(root) a box in zoomed px. Chrome
+    // and WebKit resolved px keyframes in that box, so the reveal started at
+    // origin * zoom. Percentages and box-scaled masks resolve correctly.
+    const bounds = async (zoom: string) => {
+      await open(page, `animation=${animation}&duration=6000&progress=0.03`);
+      await page.evaluate((value) => {
+        document.documentElement.style.zoom = value;
+        const target = document.createElement('button');
+        target.id = 'zoom-target';
+        target.textContent = 'Target';
+        target.style.cssText = 'position:fixed;left:30vw;top:30vh';
+        document.body.append(target);
+      }, zoom);
+      await page.locator('#freeze').click();
+      const box = (await page.locator('#zoom-target').boundingBox())!;
+      void page.evaluate(() =>
+        window.themeFixture.state.switchTheme('dark', {
+          element: document.getElementById('zoom-target'),
+        })
+      );
+      await page.waitForFunction(() =>
+        document
+          .getAnimations()
+          .some((animation) => animation.playState === 'paused')
+      );
+      // Let the paused frame paint before reading pixels.
+      await page.evaluate(
+        () =>
+          new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve))
+          )
+      );
+      const dark = await darkBounds(page);
+      await page.evaluate(() =>
+        window.themeFixture.inspection.transitions.at(-1)!.skipTransition()
+      );
+      await settle(page);
+      await page.evaluate(() =>
+        window.themeFixture.state.switchTheme('light', false)
+      );
+
+      return {
+        dark,
+        center: { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+      };
+    };
+
+    const plain = await bounds('1');
+    const zoomed = await bounds('1.5');
+
+    if (animation === 'polygon-gradient') {
+      // A corner reveal: same corner and the same progress as without zoom.
+      expect(zoomed.dark.left).toBeLessThan(1);
+      expect(zoomed.dark.top).toBeLessThan(1);
+      // Before the fix the zoomed mask was 1.5 times too large.
+      expect(zoomed.dark.right / plain.dark.right).toBeCloseTo(1, 1);
+      expect(zoomed.dark.bottom / plain.dark.bottom).toBeCloseTo(1, 1);
+
+      return;
+    }
+
+    const { dark, center } = zoomed;
+    // Before the fix the reveal started at the origin times the zoom, more
+    // than 100 px away here. The tolerance covers antialiasing and feathering.
+    expect(Math.abs((dark.left + dark.right) / 2 - center.x)).toBeLessThan(8);
+
+    // A triangle's bounding box is not centred on its incircle vertically.
+    const middleY =
+      animation === 'triangle'
+        ? dark.bottom - (dark.bottom - dark.top) / 3
+        : (dark.top + dark.bottom) / 2;
+
+    expect(Math.abs(middleY - center.y)).toBeLessThan(8);
+    expect(plain.dark.right).toBeGreaterThan(plain.dark.left);
+  });
+}
 
 test('explicit origin does not need an attached ref', async ({ page }) => {
   await open(page);
