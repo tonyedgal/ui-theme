@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRegistry, javascriptSource, shadcnStyles } from '../src/build.ts';
+import {
+  buildRegistry,
+  controls,
+  javascriptSource,
+  shadcnStyles,
+} from '../src/build.ts';
+import { baseVariants, findBase } from '../../ui-theme-cli/src/bases.ts';
+
 import {
   mkdtemp,
   mkdir,
@@ -12,6 +19,9 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// One item per control, base and framework pair, Tailwind major and language.
+const itemCount = controls.length * baseVariants().length * 2 * 2;
 
 test('Vue JavaScript variants preserve public prop declarations and typed emits', async () => {
   const js = await javascriptSource(
@@ -39,32 +49,21 @@ test('builder rejects incomplete sources instead of emitting placeholders', asyn
   }
 });
 
-test('builds all 96 variants reproducibly from sources with only selected base dependencies', async () => {
+test(`builds all ${itemCount} variants reproducibly from sources with only selected base dependencies`, async () => {
   const root = await mkdtemp(join(tmpdir(), 'uitheme-registry-all-'));
 
   try {
     const sourceDir = join(root, 'templates'),
       outDir = join(root, 'dist');
 
-    for (const [framework, base, dep] of [
-      ['react', 'base-ui', '@base-ui/react'],
-      ['react', 'radix', 'radix-ui@^1.4.3'],
-      ['vue', 'reka', 'reka-ui'],
-    ]) {
-      const dir = join(sourceDir, framework, base);
+    for (const { base, support } of baseVariants()) {
+      // The radix range is asserted below.
+      const dep = base === 'radix' ? 'radix-ui@^1.4.3' : support.packages[0];
+      const dir = join(sourceDir, support.templates);
       await mkdir(dir, { recursive: true });
 
       const components = Object.fromEntries(
-        [
-          'theme-toggle',
-          'theme-selector',
-          'color-theme-selector',
-          'icon-theme-toggle',
-          'tactile-theme-toggle',
-          'theme-switcher',
-          'theme-disclosure',
-          'color-theme-disclosure',
-        ].map((name) => [
+        controls.map((name) => [
           name,
           {
             title: name,
@@ -101,7 +100,7 @@ test('builds all 96 variants reproducibly from sources with only selected base d
       second = await buildRegistry({ sourceDir, outDir });
 
     assert.equal(first.revision, second.revision);
-    assert.equal(first.index.items.length, 96);
+    assert.equal(first.index.items.length, itemCount);
 
     const react = first.index.items.find(
       (i) =>
@@ -132,7 +131,8 @@ test('builds all 96 variants reproducibly from sources with only selected base d
 
     for (const [style, base] of shadcnStyles) {
       const files = await readdir(join(outDir, style));
-      assert.equal(files.length, 9, style);
+      // one file per control and the index
+      assert.equal(files.length, controls.length + 1, style);
 
       // shadcn search reads the index; the directory forbids file content in it
       const index = JSON.parse(
@@ -173,7 +173,7 @@ test('builds all 96 variants reproducibly from sources with only selected base d
       assert.deepEqual(
         record.dependencies.toSorted(),
         [
-          base === 'radix' ? 'radix-ui' : '@base-ui/react',
+          findBase(base)?.frameworks.react?.packages[0],
           'tailwind-merge',
           'uitheme-web@^2.0.0',
         ].toSorted(),
