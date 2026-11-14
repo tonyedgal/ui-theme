@@ -6,6 +6,11 @@ import {
   NextUIThemeProvider,
 } from 'uitheme-web/react';
 import { getThemeScript } from '../../src/server';
+import {
+  legacyNextScript,
+  legacyServerScript,
+  legacyTanStackScript,
+} from './legacy-theme-scripts';
 
 const inlineScript = (element: React.ReactElement) =>
   renderToStaticMarkup(element).match(/<script[^>]*>([\s\S]*?)<\/script>/)![1];
@@ -176,3 +181,105 @@ for (const provider of ['next', 'tanstack']) {
     );
   });
 }
+
+const legacy = {
+  next: () =>
+    legacyNextScript(
+      'theme',
+      'color-theme',
+      'system',
+      'default',
+      'class',
+      'dark',
+      'theme-'
+    ),
+  'next-data-theme': () =>
+    legacyNextScript(
+      'theme',
+      'color-theme',
+      'system',
+      'default',
+      'data-theme',
+      'dark',
+      'theme-'
+    ),
+  tanstack: () =>
+    legacyTanStackScript(
+      'theme',
+      'color-theme',
+      'system',
+      'default',
+      'dark',
+      'theme-',
+      'js'
+    ),
+  'tanstack-css': () =>
+    legacyTanStackScript(
+      'theme',
+      'color-theme',
+      'system',
+      'default',
+      'dark',
+      'theme-',
+      'css'
+    ),
+  server: () => legacyServerScript({ colorThemes: ['default', 'ocean'] }),
+};
+
+test('shared bootstraps write the same DOM as the previous scripts for valid values', async ({
+  page,
+}) => {
+  await page.goto('/bootstrap.html');
+  const cases = [];
+
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+
+    for (const [name, build] of Object.entries(bootstraps)) {
+      // SAFETY: name comes from Object.entries(bootstraps).
+      const before = legacy[name as keyof typeof legacy]();
+
+      for (const theme of [null, 'light', 'dark', 'system'])
+        for (const palette of [null, 'default', 'ocean'])
+          for (const initial of ['', 'foo dark system auto theme-ocean']) {
+            const run = (source: string) =>
+              page.evaluate(
+                ([code, stored, color, classes]) => {
+                  localStorage.clear();
+
+                  if (stored) localStorage.setItem('theme', stored);
+
+                  if (color) localStorage.setItem('color-theme', color);
+                  const root = document.documentElement;
+                  root.className = classes;
+                  root.removeAttribute('style');
+                  root.removeAttribute('data-theme');
+                  new Function(code)();
+
+                  return [
+                    root.getAttribute('class'),
+                    root.getAttribute('style'),
+                    root.getAttribute('data-theme'),
+                  ];
+                },
+                [source, theme, palette, initial] as const
+              );
+
+            cases.push({
+              name,
+              colorScheme,
+              theme,
+              palette,
+              initial,
+              before: await run(before),
+              after: await run(build()),
+            });
+          }
+    }
+  }
+
+  expect(cases).toHaveLength(240);
+  expect(
+    cases.filter((entry) => entry.before.join() !== entry.after.join())
+  ).toEqual([]);
+});
