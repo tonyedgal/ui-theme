@@ -306,3 +306,93 @@ describe('CLI with a base that has requirements', () => {
     expect(await readFile(join(cwd, 'src/style.css'), 'utf8')).toBe(css);
   });
 });
+
+async function reactApp(react: string, dependencies: Record<string, string>) {
+  const cwd = await app();
+
+  await mkdir(join(cwd, 'node_modules/react'), { recursive: true });
+  await writeFile(
+    join(cwd, 'node_modules/react/package.json'),
+    JSON.stringify({ name: 'react', version: react })
+  );
+
+  const pkg = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8'));
+  delete pkg.dependencies['@fake-kit/react'];
+  Object.assign(pkg.dependencies, { react: `^${react}` }, dependencies);
+  await writeFile(join(cwd, 'package.json'), JSON.stringify(pkg));
+
+  return cwd;
+}
+
+describe('the UI SDK base', () => {
+  it('is detected from @ui-sdk/react when no other primitive is installed', async () => {
+    const cwd = await reactApp('19.1.0', { '@ui-sdk/react': '0.1.0-beta.2' }),
+      out = io();
+
+    expect(await runCli(['info', '--cwd', cwd], out)).toBe(0);
+    expect(JSON.parse(out.output()).base).toBe('ui-sdk');
+
+    const both = await reactApp('19.1.0', {
+      '@ui-sdk/react': '0.1.0-beta.2',
+      '@base-ui/react': '1.9.0',
+    });
+
+    const prompt: string[][] = [];
+
+    await runCli(['init', '--cwd', both], {
+      ...io(),
+      select: async (_message, choices) => {
+        prompt.push(choices);
+
+        throw new Error('stop after the prompt');
+      },
+    });
+    expect(prompt[0]).toContain('ui-sdk');
+  });
+
+  it('rejects React 18 before any write, with --base ui-sdk', async () => {
+    const cwd = await reactApp('18.3.1', {}),
+      out = io();
+
+    expect(
+      await runCli(['init', '--cwd', cwd, '--base', 'ui-sdk', '--yes'], {
+        ...out,
+        runInstall,
+      })
+    ).toBe(1);
+    expect(out.output()).toContain(
+      'UI SDK requires react >=19; found react 18.3.1. Upgrade React to 19, or choose another base with --base.'
+    );
+    expect(await readFile(join(cwd, 'src/style.css'), 'utf8')).toBe(
+      '@import "tailwindcss";\n'
+    );
+  });
+
+  it('accepts React 19 and declares @layer ui-sdk once', async () => {
+    const cwd = await reactApp('19.1.0', {});
+
+    for (let run = 0; run < 2; run++)
+      expect(
+        await runCli(['init', '--cwd', cwd, '--base', 'ui-sdk', '--yes'], {
+          ...io(),
+          runInstall,
+        })
+      ).toBe(0);
+
+    const css = await readFile(join(cwd, 'src/style.css'), 'utf8');
+    expect(css.startsWith('@layer ui-sdk;\n@import "tailwindcss";')).toBe(true);
+    expect(css.match(/@layer ui-sdk;/g)).toHaveLength(1);
+
+    expect(
+      await runCli(['add', 'theme-toggle', '--cwd', cwd, '--yes'], {
+        ...io(),
+        runInstall,
+        registry: registry('ui-sdk'),
+      })
+    ).toBe(0);
+    expect(await readFile(join(cwd, 'src/style.css'), 'utf8')).toBe(css);
+    expect(
+      JSON.parse(await readFile(join(cwd, 'uitheme.json'), 'utf8')).base
+    ).toBe('ui-sdk');
+  });
+});
