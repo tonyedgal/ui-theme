@@ -4,7 +4,11 @@ import { readFileSync, statSync } from 'node:fs';
 import { isRecord } from '../config.ts';
 import { parseJsonc } from '../jsonc.ts';
 import { moduleName, parseModule, type t } from '../parse.ts';
-import { nearestProjectConfig, probeModule } from '../tsconfig.ts';
+import {
+  nearestProjectConfig,
+  probeModule,
+  resolvePackage,
+} from '../tsconfig.ts';
 import type { ProjectProfile } from '../types.ts';
 import {
   componentOwner,
@@ -75,10 +79,11 @@ function exportsCallable(
   if (seen.has(key) || seen.size >= reexportDepth) return false;
   seen.add(key);
 
-  let program: t.Program;
+  let program: t.Program, source: string;
 
   try {
-    program = parseModule(path, readFileSync(path, 'utf8'));
+    source = readFileSync(path, 'utf8');
+    program = parseModule(path, source);
   } catch {
     return false;
   }
@@ -139,7 +144,15 @@ function exportsCallable(
   }
 
   const imported = (source: string, imported: string): boolean => {
-    if (!source.startsWith('.')) return true;
+    if (!source.startsWith('.')) {
+      const found = resolvePackage(source, dirname(path));
+
+      // a third-party package counts as exporting what the file names
+      if (!found?.workspace) return true;
+
+      return !!found.file && exportsCallable(found.file, imported, seen);
+    }
+
     const target = probeModule(resolve(dirname(path), source));
 
     return !!target && exportsCallable(target, imported, seen);
@@ -233,7 +246,51 @@ function exportsCallable(
       viaStar.push(statement.source.value);
   }
 
+  if (name !== 'default')
+    for (const statement of program.body) {
+      if (
+        statement.type !== 'ExpressionStatement' ||
+        statement.expression.type !== 'AssignmentExpression' ||
+        statement.expression.operator !== '='
+      )
+        continue;
+      const { left, right } = statement.expression;
+      const target = source.slice(left.start!, left.end!).replace(/\s+/g, '');
+
+      if (target === `exports.${name}` || target === `module.exports.${name}`)
+        return callable({ kind: 'expression', node: right });
+
+      if (target !== 'module.exports') continue;
+      const value = unwrap(right);
+
+      if (value.type !== 'ObjectExpression') continue;
+
+      for (const property of value.properties) {
+        if (property.type === 'SpreadElement' || propertyKey(property) !== name)
+          continue;
+
+        if (property.type === 'ObjectMethod') return property.kind === 'method';
+
+        return property.shorthand
+          ? callable(bindings.get(name))
+          : property.value.type !== 'AssignmentPattern' &&
+              property.value.type !== 'RestElement' &&
+              property.value.type !== 'ObjectPattern' &&
+              property.value.type !== 'ArrayPattern' &&
+              property.value.type !== 'VoidPattern' &&
+              callable({ kind: 'expression', node: property.value });
+      }
+    }
+
   return viaStar.some((source) => imported(source, name));
+}
+
+function propertyKey(property: t.ObjectProperty | t.ObjectMethod) {
+  if (property.computed) return;
+
+  if (property.key.type === 'Identifier') return property.key.name;
+
+  if (property.key.type === 'StringLiteral') return property.key.value;
 }
 
 function hasCnExport(path: string) {
@@ -271,9 +328,11 @@ export async function planSharedUtils(
     ? [resolve(owner.cwd, importPath)]
     : (compiler?.matcher?.(importPath) ?? []);
 
-  const resolved = targets
-    .map(probeModule)
-    .find((target): target is string => !!target);
+  const resolved =
+    targets.map(probeModule).find((target): target is string => !!target) ??
+    (/^[./]/.test(importPath)
+      ? undefined
+      : resolvePackage(importPath, owner.cwd)?.file);
 
   if (resolved && /\.d\.[cm]?ts$/.test(resolved))
     throw new Error(
