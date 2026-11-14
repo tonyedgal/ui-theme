@@ -1,7 +1,9 @@
 export type Framework =
   'vite-react' | 'vite-vue' | 'next' | 'tanstack' | 'nuxt';
 
-export type Base = 'base-ui' | 'radix' | 'reka';
+import type { Base } from './bases.ts';
+
+export type { Base };
 
 export type Language = 'ts' | 'js';
 

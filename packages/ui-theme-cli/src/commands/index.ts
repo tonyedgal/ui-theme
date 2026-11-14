@@ -1,4 +1,10 @@
 import { relative, resolve, join } from 'node:path';
+import {
+  baseIds,
+  basesFor,
+  frameworkLabels,
+  registryFramework,
+} from '../bases.ts';
 import { readConfig } from '../config.ts';
 import {
   createRegistryClient,
@@ -147,7 +153,7 @@ function parseFlags(args: string[]): Flags {
           ]);
           break;
         case '--base':
-          flags.overrides.base = choice(value, ['base-ui', 'radix', 'reka']);
+          flags.overrides.base = choice(value, baseIds());
           break;
         case '--language':
           flags.overrides.language = choice(value, ['ts', 'js']);
@@ -352,10 +358,7 @@ async function detectWithPrompts(
       if (error instanceof project.BaseMismatchError) {
         if (flags.overrides.base || flags.yes) throw error;
 
-        const choices: ProjectProfile['base'][] =
-          error.framework === 'nuxt' || error.framework === 'vite-vue'
-            ? ['reka']
-            : ['base-ui', 'radix'];
+        const choices = basesFor(registryFramework(error.framework));
 
         const selected = await io.select(
           `uitheme.json saves the ${error.base} base, which does not work with ${error.framework}. Select the base to save instead`,
@@ -390,7 +393,8 @@ async function detectWithPrompts(
   }
 }
 
-const help = `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <base-ui|radix|reka>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--registry <url>       Use another registry (env: UITHEME_REGISTRY_URL)\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without questions; keeps files that differ\n--overwrite            Replace files that differ from the registry\n--json                 Print structured output\n--existing <convert|alongside|manual>\n                       Choose what init does with an existing theme setup\n\nEnvironment:\nUITHEME_REGISTRY_URL   Use another registry (--registry wins)\nUITHEME_WEB_VERSION    Install uitheme-web from a dist-tag, version, or .tgz path\n`;
+const help = () =>
+  `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <${baseIds().join('|')}>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--registry <url>       Use another registry (env: UITHEME_REGISTRY_URL)\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without questions; keeps files that differ\n--overwrite            Replace files that differ from the registry\n--json                 Print structured output\n--existing <convert|alongside|manual>\n                       Choose what init does with an existing theme setup\n\nEnvironment:\nUITHEME_REGISTRY_URL   Use another registry (--registry wins)\nUITHEME_WEB_VERSION    Install uitheme-web from a dist-tag, version, or .tgz path\n`;
 
 export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
   const stdout = io.stdout ?? console.log,
@@ -400,7 +404,7 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
     const command = args[0] ?? '--help';
 
     if (command === '--help' || command === '-h') {
-      stdout(help);
+      stdout(help());
 
       return 0;
     }
@@ -424,7 +428,7 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
     const flags = parseFlags(args.slice(1));
 
     if (flags.help) {
-      stdout(help);
+      stdout(help());
 
       return 0;
     }
@@ -437,19 +441,23 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
       !flags.yes &&
       !flags.overrides.base &&
       !(await readConfig(profile.cwd))?.base &&
-      profile.base !== 'reka'
+      basesFor(registryFramework(profile.framework)).length > 1
     ) {
+      const framework = registryFramework(profile.framework),
+        choices = basesFor(framework);
+
       const selected = await io.select(
-        'Select the React component base',
-        ['base-ui', 'radix'],
+        `Select the ${frameworkLabels[framework]} component base`,
+        choices,
         profile.base
       );
 
-      if (selected && selected !== 'base-ui' && selected !== 'radix')
-        throw new Error('Invalid React component base');
+      const base = choices.find((item) => item === selected);
 
-      if (selected === 'base-ui' || selected === 'radix')
-        profile = { ...profile, base: selected };
+      if (selected && !base)
+        throw new Error(`Invalid ${frameworkLabels[framework]} component base`);
+
+      if (base) profile = { ...profile, base };
     }
 
     if (command === 'info') {
