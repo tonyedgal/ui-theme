@@ -1,7 +1,17 @@
 import { dirname, join, relative, isAbsolute } from 'node:path';
-import ts from 'typescript';
 import { planSharedUtils } from './shared-utils.ts';
 import { readConfig } from '../config.ts';
+import {
+  hasTrailingComma,
+  isCall,
+  memberName,
+  memberObject,
+  moduleName,
+  parseModule,
+  text,
+  walk,
+  type t,
+} from '../parse.ts';
 import type { ProjectProfile } from '../types.ts';
 import {
   appendObjectProperty,
@@ -30,27 +40,14 @@ async function firstFile(
   }
 }
 
-function sourceFile(path: string, content: string): ts.SourceFile {
-  const file = ts.createSourceFile(
-    path,
-    content,
-    ts.ScriptTarget.Latest,
-    true,
-    /\.(?:[jt]sx|js)$/.test(path) ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-  );
-
-  if (
-    ts.transpileModule(content, {
-      fileName: path,
-      reportDiagnostics: true,
-      compilerOptions: { jsx: ts.JsxEmit.Preserve },
-    }).diagnostics?.length
-  )
+function sourceFile(path: string, content: string): t.Program {
+  try {
+    return parseModule(path, content);
+  } catch {
     throw new Error(
       `${path} has a syntax error, so the CLI cannot add the provider. Fix the error and run init again, or add the provider yourself.`
     );
-
-  return file;
+  }
 }
 
 // The app-owned wrapper that the CLI generates around UIThemeProvider.
@@ -74,11 +71,11 @@ function wrapChildren(inner: string, name: string): string {
   return `\n${childIndent}<${name}>${body.replace(/\n(?=[ \t]*\S)/g, `\n${unit}`)}\n${childIndent}</${name}>\n${closingIndent}`;
 }
 
-function walk(node: ts.Node, visit: (node: ts.Node) => void): void {
-  visit(node);
-  node.forEachChild((child) => {
-    walk(child, visit);
-  });
+// a jsx element with children, as the typescript api distinguished it
+function isJsxElement(
+  node: t.Node
+): node is t.JSXElement & { closingElement: t.JSXClosingElement } {
+  return node.type === 'JSXElement' && node.closingElement !== null;
 }
 
 function relativeImport(from: string, to: string): string {
@@ -89,54 +86,50 @@ function relativeImport(from: string, to: string): string {
   return path.startsWith('.') ? path : `./${path}`;
 }
 
-function isReactRoot(receiver: ts.Expression, file: ts.SourceFile): boolean {
+function isReactRoot(receiver: t.Expression, file: t.Program): boolean {
   const functions = new Set<string>(),
     namespaces = new Set<string>();
 
-  for (const statement of file.statements) {
+  for (const statement of file.body) {
     if (
-      !ts.isImportDeclaration(statement) ||
-      !ts.isStringLiteral(statement.moduleSpecifier) ||
-      statement.moduleSpecifier.text !== 'react-dom/client'
+      statement.type !== 'ImportDeclaration' ||
+      statement.source.value !== 'react-dom/client'
     )
       continue;
-    const clause = statement.importClause;
 
-    if (clause?.name) namespaces.add(clause.name.text);
-
-    if (clause?.namedBindings && ts.isNamespaceImport(clause.namedBindings))
-      namespaces.add(clause.namedBindings.name.text);
-
-    if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings))
-      for (const element of clause.namedBindings.elements)
-        if ((element.propertyName?.text ?? element.name.text) === 'createRoot')
-          functions.add(element.name.text);
+    for (const specifier of statement.specifiers) {
+      if (specifier.type !== 'ImportSpecifier')
+        namespaces.add(specifier.local.name);
+      else if (moduleName(specifier.imported) === 'createRoot')
+        functions.add(specifier.local.name);
+    }
   }
 
-  const createsRoot = (expression: ts.Expression): boolean => {
-    if (!ts.isCallExpression(expression)) return false;
-    const called = expression.expression;
+  const createsRoot = (expression: t.Node): boolean => {
+    if (!isCall(expression)) return false;
+
+    const called = expression.callee,
+      namespace = memberObject(called);
 
     return (
-      (ts.isIdentifier(called) && functions.has(called.text)) ||
-      (ts.isPropertyAccessExpression(called) &&
-        called.name.text === 'createRoot' &&
-        ts.isIdentifier(called.expression) &&
-        namespaces.has(called.expression.text))
+      (called.type === 'Identifier' && functions.has(called.name)) ||
+      (memberName(called) === 'createRoot' &&
+        namespace?.type === 'Identifier' &&
+        namespaces.has(namespace.name))
     );
   };
 
   if (createsRoot(receiver)) return true;
 
-  if (!ts.isIdentifier(receiver)) return false;
+  if (receiver.type !== 'Identifier') return false;
   let known = false;
   walk(file, (node) => {
     if (
-      ts.isVariableDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.name.text === receiver.text &&
-      node.initializer &&
-      createsRoot(node.initializer)
+      node.type === 'VariableDeclarator' &&
+      node.id.type === 'Identifier' &&
+      node.id.name === receiver.name &&
+      node.init &&
+      createsRoot(node.init)
     )
       known = true;
   });
@@ -175,15 +168,18 @@ async function reactProvider(
   }
 
   const file = sourceFile(entry.path, entry.content);
+  const source = entry.content;
   const edits: { start: number; end: number; text: string }[] = [];
-  let rootNode: ts.Node | undefined;
+  let rootNode: t.Node | undefined;
 
   if (profile.framework === 'next' || profile.framework === 'tanstack') {
-    const bodies: ts.JsxElement[] = [];
+    const bodies: (t.JSXElement & { closingElement: t.JSXClosingElement })[] =
+      [];
+
     walk(file, (node) => {
       if (
-        ts.isJsxElement(node) &&
-        node.openingElement.tagName.getText(file) === 'body'
+        isJsxElement(node) &&
+        text(source, node.openingElement.name) === 'body'
       )
         bodies.push(node);
     });
@@ -199,29 +195,28 @@ async function reactProvider(
     const body = bodies[0];
     rootNode = body;
     edits.push({
-      start: body.openingElement.end,
-      end: body.openingElement.end,
+      start: body.openingElement.end!,
+      end: body.openingElement.end!,
       text: `<${wrapperName}>`,
     });
     edits.push({
-      start: body.closingElement.getStart(file),
-      end: body.closingElement.getStart(file),
+      start: body.closingElement.start!,
+      end: body.closingElement.start!,
       text: `</${wrapperName}>`,
     });
   } else {
-    const renders: ts.CallExpression[] = [];
+    const renders: t.Node[] = [];
     walk(file, (node) => {
       if (
-        ts.isCallExpression(node) &&
-        ts.isPropertyAccessExpression(node.expression) &&
-        node.expression.name.text === 'render' &&
-        isReactRoot(node.expression.expression, file) &&
+        isCall(node) &&
+        memberName(node.callee) === 'render' &&
+        memberObject(node.callee) !== undefined &&
+        isReactRoot(memberObject(node.callee)!, file) &&
         node.arguments.length === 1 &&
-        (ts.isJsxElement(node.arguments[0]) ||
-          ts.isJsxSelfClosingElement(node.arguments[0]) ||
-          ts.isJsxFragment(node.arguments[0]))
+        (node.arguments[0].type === 'JSXElement' ||
+          node.arguments[0].type === 'JSXFragment')
       )
-        renders.push(node);
+        renders.push(node.arguments[0]);
     });
 
     if (renders.length !== 1) {
@@ -232,29 +227,29 @@ async function reactProvider(
       return;
     }
 
-    const child = renders[0].arguments[0];
+    const child = renders[0];
     rootNode = child;
 
     // Keep StrictMode outermost so that it also checks the provider.
     if (
-      ts.isJsxElement(child) &&
+      isJsxElement(child) &&
       ['StrictMode', 'React.StrictMode'].includes(
-        child.openingElement.tagName.getText(file)
+        text(source, child.openingElement.name)
       )
     ) {
-      const start = child.openingElement.end,
-        end = child.closingElement.getStart(file);
+      const start = child.openingElement.end!,
+        end = child.closingElement.start!;
 
       edits.push({
         start,
         end,
-        text: wrapChildren(file.text.slice(start, end), wrapperName),
+        text: wrapChildren(source.slice(start, end), wrapperName),
       });
     } else
       edits.push({
-        start: child.getStart(file),
-        end: child.end,
-        text: `<${wrapperName}>${child.getText(file)}</${wrapperName}>`,
+        start: child.start!,
+        end: child.end!,
+        text: `<${wrapperName}>${text(source, child)}</${wrapperName}>`,
       });
   }
 
@@ -280,27 +275,21 @@ async function reactProvider(
   let setupImported = false;
   let setupConflict = false;
 
-  for (const statement of file.statements) {
-    if (
-      !ts.isImportDeclaration(statement) ||
-      !ts.isStringLiteral(statement.moduleSpecifier)
-    )
-      continue;
-    const module = statement.moduleSpecifier.text;
-    const bindings = statement.importClause?.namedBindings;
+  for (const statement of file.body) {
+    if (statement.type !== 'ImportDeclaration') continue;
+    const module = statement.source.value;
 
-    if (!bindings || !ts.isNamedImports(bindings)) continue;
-
-    for (const element of bindings.elements) {
-      const exported = element.propertyName?.text ?? element.name.text;
+    for (const element of statement.specifiers) {
+      if (element.type !== 'ImportSpecifier') continue;
+      const exported = moduleName(element.imported);
 
       if (
         (module === 'uitheme-web/react' || module === 'uitheme-web/next') &&
         ['UIThemeProvider', 'NextUIThemeProvider'].includes(exported)
       )
-        directProviders.add(element.name.text);
+        directProviders.add(element.local.name);
 
-      if (element.name.text === wrapperName) {
+      if (element.local.name === wrapperName) {
         if (
           exported === wrapperName &&
           module === relativeImport(entry.path, wrapperPath)
@@ -316,8 +305,8 @@ async function reactProvider(
 
   if (rootNode)
     walk(rootNode, (node) => {
-      if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
-        const tag = node.tagName.getText(file);
+      if (node.type === 'JSXOpeningElement') {
+        const tag = text(source, node.name);
 
         if (directProviders.has(tag)) directProviderUsed = true;
 
@@ -372,14 +361,7 @@ async function reactProvider(
   const imported = `import { ${wrapperName} } from '${relativeImport(entry.path, wrapperPath)}';\n`;
   let insertAt = 0;
 
-  for (const statement of file.statements) {
-    if (
-      ts.isExpressionStatement(statement) &&
-      ts.isStringLiteral(statement.expression)
-    )
-      insertAt = statement.end;
-    else break;
-  }
+  for (const directive of file.directives) insertAt = directive.end!;
 
   content =
     content.slice(0, insertAt) +
@@ -414,14 +396,9 @@ async function vueProvider(
   )
     return;
   const file = sourceFile(entry.path, entry.content);
-  const mounts: ts.CallExpression[] = [];
+  const mounts: (t.CallExpression | t.OptionalCallExpression)[] = [];
   walk(file, (node) => {
-    if (
-      ts.isCallExpression(node) &&
-      ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === 'mount'
-    )
-      mounts.push(node);
+    if (isCall(node) && memberName(node.callee) === 'mount') mounts.push(node);
   });
 
   if (mounts.length !== 1) {
@@ -432,38 +409,35 @@ async function vueProvider(
     return;
   }
 
-  const mount = mounts[0].expression;
+  const mount = mounts[0].callee;
 
-  if (!ts.isPropertyAccessExpression(mount))
+  const receiver = memberObject(mount);
+
+  if (!receiver)
     throw new Error(
       `Install createUITheme() on the Vue application in ${relative(profile.cwd, entry.path)}. Its mount call is custom.`
     );
-  const receiver = mount.expression;
+
+  const createsApp = (node: t.Node) =>
+    isCall(node) &&
+    node.callee.type === 'Identifier' &&
+    node.callee.name === 'createApp';
+
   let known = false;
   walk(receiver, (node) => {
-    if (
-      ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === 'createApp'
-    )
-      known = true;
+    if (createsApp(node)) known = true;
   });
 
-  if (ts.isIdentifier(receiver))
+  if (receiver.type === 'Identifier')
     walk(file, (node) => {
       if (
-        ts.isVariableDeclaration(node) &&
-        ts.isIdentifier(node.name) &&
-        node.name.text === receiver.text &&
-        node.initializer
+        node.type === 'VariableDeclarator' &&
+        node.id.type === 'Identifier' &&
+        node.id.name === receiver.name &&
+        node.init
       )
-        walk(node.initializer, (expression) => {
-          if (
-            ts.isCallExpression(expression) &&
-            ts.isIdentifier(expression.expression) &&
-            expression.expression.text === 'createApp'
-          )
-            known = true;
+        walk(node.init, (expression) => {
+          if (createsApp(expression)) known = true;
         });
     });
 
@@ -475,7 +449,7 @@ async function vueProvider(
     return;
   }
 
-  const at = receiver.end;
+  const at = receiver.end!;
   const content = `import { createUITheme } from 'uitheme-web/vue';\n${entry.content.slice(0, at)}.use(createUITheme({ defaultTheme: 'system', defaultColorTheme: 'default', colorThemes: ['default'] }))${entry.content.slice(at)}`;
   files.push(await planFile(profile, entry.path, content));
 }
@@ -498,20 +472,34 @@ async function nuxtModule(
   }
 
   const file = sourceFile(entry.path, entry.content);
-  let config: ts.ObjectLiteralExpression | undefined;
+  let config: t.ObjectExpression | undefined;
 
-  for (const statement of file.statements)
+  for (const statement of file.body) {
+    const exported =
+      statement.type === 'TSExportAssignment'
+        ? statement.expression
+        : statement.type === 'ExportDefaultDeclaration'
+          ? statement.declaration
+          : undefined;
+
     if (
-      ts.isExportAssignment(statement) &&
-      ts.isCallExpression(statement.expression) &&
-      ts.isIdentifier(statement.expression.expression) &&
-      statement.expression.expression.text === 'defineNuxtConfig' &&
-      statement.expression.arguments.length === 1
+      exported &&
+      isCall(exported) &&
+      exported.callee.type === 'Identifier' &&
+      exported.callee.name === 'defineNuxtConfig' &&
+      exported.arguments.length === 1
     ) {
-      const value = unwrapExpression(statement.expression.arguments[0]);
+      const [argument] = exported.arguments;
 
-      if (ts.isObjectLiteralExpression(value)) config = value;
+      const value =
+        argument.type === 'SpreadElement' ||
+        argument.type === 'ArgumentPlaceholder'
+          ? argument
+          : unwrapExpression(argument);
+
+      if (value.type === 'ObjectExpression') config = value;
     }
+  }
 
   if (!config) {
     manual.push(
@@ -531,11 +519,11 @@ async function nuxtModule(
       "modules: ['uitheme-web/nuxt']"
     );
   else {
-    const array = unwrapExpression(modules.initializer);
+    const array = unwrapExpression(modules.value);
 
     if (
-      !ts.isArrayLiteralExpression(array) ||
-      array.elements.some(ts.isSpreadElement)
+      array.type !== 'ArrayExpression' ||
+      array.elements.some((value) => value?.type === 'SpreadElement')
     ) {
       manual.push("Add 'uitheme-web/nuxt' to the computed Nuxt modules array.");
 
@@ -545,12 +533,12 @@ async function nuxtModule(
     if (
       array.elements.some(
         (value) =>
-          ts.isStringLiteral(value) && value.text === 'uitheme-web/nuxt'
+          value?.type === 'StringLiteral' && value.value === 'uitheme-web/nuxt'
       )
     )
       return;
-    const end = array.end - 1;
-    content = `${entry.content.slice(0, end)}${array.elements.length && !array.elements.hasTrailingComma ? ',' : ''}'uitheme-web/nuxt'${entry.content.slice(end)}`;
+    const end = array.end! - 1;
+    content = `${entry.content.slice(0, end)}${array.elements.length && !hasTrailingComma(entry.content, array.elements, end) ? ',' : ''}'uitheme-web/nuxt'${entry.content.slice(end)}`;
   }
 
   files.push(await planFile(profile, entry.path, content));

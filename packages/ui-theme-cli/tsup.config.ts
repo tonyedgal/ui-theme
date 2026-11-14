@@ -6,5 +6,6 @@ export default defineConfig({
   target: 'node22',
   clean: true,
   splitting: true,
+  noExternal: ['@babel/parser', 'get-tsconfig'],
   banner: { js: '#!/usr/bin/env node' },
 });

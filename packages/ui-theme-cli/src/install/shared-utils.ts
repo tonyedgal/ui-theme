@@ -1,7 +1,10 @@
 /* eslint-disable anti-slop/no-runtime-typeof -- validate project configuration at this boundary */
 import { dirname, join, resolve, extname, relative, sep } from 'node:path';
-import ts from 'typescript';
+import { readFileSync, statSync } from 'node:fs';
 import { isRecord } from '../config.ts';
+import { parseJsonc } from '../jsonc.ts';
+import { moduleName, parseModule, type t } from '../parse.ts';
+import { nearestProjectConfig, probeModule } from '../tsconfig.ts';
 import type { ProjectProfile } from '../types.ts';
 import {
   componentOwner,
@@ -15,61 +18,226 @@ async function jsonFile(path: string) {
   const source = await readOptional(path);
 
   if (!source) return {};
-  const parsed = ts.parseConfigFileTextToJson(path, source);
+  let config: unknown;
 
-  if (parsed.error || !isRecord(parsed.config))
+  try {
+    config = parseJsonc(source);
+  } catch {
     throw new Error(`Invalid configuration: ${path}`);
+  }
 
-  return parsed.config;
+  if (!isRecord(config)) throw new Error(`Invalid configuration: ${path}`);
+
+  return config;
 }
 
-function compilerOptions(cwd: string): ts.CompilerOptions {
-  const path =
-    ts.findConfigFile(cwd, ts.sys.fileExists, 'tsconfig.json') ??
-    ts.findConfigFile(cwd, ts.sys.fileExists, 'jsconfig.json');
+const reexportDepth = 8;
 
-  if (!path) return {};
-  const config = ts.readConfigFile(path, ts.sys.readFile);
+type Binding =
+  | { kind: 'callable' | 'not-callable' }
+  | { kind: 'expression'; node: t.Expression }
+  | { kind: 'import'; source: string; name: string };
 
-  if (config.error) throw new Error(`Cannot read configuration: ${path}`);
+function unwrap(node: t.Expression): t.Expression {
+  while (
+    node.type === 'TSAsExpression' ||
+    node.type === 'TSSatisfiesExpression' ||
+    node.type === 'TSNonNullExpression' ||
+    node.type === 'TSTypeAssertion' ||
+    node.type === 'ParenthesizedExpression'
+  )
+    node = node.expression;
 
-  return ts.parseJsonConfigFileContent(config.config, ts.sys, dirname(path))
-    .options;
+  return node;
 }
 
-function hasCnExport(path: string, options: ts.CompilerOptions) {
-  const program = ts.createProgram([path], {
-    ...options,
-    allowJs: true,
-    noEmit: true,
-    skipLibCheck: true,
-  });
+const literals = new Set([
+  'StringLiteral',
+  'NumericLiteral',
+  'BigIntLiteral',
+  'BooleanLiteral',
+  'NullLiteral',
+  'RegExpLiteral',
+  'TemplateLiteral',
+  'ObjectExpression',
+  'ArrayExpression',
+  'ClassExpression',
+]);
 
-  const source = program.getSourceFile(path);
+/** Whether `name`, exported from the module at `path`, can be called. */
+function exportsCallable(
+  path: string,
+  name: string,
+  seen: Set<string>
+): boolean {
+  const key = `${path}#${name}`;
 
-  if (source && program.getSyntacticDiagnostics(source).length) return false;
-  const checker = program.getTypeChecker();
-  const module = source && checker.getSymbolAtLocation(source);
+  if (seen.has(key) || seen.size >= reexportDepth) return false;
+  seen.add(key);
 
-  const exported =
-    module &&
-    checker.getExportsOfModule(module).find((symbol) => symbol.name === 'cn');
+  let program: t.Program;
 
-  if (!exported || !source) return false;
+  try {
+    program = parseModule(path, readFileSync(path, 'utf8'));
+  } catch {
+    return false;
+  }
 
-  const binding =
-    exported.flags & ts.SymbolFlags.Alias
-      ? checker.getAliasedSymbol(exported)
-      : exported;
+  const bindings = new Map<string, Binding>();
 
-  const type = checker.getTypeOfSymbolAtLocation(binding, source);
+  const declare = (declaration: t.Node) => {
+    if (declaration.type === 'FunctionDeclaration' && declaration.id)
+      bindings.set(declaration.id.name, { kind: 'callable' });
+    else if (declaration.type === 'TSDeclareFunction' && declaration.id)
+      bindings.set(declaration.id.name, { kind: 'callable' });
+    else if (declaration.type === 'ClassDeclaration' && declaration.id)
+      bindings.set(declaration.id.name, { kind: 'not-callable' });
+    else if (
+      (declaration.type === 'TSEnumDeclaration' ||
+        declaration.type === 'TSInterfaceDeclaration' ||
+        declaration.type === 'TSTypeAliasDeclaration') &&
+      declaration.id.type === 'Identifier'
+    )
+      bindings.set(declaration.id.name, { kind: 'not-callable' });
+    else if (declaration.type === 'VariableDeclaration')
+      for (const declarator of declaration.declarations)
+        if (declarator.id.type === 'Identifier')
+          bindings.set(
+            declarator.id.name,
+            declarator.init
+              ? { kind: 'expression', node: declarator.init }
+              : { kind: 'callable' }
+          );
+  };
 
-  if (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown))
-    throw new Error(
-      `Cannot validate cn in ${path}. Install its dependencies and check its imports before replacing this file.`
-    );
+  for (const statement of program.body) {
+    if (statement.type === 'ImportDeclaration')
+      for (const specifier of statement.specifiers)
+        bindings.set(
+          specifier.local.name,
+          statement.importKind === 'type' ||
+            (specifier.type === 'ImportSpecifier' &&
+              specifier.importKind === 'type') ||
+            specifier.type === 'ImportNamespaceSpecifier'
+            ? { kind: 'not-callable' }
+            : {
+                kind: 'import',
+                source: statement.source.value,
+                name:
+                  specifier.type === 'ImportSpecifier'
+                    ? moduleName(specifier.imported)
+                    : 'default',
+              }
+        );
+    else if (
+      (statement.type === 'ExportNamedDeclaration' ||
+        statement.type === 'ExportDefaultDeclaration') &&
+      statement.declaration
+    )
+      declare(statement.declaration);
+    else declare(statement);
+  }
 
-  return type.getCallSignatures().length > 0;
+  const imported = (source: string, imported: string): boolean => {
+    if (!source.startsWith('.')) return true;
+    const target = probeModule(resolve(dirname(path), source));
+
+    return !!target && exportsCallable(target, imported, seen);
+  };
+
+  const callable = (binding: Binding | undefined, depth = 0): boolean => {
+    if (!binding || depth > reexportDepth) return false;
+
+    if (binding.kind === 'import')
+      return imported(binding.source, binding.name);
+
+    if (binding.kind !== 'expression') return binding.kind === 'callable';
+    const node = unwrap(binding.node);
+
+    if (literals.has(node.type)) return false;
+
+    // a global or a parameter cannot be disproved without types
+    if (node.type === 'Identifier')
+      return (
+        !bindings.has(node.name) || callable(bindings.get(node.name), depth + 1)
+      );
+
+    return true;
+  };
+
+  const viaStar: string[] = [];
+
+  for (const statement of program.body) {
+    if (statement.type === 'ExportDefaultDeclaration' && name === 'default') {
+      const declaration = statement.declaration;
+
+      if (
+        declaration.type === 'FunctionDeclaration' ||
+        declaration.type === 'TSDeclareFunction'
+      )
+        return true;
+
+      if (declaration.type === 'ClassDeclaration') return false;
+
+      return callable(
+        declaration.type === 'Identifier'
+          ? (bindings.get(declaration.name) ?? { kind: 'callable' })
+          : /Declaration$/.test(declaration.type)
+            ? { kind: 'not-callable' }
+            : // SAFETY: a default export that is not a declaration is an expression
+              { kind: 'expression', node: declaration as t.Expression }
+      );
+    }
+
+    if (statement.type === 'ExportNamedDeclaration') {
+      const typeOnly = statement.exportKind === 'type';
+      const declaration = statement.declaration;
+
+      if (declaration) {
+        const names =
+          declaration.type === 'VariableDeclaration'
+            ? declaration.declarations.flatMap((item) =>
+                item.id.type === 'Identifier' ? [item.id.name] : []
+              )
+            : 'id' in declaration &&
+                declaration.id &&
+                declaration.id.type === 'Identifier'
+              ? [declaration.id.name]
+              : [];
+
+        if (names.includes(name))
+          return !typeOnly && callable(bindings.get(name));
+      }
+
+      for (const specifier of statement.specifiers) {
+        if (moduleName(specifier.exported) !== name) continue;
+
+        if (
+          typeOnly ||
+          specifier.type !== 'ExportSpecifier' ||
+          specifier.exportKind === 'type'
+        )
+          return false;
+
+        return statement.source
+          ? imported(statement.source.value, moduleName(specifier.local))
+          : callable(bindings.get(moduleName(specifier.local)));
+      }
+    }
+
+    if (
+      statement.type === 'ExportAllDeclaration' &&
+      statement.exportKind !== 'type' &&
+      name !== 'default'
+    )
+      viaStar.push(statement.source.value);
+  }
+
+  return viaStar.some((source) => imported(source, name));
+}
+
+function hasCnExport(path: string) {
+  return exportsCallable(path, 'cn', new Set());
 }
 
 const noSteps: string[] = [];
@@ -97,57 +265,22 @@ export async function planSharedUtils(
       ? aliases.utils
       : `${profile.aliasPrefix}/lib/utils`;
 
-  const compiler = compilerOptions(owner.cwd);
+  const compiler = nearestProjectConfig(owner.cwd);
 
-  const resolved = ts.resolveModuleName(
-    importPath,
-    join(owner.cwd, '__uitheme__.ts'),
-    {
-      ...compiler,
-      moduleResolution:
-        compiler.moduleResolution ?? ts.ModuleResolutionKind.Bundler,
-    },
-    ts.sys
-  ).resolvedModule;
+  const targets = /^\.\.?(?:\/|$)/.test(importPath)
+    ? [resolve(owner.cwd, importPath)]
+    : (compiler?.matcher?.(importPath) ?? []);
 
-  if (resolved && /\.d\.[cm]?ts$/.test(resolved.resolvedFileName))
+  const resolved = targets
+    .map(probeModule)
+    .find((target): target is string => !!target);
+
+  if (resolved && /\.d\.[cm]?ts$/.test(resolved))
     throw new Error(
       `Utils alias ${importPath} resolves to a declaration. Configure an alias to its source file before installing.`
     );
 
-  let utility = resolved?.resolvedFileName;
-
-  if (!utility) {
-    for (const [alias, targets] of Object.entries(compiler.paths ?? {})) {
-      const [prefix, suffix] = alias.split('*');
-
-      if (
-        alias.includes('*')
-          ? !importPath.startsWith(prefix) || !importPath.endsWith(suffix)
-          : alias !== importPath
-      )
-        continue;
-
-      const capture = alias.includes('*')
-        ? importPath.slice(
-            prefix.length,
-            suffix.length ? -suffix.length : undefined
-          )
-        : '';
-
-      const target = targets[0]?.replace('*', capture);
-
-      if (target)
-        utility = resolve(
-          compiler.baseUrl ??
-            (typeof compiler.pathsBasePath === 'string'
-              ? compiler.pathsBasePath
-              : owner.cwd),
-          target
-        );
-      break;
-    }
-  }
+  let utility = resolved ?? (targets[0] && resolve(targets[0]));
 
   if (!utility && typeof aliases.utils === 'string') {
     const manifest = await jsonFile(join(owner.cwd, 'package.json'));
@@ -205,7 +338,9 @@ export async function planSharedUtils(
   utility ??= join(
     owner.cwd,
     relative(owner.cwd, profile.componentsDir).split(sep)[0] === 'src' ||
-      ts.sys.directoryExists(join(owner.cwd, 'src'))
+      statSync(join(owner.cwd, 'src'), {
+        throwIfNoEntry: false,
+      })?.isDirectory()
       ? 'src/lib/utils'
       : 'lib/utils'
   );
@@ -213,14 +348,15 @@ export async function planSharedUtils(
   if (!extname(utility)) {
     const candidates = [utility + '.ts', utility + '.js'];
     utility =
-      candidates.find(ts.sys.fileExists) ??
-      utility + (profile.language === 'js' ? '.js' : '.ts');
+      candidates.find((candidate) =>
+        statSync(candidate, { throwIfNoEntry: false })?.isFile()
+      ) ?? utility + (profile.language === 'js' ? '.js' : '.ts');
   }
 
   const planProfile = { ...profile, utilsFile: utility };
   const existing = (await planFile(planProfile, utility, '')).before;
 
-  if (existing !== undefined && hasCnExport(utility, compiler))
+  if (existing !== undefined && hasCnExport(utility))
     return {
       owner,
       profile: planProfile,

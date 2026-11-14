@@ -2,9 +2,10 @@ import { readFile, access, readdir } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve, dirname, join, relative, isAbsolute } from 'node:path';
-import ts from 'typescript';
 import semver from 'semver';
 import { readConfig, relativeProjectPath, isRecord } from './config.ts';
+import { parseJsonc } from './jsonc.ts';
+import { readProjectConfigs } from './tsconfig.ts';
 import type {
   Base,
   Framework,
@@ -66,63 +67,23 @@ function installedReactBase(
 
 async function json(path: string): Promise<AppJson | undefined> {
   try {
-    const result = ts.parseConfigFileTextToJson(
-      path,
-      await readFile(path, 'utf8')
-    );
+    const source = await readFile(path, 'utf8');
+    let config: unknown;
 
-    if (result.error || !isRecord(result.config))
+    try {
+      config = parseJsonc(source);
+    } catch {
       throw new Error(`Invalid JSON: ${path}`);
+    }
+
+    if (!isRecord(config)) throw new Error(`Invalid JSON: ${path}`);
 
     // SAFETY: JSON object is read as package or components configuration only
-    return result.config as AppJson;
+    return config as AppJson;
   } catch (error) {
     if (isRecord(error) && error.code === 'ENOENT') return;
     throw error;
   }
-}
-
-async function configs(
-  path: string,
-  seen = new Set<string>()
-): Promise<ts.ParsedCommandLine[]> {
-  if (seen.has(path) || !(await exists(path))) return [];
-  seen.add(path);
-
-  const value = ts.getParsedCommandLineOfConfigFile(
-    path,
-    {},
-    {
-      ...ts.sys,
-      realpath: (path) => path,
-      onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
-        throw new Error(
-          ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-        );
-      },
-    }
-  );
-
-  if (!value) throw new Error(`Invalid TypeScript configuration: ${path}`);
-
-  const broken = value.errors.filter(
-    (error) => ![18003, 18002].includes(error.code)
-  );
-
-  if (broken.length)
-    throw new Error(
-      ts.flattenDiagnosticMessageText(broken[0].messageText, '\n')
-    );
-  const result = [value];
-
-  for (const ref of value.projectReferences ?? []) {
-    let target = ref.path;
-
-    if (!target.endsWith('.json')) target = join(target, 'tsconfig.json');
-    result.push(...(await configs(target, seen)));
-  }
-
-  return result;
 }
 
 async function cssFiles(root: string, depth = 0): Promise<string[]> {
@@ -246,28 +207,14 @@ export async function detectProject(
     throw new Error('Tailwind 3.4 or newer is required');
   const hasTypeScriptConfig = await exists(join(cwd, 'tsconfig.json'));
 
-  const tsconfigs = await configs(
+  const tsconfigs = readProjectConfigs(
     join(cwd, hasTypeScriptConfig ? 'tsconfig.json' : 'jsconfig.json')
   );
 
   const paths: Record<string, string[]> = {};
 
-  for (const config of [...tsconfigs].reverse()) {
-    // SAFETY: TypeScript stores the originating paths directory on parsed options
-    const options = config.options as ts.CompilerOptions & {
-      pathsBasePath?: string;
-    };
-
-    for (const [alias, targets] of Object.entries(options.paths ?? {}))
-      paths[alias] = targets.map((target) =>
-        resolve(
-          options.baseUrl ??
-            options.pathsBasePath ??
-            dirname(String(options.configFilePath)),
-          target
-        )
-      );
-  }
+  for (const config of [...tsconfigs].reverse())
+    Object.assign(paths, config.paths);
 
   const aliasKey = Object.keys(paths).find((key) => key.endsWith('/*'));
 
