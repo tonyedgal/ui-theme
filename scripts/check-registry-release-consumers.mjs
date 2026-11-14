@@ -313,7 +313,7 @@ try {
             );
           });
 
-          assert.equal(selected.length, 7);
+          assert.equal(selected.length, 8);
 
           const dependencies = Object.fromEntries(
             selected
@@ -753,7 +753,7 @@ try {
         }
 
   assert.equal(results.length, 12);
-  console.log(`All 84 emitted components passed. Evidence: ${evidence}`);
+  console.log(`All 96 emitted components passed. Evidence: ${evidence}`);
 } finally {
   await browser?.close();
 
