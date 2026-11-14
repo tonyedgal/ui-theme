@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { createServer, type AddressInfo } from 'node:net';
 import {
   createRegistryClient,
   defaultOrigin,
@@ -169,6 +171,22 @@ test('request timeout rejects stalled injectable clients', async () => {
       http: () => new Promise(() => {}),
     }).manifest(),
     /timed out/i
+  );
+});
+
+test('names the URL and the cause when the registry cannot be reached', async () => {
+  const server = createServer().listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  // SAFETY: a listening TCP server always reports an address object
+  const { port } = server.address() as AddressInfo;
+  server.close();
+  await once(server, 'close');
+
+  await assert.rejects(
+    createRegistryClient({ origin: `http://127.0.0.1:${port}/r` }).manifest(),
+    {
+      message: `Registry request failed (ECONNREFUSED): http://127.0.0.1:${port}/r/manifest.json`,
+    }
   );
 });
 
