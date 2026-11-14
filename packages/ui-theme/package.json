@@ -88,12 +88,24 @@
       }
     },
     "./vue": {
-      "types": "./dist/vue/index.d.ts",
-      "import": "./dist/vue/index.js"
+      "import": {
+        "types": "./dist/vue/index.d.ts",
+        "default": "./dist/vue/index.js"
+      },
+      "require": {
+        "types": "./dist/vue/index.d.cts",
+        "default": "./dist/vue/index.cjs"
+      }
     },
     "./vue/bootstrap": {
-      "types": "./dist/vue/bootstrap.d.ts",
-      "import": "./dist/vue/bootstrap.js"
+      "import": {
+        "types": "./dist/vue/bootstrap.d.ts",
+        "default": "./dist/vue/bootstrap.js"
+      },
+      "require": {
+        "types": "./dist/vue/bootstrap.d.cts",
+        "default": "./dist/vue/bootstrap.cjs"
+      }
     },
     "./nuxt": {
       "types": "./dist/nuxt.d.ts",
@@ -122,7 +134,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test:types": "tsc --noEmit -p tests/types/tsconfig.json",
-    "test:package": "node scripts/smoke-v2-package.mjs",
+    "test:package": "node scripts/smoke-v2-package.mjs && node scripts/check-client-directives.mjs && node scripts/check-size-budget.mjs",
     "test:browser:vue": "playwright test --config playwright.vue.config.ts"
   },
   "peerDependencies": {
