@@ -180,23 +180,24 @@ test('cross-tab changes validate values, avoid persistence echoes and reset remo
   expect(controller.getSnapshot().theme).toBe('light');
 });
 
-test('a failed persistence request can retry the same destination', async () => {
-  const controller = create({ defaultTheme: 'light' });
+test('a failed custom storage write can retry the same destination', async () => {
+  const setItem = vi.fn().mockImplementationOnce(() => {
+    throw new Error('Storage blocked');
+  });
+
+  const controller = create({
+    defaultTheme: 'light',
+    storage: { getItem: () => null, setItem },
+  });
+
   controller.mount();
-
-  const write = vi
-    .spyOn(Storage.prototype, 'setItem')
-    .mockImplementationOnce(() => {
-      throw new Error('Storage blocked');
-    });
-
   await expect(controller.switchTheme('dark', true)).rejects.toThrow(
     'Storage blocked'
   );
   expect(controller.getSnapshot().theme).toBe('light');
   await controller.switchTheme('dark', true);
   expect(controller.getSnapshot().theme).toBe('dark');
-  expect(write).toHaveBeenCalledTimes(2);
+  expect(setItem).toHaveBeenCalledTimes(2);
 });
 
 test('controllers keep state independent and remove old palette classes after option changes', () => {
@@ -510,6 +511,21 @@ test('theme toggles follow configured alternatives when the resolved opposite is
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   await controller.switchTheme('dark', true);
   expect(controller.getSnapshot().theme).toBe('light');
+});
+
+test('a native storage write failure keeps the theme in memory and applies it', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const controller = create({ defaultTheme: 'light' });
+  controller.mount();
+
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new DOMException('Quota exceeded', 'QuotaExceededError');
+  });
+  await expect(controller.switchTheme('dark', true)).resolves.toBeUndefined();
+  expect(controller.getSnapshot().theme).toBe('dark');
+  expect(document.documentElement.classList.contains('dark')).toBe(true);
+  expect(() => controller.setColorTheme('default')).not.toThrow();
+  expect(warn).toHaveBeenCalled();
 });
 
 test('an adapter may handle native write errors without swallowing explicit custom storage failures', () => {

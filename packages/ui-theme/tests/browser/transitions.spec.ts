@@ -1158,29 +1158,36 @@ test('gallery activates light and dark uploads only after both are supplied', as
   }
 });
 
-test('a failed storage write can retry the same destination', async ({
+test('a failed storage write still applies the theme without rejecting', async ({
   page,
 }) => {
   await open(page);
-  await page.evaluate(async () => {
+
+  const result = await page.evaluate(async () => {
     const setItem = Storage.prototype.setItem;
     Storage.prototype.setItem = () => {
-      throw new Error('Storage blocked');
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
     };
-
-    let rejected = false;
 
     try {
       await window.themeFixture.state.switchTheme('dark', true);
-    } catch {
-      rejected = true;
-    }
 
-    if (!rejected) throw new Error('Expected storage rejection');
-    Storage.prototype.setItem = setItem;
-    await window.themeFixture.state.switchTheme('dark', true);
+      return {
+        rejected: false,
+        theme: window.themeFixture.state.theme,
+        stored: localStorage.getItem('theme'),
+      };
+    } catch {
+      return { rejected: true };
+    } finally {
+      Storage.prototype.setItem = setItem;
+    }
   });
+
+  expect(result.rejected).toBe(false);
+  expect(result.stored).not.toBe('dark');
   await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.locator('#diagnostics')).toContainText('dark');
 });
 
 test('server preferences hydrate even when storage is blocked', async ({
