@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -198,5 +198,174 @@ describe('utils alias resolution', () => {
     expect(accepted).toBe(true);
     expect(plan.file.path).toMatch(/src\/lib\/utils\.ts$/);
     expect(plan.file.action).toBe('create');
+  });
+});
+
+describe('CommonJS exports', () => {
+  it.each([
+    ['exports.cn', 'exports.cn = function () {};'],
+    ['module.exports.cn', 'module.exports.cn = (...a) => a.join(" ");'],
+    ['a shorthand object', 'function cn() {}\nmodule.exports = { cn };'],
+    ['an object property', 'module.exports = { cn: require("clsx") };'],
+    ['an object method', 'module.exports = { cn() {} };'],
+  ])('accepts %s', async (_, source) => {
+    expect((await accepts({ 'src/lib/utils.js': source })).accepted).toBe(true);
+  });
+
+  it.each([
+    ['exports.cn as a string', "exports.cn = 'cn';"],
+    ['module.exports.cn as an object', 'module.exports.cn = {};'],
+    ['a shorthand array', 'const cn = [];\nmodule.exports = { cn };'],
+    ['an object without cn', 'module.exports = { other() {} };'],
+    ['a getter', 'module.exports = { get cn() { return 1; } };'],
+  ])('rejects %s', async (_, source) => {
+    expect((await accepts({ 'src/lib/utils.js': source })).accepted).toBe(
+      false
+    );
+  });
+});
+
+describe('workspace packages', () => {
+  // the shape of the shadcn monorepo template: apps/web uses packages/ui
+  async function monorepo(
+    ui: Record<string, string>,
+    utils = '@workspace/ui/lib/utils',
+    app: Record<string, string> = {}
+  ) {
+    const root = await mkdtemp(join(tmpdir(), 'uitheme-monorepo-'));
+    roots.push(root);
+
+    const files = {
+      'package.json': '{"name":"monorepo","private":true}',
+      'apps/web/package.json': '{"name":"web"}',
+      'apps/web/tsconfig.json': '{"compilerOptions":{"paths":{"@/*":["./*"]}}}',
+      'apps/web/components.json': JSON.stringify({ aliases: { utils } }),
+      ...Object.fromEntries(
+        Object.entries(ui).map(([path, content]) => [
+          `packages/ui/${path}`,
+          content,
+        ])
+      ),
+      ...Object.fromEntries(
+        Object.entries(app).map(([path, content]) => [
+          `apps/web/${path}`,
+          content,
+        ])
+      ),
+    };
+
+    for (const [path, content] of Object.entries(files)) {
+      await mkdir(dirname(join(root, path)), { recursive: true });
+      await writeFile(join(root, path), content);
+    }
+
+    await mkdir(join(root, 'packages/ui'), { recursive: true });
+    await mkdir(join(root, 'apps/web/node_modules/@workspace'), {
+      recursive: true,
+    });
+    await symlink(
+      join(root, 'packages/ui'),
+      join(root, 'apps/web/node_modules/@workspace/ui')
+    );
+
+    const cwd = join(root, 'apps/web');
+    const asked: string[] = [];
+
+    const plan = planSharedUtils(
+      {
+        cwd,
+        workspaceRoot: root,
+        framework: 'next',
+        frameworkVersion: '15',
+        language: 'ts',
+        packageManager: 'pnpm',
+        tailwind: 4,
+        cssFile: join(cwd, 'app/globals.css'),
+        componentsDir: join(cwd, 'components/ui'),
+        aliasPrefix: '@',
+        base: 'radix',
+        colorFormat: 'css',
+        configFile: join(cwd, 'uitheme.json'),
+      },
+      {
+        resolveConflict: async (conflict) => {
+          asked.push(conflict.reason);
+
+          return 'keep';
+        },
+      }
+    );
+
+    return { root, asked, plan };
+  }
+
+  const exportsManifest = JSON.stringify({
+    name: '@workspace/ui',
+    exports: {
+      './globals.css': './src/styles/globals.css',
+      './lib/*': { types: './dist/lib/*.d.ts', default: './src/lib/*.ts' },
+      './components/*': './src/components/*.tsx',
+    },
+  });
+
+  it('resolves the alias through the symlink and wildcard exports', async () => {
+    const { root, asked, plan } = await monorepo({
+      'package.json': exportsManifest,
+      'src/lib/utils.ts': 'export function cn() {}',
+      'dist/lib/utils.d.ts': 'export declare function cn(): string;',
+    });
+
+    expect((await plan).file.path).toBe(
+      join(root, 'packages/ui/src/lib/utils.ts')
+    );
+    expect(asked).toEqual([]);
+  });
+
+  it.each([
+    ['accepts', 'export function cn() {}', []],
+    ['rejects', 'export const cn = "not callable";', ['no-cn']],
+  ])(
+    '%s a cn re-exported from the workspace package',
+    async (_, source, reasons) => {
+      const { asked, plan } = await monorepo(
+        { 'package.json': exportsManifest, 'src/lib/utils.ts': source },
+        '@/lib/utils',
+        { 'lib/utils.ts': "export { cn } from '@workspace/ui/lib/utils';" }
+      );
+
+      await plan;
+      expect(asked).toEqual(reasons);
+    }
+  );
+
+  it('probes files in a package without exports', async () => {
+    const { root, plan } = await monorepo({
+      'package.json': '{"name":"@workspace/ui"}',
+      'lib/utils.tsx': 'export function cn() {}',
+    });
+
+    expect((await plan).file.path).toBe(
+      join(root, 'packages/ui/lib/utils.tsx')
+    );
+  });
+
+  it('rejects a package subpath that only has a declaration file', async () => {
+    const { plan } = await monorepo({
+      'package.json': JSON.stringify({
+        name: '@workspace/ui',
+        exports: { './lib/*': { types: './dist/lib/*.d.ts' } },
+      }),
+      'dist/lib/utils.d.ts': 'export declare function cn(): string;',
+    });
+
+    await expect(plan).rejects.toThrow(/resolves to a declaration/);
+  });
+
+  it('names the alias when the package is missing', async () => {
+    const { plan } = await monorepo({}, '@workspace/missing/lib/utils');
+
+    await expect(plan).rejects.toThrow(
+      'Cannot resolve utils alias @workspace/missing/lib/utils. Configure its path in components.json and the project configuration.'
+    );
   });
 });
