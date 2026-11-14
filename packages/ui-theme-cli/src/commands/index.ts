@@ -1,5 +1,4 @@
 import { relative, resolve, join } from 'node:path';
-import { BaseMismatchError, detectProject } from '../project.ts';
 import { readConfig } from '../config.ts';
 import {
   createRegistryClient,
@@ -15,9 +14,7 @@ import {
   planRegistryInstall,
   readOptional,
 } from '../install/index.ts';
-import { planInit } from '../install/setup.ts';
 import { cliVersion, installedWebVersion } from './version.ts';
-import { runMigration } from './migrate.ts';
 import type {
   ConflictReason,
   ConflictResolver,
@@ -318,13 +315,15 @@ async function detectWithPrompts(
   flags: Flags,
   io: CliIO
 ): Promise<ProjectProfile> {
+  const project = await import('../project.ts');
+
   while (true) {
     try {
-      return await detectProject(flags.overrides);
+      return await project.detectProject(flags.overrides);
     } catch (error) {
       if (!io.select || !(error instanceof Error)) throw error;
 
-      if (error instanceof BaseMismatchError) {
+      if (error instanceof project.BaseMismatchError) {
         if (flags.overrides.base || flags.yes) throw error;
 
         const choices: ProjectProfile['base'][] =
@@ -390,7 +389,10 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
       throw new Error(`Unknown command: ${command}`);
 
     if (command === 'migrate') {
-      return await (io.migrate ?? runMigration)(args.slice(1), io);
+      return await (io.migrate ?? (await import('./migrate.ts')).runMigration)(
+        args.slice(1),
+        io
+      );
     }
 
     const flags = parseFlags(args.slice(1));
@@ -531,7 +533,9 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
     let plan: InstallPlan;
 
     if (command === 'init')
-      plan = await planInit(profile, {
+      plan = await (
+        await import('../install/setup.ts')
+      ).planInit(profile, {
         ...flags,
         webDependency,
         resolveConflict: conflictResolver(flags, io, stdout),
