@@ -1,6 +1,6 @@
 'use client';
 
-import { serializeScriptValue } from './serialize-script-value';
+import { buildThemeScript } from '../../core/theme-script';
 import { SharedThemeContext } from './shared-theme-context';
 import { useHydrated } from '../hooks/use-hydrated';
 import { getThemeLogoOptions } from '../../core/logo';
@@ -79,51 +79,12 @@ export type NextUIThemeProviderProps = ThemeAnimationOptions & {
 };
 
 /**
- * Pre-hydration script content generator
- * This script runs BEFORE React hydrates to prevent flash of wrong theme
- */
-const generatePreHydrationScript = (
-  storageKey: string,
-  colorStorageKey: string,
-  defaultTheme: Theme,
-  defaultColorTheme: ColorTheme,
-  attribute: 'class' | 'data-theme',
-  globalClassName: string,
-  colorThemePrefix: string
-): string => {
-  return `
-(function() {
-  try {
-    var theme = localStorage.getItem(${serializeScriptValue(storageKey)}) || ${serializeScriptValue(defaultTheme)};
-    var colorTheme = localStorage.getItem(${serializeScriptValue(colorStorageKey)}) || ${serializeScriptValue(defaultColorTheme)};
-    var resolved = theme === 'system' 
-      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-      : theme;
-    
-    if (${serializeScriptValue(attribute)} === 'class') {
-      if (resolved === 'dark') {
-        document.documentElement.classList.add(${serializeScriptValue(globalClassName)});
-      } else {
-        document.documentElement.classList.remove(${serializeScriptValue(globalClassName)});
-      }
-    } else {
-      document.documentElement.setAttribute('data-theme', resolved);
-    }
-    
-    document.documentElement.style.colorScheme = resolved;
-    document.documentElement.classList.add(${serializeScriptValue(colorThemePrefix)} + colorTheme);
-  } catch (e) {
-    console.warn('Theme pre-hydration script failed:', e);
-  }
-})();
-`;
-};
-
-/**
  * Pre-hydration script component
  * Injects inline script before React hydration to prevent theme flash
  */
 interface ThemePreHydrationScriptProps {
+  themes: readonly Theme[];
+  colorThemes: readonly ColorTheme[];
   storageKey: string;
   colorStorageKey: string;
   defaultTheme: Theme;
@@ -136,6 +97,8 @@ interface ThemePreHydrationScriptProps {
 
 const ThemePreHydrationScript = React.memo(
   ({
+    themes,
+    colorThemes,
     storageKey,
     colorStorageKey,
     defaultTheme,
@@ -145,15 +108,21 @@ const ThemePreHydrationScript = React.memo(
     colorThemePrefix,
     nonce,
   }: ThemePreHydrationScriptProps) => {
-    const scriptContent = generatePreHydrationScript(
+    const scriptContent = buildThemeScript({
       storageKey,
       colorStorageKey,
+      themes,
+      colorThemes,
       defaultTheme,
       defaultColorTheme,
-      attribute,
       globalClassName,
-      colorThemePrefix
-    );
+      colorThemePrefix,
+      storage: true,
+      dataTheme: attribute === 'data-theme',
+      systemClasses: false,
+      systemCss: false,
+      palette: 'add',
+    });
 
     return (
       <script
@@ -282,6 +251,8 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
         <SharedThemeContext.Provider value={loadingContextValue}>
           {!disablePreHydrationScript && (
             <ThemePreHydrationScript
+              themes={themes}
+              colorThemes={colorThemes}
               storageKey={storageKey}
               colorStorageKey={colorStorageKey}
               defaultTheme={defaultTheme}
@@ -303,6 +274,8 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
       <SharedThemeContext.Provider value={contextValue}>
         {!disablePreHydrationScript && (
           <ThemePreHydrationScript
+            themes={themes}
+            colorThemes={colorThemes}
             storageKey={storageKey}
             colorStorageKey={colorStorageKey}
             defaultTheme={defaultTheme}
