@@ -403,3 +403,26 @@ export function transformTailwind4(
 
   return root.toString();
 }
+
+// The first declaration of a layer fixes its order, so the statement goes
+// above every import and layer. Only @charset may come before it.
+export function declareLayer(source: string, layer: string): string {
+  const root = postcss.parse(source);
+
+  const declared = root.nodes.some(
+    (node) =>
+      node.type === 'atrule' &&
+      node.name === 'layer' &&
+      !node.nodes &&
+      node.params.split(',').some((name) => name.trim() === layer)
+  );
+
+  if (declared) return source;
+
+  const first = root.first,
+    charset = first?.type === 'atrule' && first.name === 'charset';
+
+  const offset = charset ? first.source!.end!.offset : 0;
+
+  return `${source.slice(0, offset)}${charset ? '\n' : ''}@layer ${layer};${charset ? '' : '\n'}${source.slice(offset)}`;
+}
