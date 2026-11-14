@@ -8,6 +8,7 @@ import React, {
   useContext,
   ReactNode,
   useCallback,
+  useMemo,
 } from 'react';
 import { useTheme } from '../hooks/use-theme';
 import type { UseThemeReturn, ThemeTransitionInput } from '../types';
@@ -18,7 +19,6 @@ import {
   ThemeAnimationOptions,
 } from '../../core/types';
 import { DEFAULT_DURATION } from '../../core/constants';
-import { getSystemTheme } from '../../core/animations';
 
 /**
  * Context type for the Vite UI Theme Provider
@@ -196,21 +196,26 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
     [themeState, applyTransitionDisable]
   );
 
-  const switchThemeFromElement = (theme: Theme, element: Element) =>
-    wrappedSwitchTheme(theme, { element });
-
-  const systemTheme = getSystemTheme();
-
-  const contextValue: ViteUIThemeContextType = {
-    ...themeState,
-    systemTheme,
-    setTheme: wrappedSetTheme,
-    switchTheme: wrappedSwitchTheme,
-    switchThemeFromElement,
-    toggleTheme: wrappedToggleTheme,
-    toggleLightTheme: wrappedToggleLightTheme,
-    toggleDarkTheme: wrappedToggleDarkTheme,
-  };
+  const contextValue = useMemo<ViteUIThemeContextType>(
+    () => ({
+      ...themeState,
+      setTheme: wrappedSetTheme,
+      switchTheme: wrappedSwitchTheme,
+      switchThemeFromElement: (theme: Theme, element: Element) =>
+        wrappedSwitchTheme(theme, { element }),
+      toggleTheme: wrappedToggleTheme,
+      toggleLightTheme: wrappedToggleLightTheme,
+      toggleDarkTheme: wrappedToggleDarkTheme,
+    }),
+    [
+      themeState,
+      wrappedSetTheme,
+      wrappedSwitchTheme,
+      wrappedToggleTheme,
+      wrappedToggleLightTheme,
+      wrappedToggleDarkTheme,
+    ]
+  );
 
   return (
     <ViteUIThemeContext.Provider value={contextValue}>

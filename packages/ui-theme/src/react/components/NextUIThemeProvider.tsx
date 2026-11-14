@@ -10,6 +10,7 @@ import React, {
   useContext,
   ReactNode,
   useCallback,
+  useMemo,
 } from 'react';
 import { useTheme } from '../hooks/use-theme';
 import type { UseThemeReturn, ThemeTransitionInput } from '../types';
@@ -244,11 +245,14 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
     [switchThemeWithHydrationAwareness]
   );
 
-  const systemTheme =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
+  const contextValue = useMemo<NextUIThemeContextType>(
+    () => ({
+      ...themeState,
+      switchTheme: switchThemeWithHydrationAwareness,
+      switchThemeFromElement,
+    }),
+    [themeState, switchThemeWithHydrationAwareness, switchThemeFromElement]
+  );
 
   if (!mounted) {
     const loadingContextValue: NextUIThemeContextType = {
@@ -293,13 +297,6 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
       </NextUIThemeContext.Provider>
     );
   }
-
-  const contextValue: NextUIThemeContextType = {
-    ...themeState,
-    systemTheme,
-    switchTheme: switchThemeWithHydrationAwareness,
-    switchThemeFromElement,
-  };
 
   return (
     <NextUIThemeContext.Provider value={contextValue}>

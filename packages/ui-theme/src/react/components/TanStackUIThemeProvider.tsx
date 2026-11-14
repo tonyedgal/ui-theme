@@ -11,6 +11,7 @@ import React, {
   useContext,
   ReactNode,
   useEffect,
+  useMemo,
   useRef,
 } from 'react';
 import { useTheme } from '../hooks/use-theme';
@@ -373,44 +374,39 @@ export const TanStackUIThemeProvider: React.FC<
   const setThemeWithServer = themeState.setTheme;
   const setColorThemeWithServer = themeState.setColorTheme;
 
-  const withoutHydrationAnimation = (
-    options: ThemeTransitionInput = false
-  ): ThemeTransitionInput =>
-    isHydrated
-      ? options
-      : options === true || options === false
-        ? true
-        : { ...options, animationOff: true };
+  const contextValue = useMemo<TanStackUIThemeContextType>(() => {
+    const withoutHydrationAnimation = (
+      options: ThemeTransitionInput = false
+    ): ThemeTransitionInput =>
+      isHydrated
+        ? options
+        : options === true || options === false
+          ? true
+          : { ...options, animationOff: true };
 
-  const switchThemeWithHydrationAwareness = (
-    theme: Theme,
-    options?: ThemeTransitionInput
-  ) => themeState.switchTheme(theme, withoutHydrationAnimation(options));
+    const switchThemeWithHydrationAwareness = (
+      theme: Theme,
+      options?: ThemeTransitionInput
+    ) => themeState.switchTheme(theme, withoutHydrationAnimation(options));
 
-  const toggleThemeWithHydrationAwareness = (options?: ThemeTransitionInput) =>
-    themeState.toggleTheme(withoutHydrationAnimation(options));
+    return {
+      ...themeState,
+      isHydrated: true,
+      switchTheme: switchThemeWithHydrationAwareness,
+      switchThemeFromElement: (theme: Theme, element: Element) =>
+        switchThemeWithHydrationAwareness(theme, { element }),
+      switchColorTheme: (theme: string, options?: ThemeTransitionInput) =>
+        themeState.switchColorTheme(theme, withoutHydrationAnimation(options)),
+      toggleTheme: (options?: ThemeTransitionInput) =>
+        themeState.toggleTheme(withoutHydrationAnimation(options)),
+      toggleLightTheme: (options?: ThemeTransitionInput) =>
+        themeState.toggleLightTheme(withoutHydrationAnimation(options)),
+      toggleDarkTheme: (options?: ThemeTransitionInput) =>
+        themeState.toggleDarkTheme(withoutHydrationAnimation(options)),
+    };
+  }, [themeState, isHydrated]);
 
-  const toggleLightThemeWithHydrationAwareness = (
-    options?: ThemeTransitionInput
-  ) => themeState.toggleLightTheme(withoutHydrationAnimation(options));
-
-  const toggleDarkThemeWithHydrationAwareness = (
-    options?: ThemeTransitionInput
-  ) => themeState.toggleDarkTheme(withoutHydrationAnimation(options));
-
-  const switchColorThemeWithServer = (
-    theme: string,
-    options?: ThemeTransitionInput
-  ) => themeState.switchColorTheme(theme, withoutHydrationAnimation(options));
-
-  const switchThemeFromElement = (theme: Theme, element: Element) =>
-    switchThemeWithHydrationAwareness(theme, { element });
-
-  const systemTheme =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
+  const { systemTheme } = themeState;
 
   // Compute the resolvedTheme for the server (pre-hydration) context
   const serverResolvedTheme: 'light' | 'dark' = (() => {
@@ -440,7 +436,7 @@ export const TanStackUIThemeProvider: React.FC<
       setColorTheme: setColorThemeWithServer,
       switchTheme: async (theme: Theme) => setThemeWithServer(theme),
       switchThemeFromElement: async (theme: Theme) => setThemeWithServer(theme),
-      switchColorTheme: switchColorThemeWithServer,
+      switchColorTheme: contextValue.switchColorTheme,
       toggleTheme: async () => {
         const nextTheme = serverResolvedTheme === 'dark' ? 'light' : 'dark';
         setThemeWithServer(nextTheme);
@@ -460,20 +456,6 @@ export const TanStackUIThemeProvider: React.FC<
       </TanStackUIThemeContext.Provider>
     );
   }
-
-  const contextValue: TanStackUIThemeContextType = {
-    ...themeState,
-    systemTheme,
-    isHydrated: true,
-    setTheme: setThemeWithServer,
-    setColorTheme: setColorThemeWithServer,
-    switchTheme: switchThemeWithHydrationAwareness,
-    switchThemeFromElement,
-    switchColorTheme: switchColorThemeWithServer,
-    toggleTheme: toggleThemeWithHydrationAwareness,
-    toggleLightTheme: toggleLightThemeWithHydrationAwareness,
-    toggleDarkTheme: toggleDarkThemeWithHydrationAwareness,
-  };
 
   return (
     <TanStackUIThemeContext.Provider value={contextValue}>
