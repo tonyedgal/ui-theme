@@ -19,7 +19,14 @@ import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { buildRegistry } from '../packages/ui-theme-registry/src/build.ts';
+import {
+  buildRegistry,
+  controls,
+} from '../packages/ui-theme-registry/src/build.ts';
+import {
+  baseManifest,
+  baseVariants,
+} from '../packages/ui-theme-cli/src/bases.ts';
 import { createRegistryClient } from '../packages/ui-theme-cli/src/registry.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -294,466 +301,462 @@ try {
   const { chromium } = webRequire('@playwright/test');
   browser = await chromium.launch();
 
-  for (const framework of ['react', 'vue'])
-    for (const base of framework === 'react' ? ['base-ui', 'radix'] : ['reka'])
-      for (const tailwind of [3, 4])
-        for (const language of ['ts', 'js']) {
-          const label = `${framework}-${base}-tw${tailwind}-${language}`;
-          console.log(`Checking ${label} emitted registry consumer...`);
-          const folder = join(temporary, label);
+  for (const { framework, base } of baseVariants())
+    for (const tailwind of [3, 4])
+      for (const language of ['ts', 'js']) {
+        const label = `${framework}-${base}-tw${tailwind}-${language}`;
+        console.log(`Checking ${label} emitted registry consumer...`);
+        const folder = join(temporary, label);
 
-          const selected = registry.index.items.filter((item) => {
-            const meta = item.meta.uiTheme;
+        const selected = registry.index.items.filter((item) => {
+          const meta = item.meta.uiTheme;
 
-            return (
-              meta.framework === framework &&
-              meta.base === base &&
-              meta.tailwind === tailwind &&
-              meta.language === language
-            );
-          });
-
-          assert.equal(selected.length, 8);
-
-          const dependencies = Object.fromEntries(
-            selected
-              .flatMap((item) => item.dependencies)
-              .map((spec) => {
-                const separator = spec.lastIndexOf('@');
-
-                return [spec.slice(0, separator), spec.slice(separator + 1)];
-              })
+          return (
+            meta.framework === framework &&
+            meta.base === base &&
+            meta.tailwind === tailwind &&
+            meta.language === language
           );
+        });
 
-          const frameworkDependencies =
-            framework === 'react'
-              ? Object.fromEntries(
-                  ['react', 'react-dom'].map((name) => [
-                    name,
-                    registryRequire(`${name}/package.json`).version,
-                  ])
-                )
-              : { vue: registryRequire('vue/package.json').version };
+        assert.equal(selected.length, controls.length);
 
-          write(
-            folder,
-            'package.json',
-            JSON.stringify({
-              name: label,
-              private: true,
-              type: 'module',
-              devDependencies:
-                framework === 'react'
-                  ? Object.fromEntries(
-                      ['@types/react', '@types/react-dom'].map((name) => [
-                        name,
-                        registryRequire(`${name}/package.json`).version,
-                      ])
-                    )
-                  : {},
-              dependencies: {
-                ...dependencies,
-                ...frameworkDependencies,
-                'uitheme-web': webVersion,
-                vite: registryRequire('vite/package.json').version,
-                tailwindcss:
-                  tailwind === 3
-                    ? legacyRequire('tailwindcss/package.json').version
-                    : cssRequire('tailwindcss/package.json').version,
-              },
+        const dependencies = Object.fromEntries(
+          selected
+            .flatMap((item) => item.dependencies)
+            .map((spec) => {
+              const separator = spec.lastIndexOf('@');
+
+              return [spec.slice(0, separator), spec.slice(separator + 1)];
             })
-          );
-          cpSync(web, join(folder, 'node_modules/uitheme-web'), {
-            recursive: true,
-          });
+        );
 
-          for (const name of Object.keys(frameworkDependencies))
-            link(folder, name, packageDirectory(registryRequire, name));
-
-          for (const name of Object.keys(dependencies))
-            link(
-              folder,
-              name,
-              packageDirectory(
-                name === 'tailwind-merge' && tailwind === 3
-                  ? legacyRequire
-                  : registryRequire,
-                name
+        const frameworkDependencies =
+          framework === 'react'
+            ? Object.fromEntries(
+                ['react', 'react-dom'].map((name) => [
+                  name,
+                  registryRequire(`${name}/package.json`).version,
+                ])
               )
-            );
-          link(
-            folder,
-            'tailwindcss',
-            tailwind === 3
-              ? packageDirectory(legacyRequire, 'tailwindcss')
-              : tailwind4Directory
-          );
-          link(folder, 'vite', packageDirectory(registryRequire, 'vite'));
-          link(
-            folder,
-            '@types/react',
-            dirname(registryRequire.resolve('@types/react/package.json'))
-          );
-          link(
-            folder,
-            '@types/react-dom',
-            dirname(registryRequire.resolve('@types/react-dom/package.json'))
-          );
-          assert.equal(
-            existsSync(join(folder, 'node_modules/reka-ui')),
-            framework === 'vue'
-          );
-          assert.equal(
-            existsSync(join(folder, 'node_modules/@base-ui/react')),
-            base === 'base-ui'
-          );
-          assert.equal(
-            existsSync(join(folder, 'node_modules/radix-ui')),
-            base === 'radix'
-          );
+            : { vue: registryRequire('vue/package.json').version };
 
-          const extension =
-            framework === 'react'
-              ? language === 'ts'
-                ? 'tsx'
-                : 'jsx'
-              : language;
-
-          write(
-            folder,
-            'index.html',
-            `<html><head><link rel="stylesheet" href="/style.css"></head><body><main id="root"></main><script type="module" src="/src/main.${extension}"></script></body></html>`
-          );
-
-          if (framework === 'react') {
-            write(
-              folder,
-              `src/main.${extension}`,
-              `import React from 'react'; import { createRoot } from 'react-dom/client'; import { UIThemeProvider, useUITheme } from 'uitheme-web/react'; import {ThemeToggle} from './components/ui/theme-toggle'; import {ThemeSelector} from './components/ui/theme-selector'; import {ColorThemeSelector} from './components/ui/color-theme-selector'; import {IconThemeToggle} from './components/ui/icon-theme-toggle'; import {ThemeSwitcher} from './components/ui/theme-switcher'; import {ThemeDisclosure} from './components/ui/theme-disclosure'; import {ColorThemeDisclosure} from './components/ui/color-theme-disclosure'; function Controls(){const state=useUITheme(); return <div data-ready={state.mounted}><ThemeToggle/><ThemeSelector/><ColorThemeSelector/><IconThemeToggle/><ThemeSwitcher/><ThemeDisclosure label="Inline theme"/><ColorThemeDisclosure label="Inline color theme"/><output id="state">{state.theme}/{state.colorTheme}</output></div>;} createRoot(document.getElementById('root')${language === 'ts' ? '!' : ''}).render(<UIThemeProvider defaultTheme="light" colorThemes={['default','ocean']} duration={0}><Controls/></UIThemeProvider>);`
-            );
-          } else {
-            write(
-              folder,
-              `src/main.${extension}`,
-              `import {createApp} from 'vue'; import {createUITheme} from 'uitheme-web/vue'; import App from './App.vue'; createApp(App).use(createUITheme({defaultTheme:'light',colorThemes:['default','ocean'],duration:0})).mount('#root');`
-            );
-            write(
-              folder,
-              'src/App.vue',
-              `<script setup${language === 'ts' ? ' lang="ts"' : ''}>import {useUITheme} from 'uitheme-web/vue'; import ThemeToggle from './components/ui/theme-toggle.vue'; import ThemeSelector from './components/ui/theme-selector.vue'; import ColorThemeSelector from './components/ui/color-theme-selector.vue'; import IconThemeToggle from './components/ui/icon-theme-toggle.vue'; import ThemeSwitcher from './components/ui/theme-switcher.vue'; import ThemeDisclosure from './components/ui/theme-disclosure.vue'; import ColorThemeDisclosure from './components/ui/color-theme-disclosure.vue'; const state=useUITheme();</script><template><div :data-ready="state.mounted.value"><ThemeToggle/><ThemeSelector/><ColorThemeSelector/><IconThemeToggle/><ThemeSwitcher/><ThemeDisclosure label="Inline theme"/><ColorThemeDisclosure label="Inline color theme"/><output id="state">{{state.theme.value}}/{{state.colorTheme.value}}</output></div></template>`
-            );
-          }
-
-          write(
-            folder,
-            'style.css',
-            tailwind === 3
-              ? '@tailwind base;\n@tailwind components;\n@tailwind utilities;'
-              : '@import "tailwindcss";'
-          );
-
-          if (tailwind === 3)
-            write(
-              folder,
-              'tailwind.config.mjs',
-              `export default { content:[${JSON.stringify(join(folder, 'src/**/*.{tsx,jsx,vue,ts,js}'))}], theme:{extend:{}}, plugins:[] };`
-            );
-          write(
-            folder,
-            'tsconfig.json',
-            JSON.stringify({
-              compilerOptions: {
-                target: 'ES2022',
-                module: 'ESNext',
-                moduleResolution: 'Bundler',
-                jsx: 'react-jsx',
-                strict: true,
-                skipLibCheck: true,
-                allowJs: true,
-                checkJs: false,
-                noEmit: true,
-                lib: ['DOM', 'ES2022'],
-                types: framework === 'react' ? ['react', 'react-dom'] : [],
-                paths: { '@/*': ['./src/*'] },
-              },
-              include: ['src/**/*'],
-            })
-          );
-          command(
-            folder,
-            process.execPath,
-            [
-              join(cli, 'dist/index.js'),
-              'init',
-              '--cwd',
-              folder,
-              '--dry-run',
-              '--yes',
-            ],
-            `${label}-packed-cli-preview`
-          );
-
-          const client = createRegistryClient({
-            http: (url) =>
-              fetch(url.replace('https://www.ui-theme.dev', serverOrigin)),
-            webVersion,
-            cliVersion,
-          });
-
-          const graph = await client.resolve(
-            selected.map((item) => item.name),
-            { framework, base, tailwind, language }
-          );
-
-          assert.deepEqual(
-            graph.items.toSorted((a, b) => a.name.localeCompare(b.name)),
-            selected.toSorted((a, b) => a.name.localeCompare(b.name))
-          );
-          await asynchronousCommand(
-            folder,
-            [join(cli, 'dist/index.js'), 'init', '--cwd', folder, '--yes'],
-            `${label}-packed-cli-init`
-          );
-          await asynchronousCommand(
-            folder,
-            [
-              '--import',
-              preload,
-              join(cli, 'dist/index.js'),
-              'add',
-              ...selected.map((item) => item.name),
-              '--cwd',
-              folder,
-              '--base',
-              base,
-              '--language',
-              language,
-              '--yes',
-            ],
-            `${label}-packed-cli-add`
-          );
-
-          for (const item of selected)
-            for (const file of item.files)
-              assert.equal(
-                readFileSync(
-                  join(folder, 'src/components/ui', file.target ?? file.path),
-                  'utf8'
-                ),
-                file.content
-              );
-          command(
-            folder,
-            process.execPath,
-            [join(cli, 'dist/index.js'), 'info', '--cwd', folder],
-            `${label}-packed-cli-info`
-          );
-
-          const typeTool =
-            framework === 'vue'
-              ? join(
-                  packageDirectory(registryRequire, 'vue-tsc'),
-                  'bin/vue-tsc.js'
-                )
-              : registryRequire.resolve('typescript/bin/tsc');
-
-          command(
-            folder,
-            process.execPath,
-            [typeTool, '-p', 'tsconfig.json'],
-            `${label}-types`
-          );
-          const css = readFileSync(join(folder, 'style.css'), 'utf8');
-
-          const plugin =
-            tailwind === 3
-              ? tailwind3(
-                  (
-                    await import(
-                      pathToFileURL(join(folder, 'tailwind.config.mjs')).href
-                    )
-                  ).default
-                )
-              : tailwind4({ base: folder });
-
-          const compiled = await postcss([plugin]).process(css, {
-            from: join(folder, 'style.css'),
-          });
-
-          assert.ok(
-            /\.bg-background\s*\{/.test(compiled.css),
-            `${label}: missing bg-background CSS`
-          );
-          assert.ok(
-            /\.text-foreground\s*\{/.test(compiled.css),
-            `${label}: missing text-foreground CSS`
-          );
-          assert.ok(
-            /\.border-border\s*\{/.test(compiled.css),
-            `${label}: missing border-border CSS`
-          );
-          assert.match(compiled.css, /\.dark/);
-          write(evidence, `${label}.css`, compiled.css);
-          write(folder, 'style.css', compiled.css);
-
-          const config = {
-            root: folder,
-            configFile: false,
-            resolve: {
-              alias: { '@': join(folder, 'src') },
-              dedupe: ['react', 'react-dom', 'vue'],
+        write(
+          folder,
+          'package.json',
+          JSON.stringify({
+            name: label,
+            private: true,
+            type: 'module',
+            devDependencies:
+              framework === 'react'
+                ? Object.fromEntries(
+                    ['@types/react', '@types/react-dom'].map((name) => [
+                      name,
+                      registryRequire(`${name}/package.json`).version,
+                    ])
+                  )
+                : {},
+            dependencies: {
+              ...dependencies,
+              ...frameworkDependencies,
+              'uitheme-web': webVersion,
+              vite: registryRequire('vite/package.json').version,
+              tailwindcss:
+                tailwind === 3
+                  ? legacyRequire('tailwindcss/package.json').version
+                  : cssRequire('tailwindcss/package.json').version,
             },
-            plugins: framework === 'vue' ? [vuePlugin()] : [],
-            esbuild: { jsx: 'automatic' },
-            build: { outDir: 'dist', minify: false },
-            logLevel: 'error',
-          };
+          })
+        );
+        cpSync(web, join(folder, 'node_modules/uitheme-web'), {
+          recursive: true,
+        });
 
-          await build(config);
-          preview = await startPreview({
-            ...config,
-            preview: { host: '127.0.0.1', port: 0 },
-          });
-          const address = preview.httpServer.address();
-          const page = await browser.newPage({ colorScheme: 'light' });
-          const errors = [];
-          page.on('pageerror', (error) => errors.push(error.message));
-          await page.goto(`http://127.0.0.1:${address.port}`);
-          await page.waitForSelector('[data-ready="true"]');
-          await page.waitForFunction(
-            () =>
-              document.querySelector('#state')?.textContent === 'light/default'
-          );
+        for (const name of Object.keys(frameworkDependencies))
+          link(folder, name, packageDirectory(registryRequire, name));
 
-          const toggle = page.getByRole('button', {
-            name: framework === 'react' ? 'Toggle appearance' : 'Toggle theme',
-            exact: true,
-          });
-
-          const lightBackground = await toggle.evaluate(
-            (element) => getComputedStyle(element).backgroundColor
-          );
-
-          assert.notEqual(
-            lightBackground,
-            'rgba(0, 0, 0, 0)',
-            `${label}: semantic background did not resolve`
-          );
-          await toggle.click();
-          await page.waitForFunction(
-            () =>
-              document.querySelector('#state')?.textContent === 'dark/default'
-          );
-
-          await page.waitForFunction(
-            ({ label, before }) => {
-              const element = Array.from(
-                document.querySelectorAll('button')
-              ).find((button) => button.getAttribute('aria-label') === label);
-
-              return (
-                element && getComputedStyle(element).backgroundColor !== before
-              );
-            },
-            {
-              label:
-                framework === 'react' ? 'Toggle appearance' : 'Toggle theme',
-              before: lightBackground,
-            }
-          );
-
-          const darkBackground = await toggle.evaluate(
-            (element) => getComputedStyle(element).backgroundColor
-          );
-
-          assert.notEqual(
-            darkBackground,
-            lightBackground,
-            `${label}: dark CSS did not change the semantic background`
-          );
-          await toggle.click();
-          await page.waitForFunction(
-            () =>
-              document.querySelector('#state')?.textContent === 'light/default'
-          );
-
-          const appearance = page.getByRole('combobox', {
-            name: 'Theme',
-            exact: true,
-          });
-
-          await appearance.click();
-          await page.getByRole('option', { name: 'Dark', exact: true }).click();
-          await page.waitForFunction(
-            () =>
-              document.querySelector('#state')?.textContent === 'dark/default'
-          );
-
-          const palette = page.getByRole('combobox', {
-            name: 'Color theme',
-            exact: true,
-          });
-
-          await palette.click();
-          await page
-            .getByRole('option', { name: 'Ocean', exact: true })
-            .click();
-
-          const light = page.getByRole('radio', {
-            name: 'Light theme',
-            exact: true,
-          });
-
-          await light.check();
-          await light.focus();
-          await page.keyboard.press('ArrowRight');
-          await page.waitForFunction(
-            () => document.querySelector('#state')?.textContent === 'dark/ocean'
-          );
-          await page.screenshot({ path: join(evidence, `${label}.png`) });
-          assert.deepEqual(errors, []);
-          await page.close();
-          await new Promise((resolveClosed) =>
-            preview.httpServer.close(resolveClosed)
-          );
-          preview = undefined;
-          results.push({
-            framework,
-            base,
-            tailwind,
-            language,
-            components: selected.map((item) => item.name),
-            types: true,
-            productionBuild: true,
-            css: true,
-            browser: true,
-            cli: true,
-          });
-          write(
-            evidence,
-            'summary.json',
-            JSON.stringify(
-              {
-                checkedAt: new Date().toISOString(),
-                webVersion,
-                cliVersion,
-                revision: registry.revision,
-                cliGraphHarness:
-                  'packed CLI version/info/init-preview/init/add executed; production registry fetch transport redirected to local HTTP; injected RegistryClient graph also checked',
-                dependencyIsolation:
-                  'packed runtime copied per fixture; existing compiler/framework/selected-primitive dependencies linked; Tailwind 3 and merge 2 installed in temporary toolchain',
-                tailwind3: legacyRequire('tailwindcss/package.json').version,
-                tailwind4: cssRequire('tailwindcss/package.json').version,
-                results,
-              },
-              null,
-              2
+        for (const name of Object.keys(dependencies))
+          link(
+            folder,
+            name,
+            packageDirectory(
+              name === 'tailwind-merge' && tailwind === 3
+                ? legacyRequire
+                : registryRequire,
+              name
             )
+          );
+        link(
+          folder,
+          'tailwindcss',
+          tailwind === 3
+            ? packageDirectory(legacyRequire, 'tailwindcss')
+            : tailwind4Directory
+        );
+        link(folder, 'vite', packageDirectory(registryRequire, 'vite'));
+        link(
+          folder,
+          '@types/react',
+          dirname(registryRequire.resolve('@types/react/package.json'))
+        );
+        link(
+          folder,
+          '@types/react-dom',
+          dirname(registryRequire.resolve('@types/react-dom/package.json'))
+        );
+
+        // Only the selected base's primitive packages are installed.
+        for (const entry of baseManifest())
+          for (const [entryFramework, support] of Object.entries(
+            entry.frameworks
+          ))
+            for (const name of support.packages)
+              assert.equal(
+                existsSync(join(folder, 'node_modules', name)),
+                entry.id === base && entryFramework === framework,
+                `${label}: ${name}`
+              );
+
+        const extension =
+          framework === 'react'
+            ? language === 'ts'
+              ? 'tsx'
+              : 'jsx'
+            : language;
+
+        write(
+          folder,
+          'index.html',
+          `<html><head><link rel="stylesheet" href="/style.css"></head><body><main id="root"></main><script type="module" src="/src/main.${extension}"></script></body></html>`
+        );
+
+        if (framework === 'react') {
+          write(
+            folder,
+            `src/main.${extension}`,
+            `import React from 'react'; import { createRoot } from 'react-dom/client'; import { UIThemeProvider, useUITheme } from 'uitheme-web/react'; import {ThemeToggle} from './components/ui/theme-toggle'; import {ThemeSelector} from './components/ui/theme-selector'; import {ColorThemeSelector} from './components/ui/color-theme-selector'; import {IconThemeToggle} from './components/ui/icon-theme-toggle'; import {ThemeSwitcher} from './components/ui/theme-switcher'; import {ThemeDisclosure} from './components/ui/theme-disclosure'; import {ColorThemeDisclosure} from './components/ui/color-theme-disclosure'; function Controls(){const state=useUITheme(); return <div data-ready={state.mounted}><ThemeToggle/><ThemeSelector/><ColorThemeSelector/><IconThemeToggle/><ThemeSwitcher/><ThemeDisclosure label="Inline theme"/><ColorThemeDisclosure label="Inline color theme"/><output id="state">{state.theme}/{state.colorTheme}</output></div>;} createRoot(document.getElementById('root')${language === 'ts' ? '!' : ''}).render(<UIThemeProvider defaultTheme="light" colorThemes={['default','ocean']} duration={0}><Controls/></UIThemeProvider>);`
+          );
+        } else {
+          write(
+            folder,
+            `src/main.${extension}`,
+            `import {createApp} from 'vue'; import {createUITheme} from 'uitheme-web/vue'; import App from './App.vue'; createApp(App).use(createUITheme({defaultTheme:'light',colorThemes:['default','ocean'],duration:0})).mount('#root');`
+          );
+          write(
+            folder,
+            'src/App.vue',
+            `<script setup${language === 'ts' ? ' lang="ts"' : ''}>import {useUITheme} from 'uitheme-web/vue'; import ThemeToggle from './components/ui/theme-toggle.vue'; import ThemeSelector from './components/ui/theme-selector.vue'; import ColorThemeSelector from './components/ui/color-theme-selector.vue'; import IconThemeToggle from './components/ui/icon-theme-toggle.vue'; import ThemeSwitcher from './components/ui/theme-switcher.vue'; import ThemeDisclosure from './components/ui/theme-disclosure.vue'; import ColorThemeDisclosure from './components/ui/color-theme-disclosure.vue'; const state=useUITheme();</script><template><div :data-ready="state.mounted.value"><ThemeToggle/><ThemeSelector/><ColorThemeSelector/><IconThemeToggle/><ThemeSwitcher/><ThemeDisclosure label="Inline theme"/><ColorThemeDisclosure label="Inline color theme"/><output id="state">{{state.theme.value}}/{{state.colorTheme.value}}</output></div></template>`
           );
         }
 
-  assert.equal(results.length, 12);
-  console.log(`All 96 emitted components passed. Evidence: ${evidence}`);
+        write(
+          folder,
+          'style.css',
+          tailwind === 3
+            ? '@tailwind base;\n@tailwind components;\n@tailwind utilities;'
+            : '@import "tailwindcss";'
+        );
+
+        if (tailwind === 3)
+          write(
+            folder,
+            'tailwind.config.mjs',
+            `export default { content:[${JSON.stringify(join(folder, 'src/**/*.{tsx,jsx,vue,ts,js}'))}], theme:{extend:{}}, plugins:[] };`
+          );
+        write(
+          folder,
+          'tsconfig.json',
+          JSON.stringify({
+            compilerOptions: {
+              target: 'ES2022',
+              module: 'ESNext',
+              moduleResolution: 'Bundler',
+              jsx: 'react-jsx',
+              strict: true,
+              skipLibCheck: true,
+              allowJs: true,
+              checkJs: false,
+              noEmit: true,
+              lib: ['DOM', 'ES2022'],
+              types: framework === 'react' ? ['react', 'react-dom'] : [],
+              paths: { '@/*': ['./src/*'] },
+            },
+            include: ['src/**/*'],
+          })
+        );
+        command(
+          folder,
+          process.execPath,
+          [
+            join(cli, 'dist/index.js'),
+            'init',
+            '--cwd',
+            folder,
+            '--dry-run',
+            '--yes',
+          ],
+          `${label}-packed-cli-preview`
+        );
+
+        const client = createRegistryClient({
+          http: (url) =>
+            fetch(url.replace('https://www.ui-theme.dev', serverOrigin)),
+          webVersion,
+          cliVersion,
+        });
+
+        const graph = await client.resolve(
+          selected.map((item) => item.name),
+          { framework, base, tailwind, language }
+        );
+
+        assert.deepEqual(
+          graph.items.toSorted((a, b) => a.name.localeCompare(b.name)),
+          selected.toSorted((a, b) => a.name.localeCompare(b.name))
+        );
+        await asynchronousCommand(
+          folder,
+          [join(cli, 'dist/index.js'), 'init', '--cwd', folder, '--yes'],
+          `${label}-packed-cli-init`
+        );
+        await asynchronousCommand(
+          folder,
+          [
+            '--import',
+            preload,
+            join(cli, 'dist/index.js'),
+            'add',
+            ...selected.map((item) => item.name),
+            '--cwd',
+            folder,
+            '--base',
+            base,
+            '--language',
+            language,
+            '--yes',
+          ],
+          `${label}-packed-cli-add`
+        );
+
+        for (const item of selected)
+          for (const file of item.files)
+            assert.equal(
+              readFileSync(
+                join(folder, 'src/components/ui', file.target ?? file.path),
+                'utf8'
+              ),
+              file.content
+            );
+        command(
+          folder,
+          process.execPath,
+          [join(cli, 'dist/index.js'), 'info', '--cwd', folder],
+          `${label}-packed-cli-info`
+        );
+
+        const typeTool =
+          framework === 'vue'
+            ? join(
+                packageDirectory(registryRequire, 'vue-tsc'),
+                'bin/vue-tsc.js'
+              )
+            : registryRequire.resolve('typescript/bin/tsc');
+
+        command(
+          folder,
+          process.execPath,
+          [typeTool, '-p', 'tsconfig.json'],
+          `${label}-types`
+        );
+        const css = readFileSync(join(folder, 'style.css'), 'utf8');
+
+        const plugin =
+          tailwind === 3
+            ? tailwind3(
+                (
+                  await import(
+                    pathToFileURL(join(folder, 'tailwind.config.mjs')).href
+                  )
+                ).default
+              )
+            : tailwind4({ base: folder });
+
+        const compiled = await postcss([plugin]).process(css, {
+          from: join(folder, 'style.css'),
+        });
+
+        assert.ok(
+          /\.bg-background\s*\{/.test(compiled.css),
+          `${label}: missing bg-background CSS`
+        );
+        assert.ok(
+          /\.text-foreground\s*\{/.test(compiled.css),
+          `${label}: missing text-foreground CSS`
+        );
+        assert.ok(
+          /\.border-border\s*\{/.test(compiled.css),
+          `${label}: missing border-border CSS`
+        );
+        assert.match(compiled.css, /\.dark/);
+        write(evidence, `${label}.css`, compiled.css);
+        write(folder, 'style.css', compiled.css);
+
+        const config = {
+          root: folder,
+          configFile: false,
+          resolve: {
+            alias: { '@': join(folder, 'src') },
+            dedupe: ['react', 'react-dom', 'vue'],
+          },
+          plugins: framework === 'vue' ? [vuePlugin()] : [],
+          esbuild: { jsx: 'automatic' },
+          build: { outDir: 'dist', minify: false },
+          logLevel: 'error',
+        };
+
+        await build(config);
+        preview = await startPreview({
+          ...config,
+          preview: { host: '127.0.0.1', port: 0 },
+        });
+        const address = preview.httpServer.address();
+        const page = await browser.newPage({ colorScheme: 'light' });
+        const errors = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        await page.goto(`http://127.0.0.1:${address.port}`);
+        await page.waitForSelector('[data-ready="true"]');
+        await page.waitForFunction(
+          () =>
+            document.querySelector('#state')?.textContent === 'light/default'
+        );
+
+        const toggle = page.getByRole('button', {
+          name: framework === 'react' ? 'Toggle appearance' : 'Toggle theme',
+          exact: true,
+        });
+
+        const lightBackground = await toggle.evaluate(
+          (element) => getComputedStyle(element).backgroundColor
+        );
+
+        assert.notEqual(
+          lightBackground,
+          'rgba(0, 0, 0, 0)',
+          `${label}: semantic background did not resolve`
+        );
+        await toggle.click();
+        await page.waitForFunction(
+          () => document.querySelector('#state')?.textContent === 'dark/default'
+        );
+
+        await page.waitForFunction(
+          ({ label, before }) => {
+            const element = Array.from(
+              document.querySelectorAll('button')
+            ).find((button) => button.getAttribute('aria-label') === label);
+
+            return (
+              element && getComputedStyle(element).backgroundColor !== before
+            );
+          },
+          {
+            label: framework === 'react' ? 'Toggle appearance' : 'Toggle theme',
+            before: lightBackground,
+          }
+        );
+
+        const darkBackground = await toggle.evaluate(
+          (element) => getComputedStyle(element).backgroundColor
+        );
+
+        assert.notEqual(
+          darkBackground,
+          lightBackground,
+          `${label}: dark CSS did not change the semantic background`
+        );
+        await toggle.click();
+        await page.waitForFunction(
+          () =>
+            document.querySelector('#state')?.textContent === 'light/default'
+        );
+
+        const appearance = page.getByRole('combobox', {
+          name: 'Theme',
+          exact: true,
+        });
+
+        await appearance.click();
+        await page.getByRole('option', { name: 'Dark', exact: true }).click();
+        await page.waitForFunction(
+          () => document.querySelector('#state')?.textContent === 'dark/default'
+        );
+
+        const palette = page.getByRole('combobox', {
+          name: 'Color theme',
+          exact: true,
+        });
+
+        await palette.click();
+        await page.getByRole('option', { name: 'Ocean', exact: true }).click();
+
+        const light = page.getByRole('radio', {
+          name: 'Light theme',
+          exact: true,
+        });
+
+        await light.check();
+        await light.focus();
+        await page.keyboard.press('ArrowRight');
+        await page.waitForFunction(
+          () => document.querySelector('#state')?.textContent === 'dark/ocean'
+        );
+        await page.screenshot({ path: join(evidence, `${label}.png`) });
+        assert.deepEqual(errors, []);
+        await page.close();
+        await new Promise((resolveClosed) =>
+          preview.httpServer.close(resolveClosed)
+        );
+        preview = undefined;
+        results.push({
+          framework,
+          base,
+          tailwind,
+          language,
+          components: selected.map((item) => item.name),
+          types: true,
+          productionBuild: true,
+          css: true,
+          browser: true,
+          cli: true,
+        });
+        write(
+          evidence,
+          'summary.json',
+          JSON.stringify(
+            {
+              checkedAt: new Date().toISOString(),
+              webVersion,
+              cliVersion,
+              revision: registry.revision,
+              cliGraphHarness:
+                'packed CLI version/info/init-preview/init/add executed; production registry fetch transport redirected to local HTTP; injected RegistryClient graph also checked',
+              dependencyIsolation:
+                'packed runtime copied per fixture; existing compiler/framework/selected-primitive dependencies linked; Tailwind 3 and merge 2 installed in temporary toolchain',
+              tailwind3: legacyRequire('tailwindcss/package.json').version,
+              tailwind4: cssRequire('tailwindcss/package.json').version,
+              results,
+            },
+            null,
+            2
+          )
+        );
+      }
+
+  assert.equal(results.length, baseVariants().length * 2 * 2);
+  console.log(
+    `All ${results.length * controls.length} emitted components passed. Evidence: ${evidence}`
+  );
 } finally {
   await browser?.close();
 
