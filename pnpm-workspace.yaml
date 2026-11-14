@@ -11,6 +11,10 @@ overrides:
   uuid@7.0.3: 11.1.1
   decode-uri-component@0.2.2: 0.5.0
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@ui-sdk/core@0.1.0-beta.2'
+  - '@ui-sdk/react@0.1.0-beta.2'
+  - '@ui-sdk/vue@0.1.0-beta.2'
 allowBuilds:
   '@swc/core': true
   '@tailwindcss/oxide': true
