@@ -1,5 +1,5 @@
-import ts from 'typescript';
 import postcss from 'postcss';
+import { hasTrailingComma, parseModule, text, type t } from '../parse.ts';
 
 type ColorFormat = 'css' | 'hsl-channels';
 
@@ -51,40 +51,44 @@ const manual = (detail: string): never => {
   throw new Error(`Manual Tailwind setup required: ${detail}`);
 };
 
-export function unwrapExpression(node: ts.Expression): ts.Expression {
+export function unwrapExpression(node: t.Expression): t.Expression {
   while (
-    ts.isSatisfiesExpression(node) ||
-    ts.isAsExpression(node) ||
-    ts.isParenthesizedExpression(node)
+    node.type === 'TSSatisfiesExpression' ||
+    node.type === 'TSAsExpression' ||
+    node.type === 'ParenthesizedExpression'
   )
     node = node.expression;
 
   return node;
 }
 
-export function propertyName(node: ts.PropertyName): string | undefined {
-  return ts.isIdentifier(node) ||
-    ts.isStringLiteral(node) ||
-    ts.isNumericLiteral(node)
-    ? node.text
-    : undefined;
+export function propertyName(
+  property: t.ObjectProperty | t.ObjectMethod
+): string | undefined {
+  if (property.computed) return;
+  const key = property.key;
+
+  if (key.type === 'Identifier') return key.name;
+
+  if (key.type === 'StringLiteral') return key.value;
+
+  if (key.type === 'NumericLiteral') return String(key.value);
 }
 
 export function objectProperty(
-  object: ts.ObjectLiteralExpression,
+  object: t.ObjectExpression,
   key: string
-): ts.PropertyAssignment | undefined {
+): (t.ObjectProperty & { value: t.Expression }) | undefined {
   if (
     object.properties.some(
-      (property) =>
-        ts.isSpreadAssignment(property) ||
-        (property.name && !propertyName(property.name))
+      (property) => property.type === 'SpreadElement' || !propertyName(property)
     )
   )
     manual('computed properties or spreads cannot be merged safely');
 
   const properties = object.properties.filter(
-    (property) => property.name && propertyName(property.name) === key
+    (property) =>
+      property.type !== 'SpreadElement' && propertyName(property) === key
   );
 
   if (properties.length > 1) manual(`duplicate ${key} setting`);
@@ -92,72 +96,96 @@ export function objectProperty(
 
   if (!property) return;
 
-  if (!ts.isPropertyAssignment(property))
+  if (
+    property.type !== 'ObjectProperty' ||
+    property.shorthand ||
+    property.value.type === 'AssignmentPattern' ||
+    property.value.type === 'RestElement' ||
+    property.value.type === 'ObjectPattern' ||
+    property.value.type === 'ArrayPattern' ||
+    property.value.type === 'VoidPattern'
+  )
     return manual(`${key} is not a plain property`);
 
-  return property;
+  // SAFETY: the patterns above are the non-expression values of an object property
+  return property as t.ObjectProperty & { value: t.Expression };
 }
 
 export function appendObjectProperty(
   source: string,
-  object: ts.ObjectLiteralExpression,
+  object: t.ObjectExpression,
   text: string
 ): string {
-  const end = object.end - 1;
+  const end = object.end! - 1;
 
   const separator =
-    object.properties.length && !object.properties.hasTrailingComma ? ',' : '';
+    object.properties.length &&
+    !hasTrailingComma(source, object.properties, end)
+      ? ','
+      : '';
 
   return `${source.slice(0, end)}${separator}\n  ${text}\n${source.slice(end)}`;
 }
 
-function configObject(source: string): ts.ObjectLiteralExpression {
-  const file = ts.createSourceFile(
-    'tailwind.config.ts',
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS
-  );
+function exportedExpression(statement: t.Statement): t.Expression | undefined {
+  if (statement.type === 'TSExportAssignment') return statement.expression;
 
   if (
-    ts.transpileModule(source, {
-      fileName: 'tailwind.config.ts',
-      reportDiagnostics: true,
-    }).diagnostics?.length
+    statement.type === 'ExportDefaultDeclaration' &&
+    !/Declaration$/.test(statement.declaration.type)
   )
-    manual('configuration syntax is invalid');
-  let expression: ts.Expression | undefined;
+    // SAFETY: a default export that is not a declaration is an expression
+    return statement.declaration as t.Expression;
+}
 
-  for (const statement of file.statements) {
-    if (ts.isExportAssignment(statement)) expression = statement.expression;
+function configObject(source: string): t.ObjectExpression {
+  let program: t.Program;
+
+  try {
+    program = parseModule('tailwind.config.ts', source);
+  } catch {
+    return manual('configuration syntax is invalid');
+  }
+
+  let expression: t.Expression | undefined;
+
+  for (const statement of program.body) {
+    expression = exportedExpression(statement) ?? expression;
 
     if (
-      ts.isExpressionStatement(statement) &&
-      ts.isBinaryExpression(statement.expression) &&
-      statement.expression.left.getText(file) === 'module.exports'
+      statement.type === 'ExpressionStatement' &&
+      (statement.expression.type === 'AssignmentExpression' ||
+        statement.expression.type === 'BinaryExpression' ||
+        statement.expression.type === 'LogicalExpression') &&
+      text(source, statement.expression.left) === 'module.exports'
     )
       expression = statement.expression.right;
   }
 
   if (expression) expression = unwrapExpression(expression);
 
-  if (expression && ts.isIdentifier(expression)) {
-    const name = expression.text;
+  if (expression && expression.type === 'Identifier') {
+    const name = expression.name;
 
-    for (const statement of file.statements)
-      if (ts.isVariableStatement(statement))
-        for (const declaration of statement.declarationList.declarations) {
+    for (const statement of program.body) {
+      const declaration =
+        statement.type === 'ExportNamedDeclaration'
+          ? statement.declaration
+          : statement;
+
+      if (declaration?.type === 'VariableDeclaration')
+        for (const declarator of declaration.declarations) {
           if (
-            ts.isIdentifier(declaration.name) &&
-            declaration.name.text === name &&
-            declaration.initializer
+            declarator.id.type === 'Identifier' &&
+            declarator.id.name === name &&
+            declarator.init
           )
-            expression = unwrapExpression(declaration.initializer);
+            expression = unwrapExpression(declarator.init);
         }
+    }
   }
 
-  if (!expression || !ts.isObjectLiteralExpression(expression))
+  if (!expression || expression.type !== 'ObjectExpression')
     return manual('the exported configuration must be a plain object');
 
   return expression;
@@ -205,16 +233,16 @@ export function transformTailwind3(
   const darkMode = objectProperty(root, 'darkMode');
 
   if (darkMode) {
-    const value = unwrapExpression(darkMode.initializer);
+    const value = unwrapExpression(darkMode.value);
 
     const valid =
-      (ts.isStringLiteral(value) && value.text === 'class') ||
-      (ts.isArrayLiteralExpression(value) &&
+      (value.type === 'StringLiteral' && value.value === 'class') ||
+      (value.type === 'ArrayExpression' &&
         value.elements.length <= 2 &&
         value.elements.every(
           (element, index) =>
-            ts.isStringLiteral(element) &&
-            element.text === (index === 0 ? 'class' : '.dark')
+            element?.type === 'StringLiteral' &&
+            element.value === (index === 0 ? 'class' : '.dark')
         ));
 
     if (!valid) manual('existing darkMode does not use the .dark class');
@@ -228,11 +256,9 @@ export function transformTailwind3(
       0,
       ['theme', 'extend', 'colors'].indexOf(key)
     )) {
-      const value = unwrapExpression(
-        objectProperty(object, parent)!.initializer
-      );
+      const value = unwrapExpression(objectProperty(object, parent)!.value);
 
-      if (!ts.isObjectLiteralExpression(value))
+      if (value.type !== 'ObjectExpression')
         return manual(`${parent} must be a plain object`);
       object = value;
     }
@@ -240,9 +266,7 @@ export function transformTailwind3(
     const property = objectProperty(object, key);
 
     if (!property) source = appendObjectProperty(source, object, `${key}: {}`);
-    else if (
-      !ts.isObjectLiteralExpression(unwrapExpression(property.initializer))
-    )
+    else if (unwrapExpression(property.value).type !== 'ObjectExpression')
       manual(`${key} must be a plain object`);
   }
 
@@ -253,9 +277,9 @@ export function transformTailwind3(
     const property = objectProperty(colors, key);
 
     if (!property) return manual(`missing ${key} setting`);
-    const value = unwrapExpression(property.initializer);
+    const value = unwrapExpression(property.value);
 
-    if (!ts.isObjectLiteralExpression(value))
+    if (value.type !== 'ObjectExpression')
       return manual(`${key} must be a plain object`);
     colors = value;
   }

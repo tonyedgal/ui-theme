@@ -1,4 +1,13 @@
-import ts from 'typescript';
+import {
+  isCall,
+  memberName,
+  moduleName,
+  parseModule,
+  parseObjectExpression,
+  text,
+  walk,
+  type t,
+} from '../parse.ts';
 
 export interface Edit {
   start: number;
@@ -58,68 +67,66 @@ const runtimeModule = (name: string) =>
     'uitheme-web/vue',
   ].includes(name);
 
+// a string literal or a template literal without substitutions
+function stringValue(node: t.Node): string | undefined {
+  if (node.type === 'StringLiteral') return node.value;
+
+  if (node.type === 'TemplateLiteral' && !node.expressions.length)
+    return node.quasis[0].value.cooked ?? undefined;
+}
+
+function identifierName(node: t.Node): string | undefined {
+  if (node.type === 'Identifier' || node.type === 'JSXIdentifier')
+    return node.name;
+}
+
 export function rewriteScript(
   source: string,
   filename: string,
   controls: LocalControls
 ) {
-  const ast = ts.createSourceFile(
-    filename,
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    /\.(?:[jt]sx|js)$/.test(filename) ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-  );
+  let ast: t.Program;
 
-  const edits: Edit[] = [];
-  const diagnostics: string[] = [];
-
-  if (
-    'parseDiagnostics' in ast &&
-    Array.isArray(ast.parseDiagnostics) &&
-    ast.parseDiagnostics.length
-  )
+  try {
+    ast = parseModule(filename, source);
+  } catch {
     return {
       text: source,
       diagnostics: [
         'Source syntax could not be parsed safely. Fix the syntax or migrate this file manually.',
       ],
     };
-  const providers = new Set<string>();
-
-  for (const node of ast.statements) {
-    if (
-      !ts.isImportDeclaration(node) ||
-      !ts.isStringLiteral(node.moduleSpecifier) ||
-      !runtimeModule(node.moduleSpecifier.text)
-    )
-      continue;
-    const bindings = node.importClause?.namedBindings;
-
-    if (bindings && ts.isNamedImports(bindings))
-      for (const item of bindings.elements) {
-        if ((item.propertyName ?? item.name).text === 'UIThemeProvider')
-          providers.add(item.name.text);
-      }
   }
 
-  const hasProviderAncestor = (node: ts.Node): boolean => {
-    for (let parent = node.parent; parent; parent = parent.parent) {
-      if (
-        ts.isJsxElement(parent) &&
-        providers.has(parent.openingElement.tagName.getText(ast))
-      )
-        return true;
-    }
+  const edits: Edit[] = [];
+  const diagnostics: string[] = [];
+  const providers = new Set<string>();
 
-    return false;
-  };
+  for (const node of ast.body) {
+    if (node.type !== 'ImportDeclaration' || !runtimeModule(node.source.value))
+      continue;
+
+    for (const item of node.specifiers)
+      if (
+        item.type === 'ImportSpecifier' &&
+        moduleName(item.imported) === 'UIThemeProvider'
+      )
+        providers.add(item.local.name);
+  }
+
+  const hasProviderAncestor = (parents: readonly t.Node[]): boolean =>
+    parents.some(
+      (parent) =>
+        parent.type === 'JSXElement' &&
+        parent.closingElement !== null &&
+        providers.has(text(source, parent.openingElement.name))
+    );
 
   const migrateControl = (
-    item: ts.ImportSpecifier,
-    declaration: ts.ImportDeclaration
+    item: t.ImportSpecifier,
+    declaration: t.ImportDeclaration
   ): string | undefined => {
-    const original = (item.propertyName ?? item.name).text;
+    const original = moduleName(item.imported);
 
     if (original.startsWith('UISelect')) {
       diagnostics.push(
@@ -131,7 +138,11 @@ export function rewriteScript(
 
     const local = controls[original];
 
-    if (!local || item.isTypeOnly || declaration.importClause?.isTypeOnly) {
+    if (
+      !local ||
+      item.importKind === 'type' ||
+      declaration.importKind === 'type'
+    ) {
       diagnostics.push(
         `${original}: install the matching local registry control, then replace this import and review its props.`
       );
@@ -142,27 +153,25 @@ export function rewriteScript(
     let uses = 0;
     let unsafe = false;
 
-    const inspect = (node: ts.Node) => {
+    walk(ast, (node, parents) => {
       if (
-        ts.isIdentifier(node) &&
-        node.text === item.name.text &&
-        node !== item.name &&
-        node !== item.propertyName
-      ) {
-        if (
-          !ts.isJsxSelfClosingElement(node.parent) ||
-          node.parent.tagName !== node ||
-          node.parent.attributes.properties.length ||
-          !hasProviderAncestor(node)
-        )
-          unsafe = true;
-        uses++;
-      }
+        identifierName(node) !== item.local.name ||
+        node === item.local ||
+        node === item.imported
+      )
+        return;
+      const parent = parents.at(-1);
 
-      ts.forEachChild(node, inspect);
-    };
-
-    inspect(ast);
+      if (
+        parent?.type !== 'JSXOpeningElement' ||
+        !parent.selfClosing ||
+        parent.name !== node ||
+        parent.attributes.length ||
+        !hasProviderAncestor(parents)
+      )
+        unsafe = true;
+      uses++;
+    });
 
     if (!uses || unsafe) {
       diagnostics.push(
@@ -172,180 +181,189 @@ export function rewriteScript(
       return;
     }
 
-    return `import { ${local.exportName} as ${item.name.text} } from '${local.file}';`;
+    return `import { ${local.exportName} as ${item.local.name} } from '${local.file}';`;
   };
 
-  const visit = (node: ts.Node) => {
-    if (
-      ts.isImportDeclaration(node) &&
-      ts.isStringLiteral(node.moduleSpecifier)
-    ) {
-      const module = node.moduleSpecifier;
-      const bindings = node.importClause?.namedBindings;
+  const comments = (start: number, end: number) =>
+    source.slice(start, end).match(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g) ?? [];
 
-      if (
-        runtimeModule(module.text) &&
-        bindings &&
-        ts.isNamedImports(bindings)
-      ) {
-        const old = bindings.elements.filter((item) =>
-          removed.has((item.propertyName ?? item.name).text)
+  const importDeclaration = (node: t.ImportDeclaration) => {
+    const module = node.source;
+
+    const elements = node.specifiers.filter(
+      (item): item is t.ImportSpecifier => item.type === 'ImportSpecifier'
+    );
+
+    if (runtimeModule(module.value)) {
+      const old = elements.filter((item) =>
+        removed.has(moduleName(item.imported))
+      );
+
+      if (old.length) {
+        const replacements = old
+          .map((item) => migrateControl(item, node))
+          .filter((value): value is string => !!value);
+
+        if (replacements.length !== old.length) return;
+
+        const retained = elements.filter((item) => !old.includes(item));
+
+        const hasDefault = node.specifiers.some(
+          (item) => item.type === 'ImportDefaultSpecifier'
         );
 
-        if (old.length) {
-          const replacements = old
-            .map((item) => migrateControl(item, node))
-            .filter((value): value is string => !!value);
+        if (retained.length || hasDefault) {
+          for (let index = 0; index < elements.length; index++) {
+            if (!old.includes(elements[index])) continue;
+            const first = index;
 
-          if (replacements.length !== old.length) return;
+            while (
+              index + 1 < elements.length &&
+              old.includes(elements[index + 1])
+            )
+              index++;
+            const next = elements[index + 1];
+            const previous = elements[first - 1];
 
-          const retained = bindings.elements.filter(
-            (item) => !old.includes(item)
-          );
+            const start = next
+              ? elements[first].start!
+              : previous
+                ? previous.end!
+                : elements[first].start!;
 
-          if (retained.length || node.importClause?.name) {
-            for (let index = 0; index < bindings.elements.length; index++) {
-              if (!old.includes(bindings.elements[index])) continue;
-              const first = index;
-
-              while (
-                index + 1 < bindings.elements.length &&
-                old.includes(bindings.elements[index + 1])
-              )
-                index++;
-              const next = bindings.elements[index + 1];
-              const previous = bindings.elements[first - 1];
-
-              const start = next
-                ? bindings.elements[first].getStart(ast)
-                : previous
-                  ? previous.end
-                  : bindings.elements[first].getStart(ast);
-
-              const end = next
-                ? next.getStart(ast)
-                : bindings.elements[index].end;
-
-              const comments =
-                source
-                  .slice(start, end)
-                  .match(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g) ?? [];
-
-              edits.push({
-                start,
-                end,
-                text: comments.length ? ' ' + comments.join('\n') + '\n' : '',
-              });
-            }
+            const end = next ? next.start! : elements[index].end!;
+            const kept = comments(start, end);
 
             edits.push({
-              start: node.end,
-              end: node.end,
-              text: '\n' + replacements.join('\n'),
+              start,
+              end,
+              text: kept.length ? ' ' + kept.join('\n') + '\n' : '',
             });
-          } else {
-            const comments =
-              source
-                .slice(node.getStart(ast), node.end)
-                .match(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g) ?? [];
-
-            edits.push({
-              start: node.getStart(ast),
-              end: node.end,
-              text: [...comments, ...replacements].join('\n'),
-            });
-
-            return;
           }
+
+          edits.push({
+            start: node.end!,
+            end: node.end!,
+            text: '\n' + replacements.join('\n'),
+          });
+        } else {
+          edits.push({
+            start: node.start!,
+            end: node.end!,
+            text: [...comments(node.start!, node.end!), ...replacements].join(
+              '\n'
+            ),
+          });
+
+          return;
         }
       }
-
-      if (
-        runtimeModule(module.text) &&
-        bindings &&
-        ts.isNamespaceImport(bindings)
-      )
-        diagnostics.push(
-          'Namespace theme imports need a manual check for removed styled controls. Replace the namespace with explicit provider/composable imports.'
-        );
-
-      if (
-        module.text.startsWith('uitheme-vue/') &&
-        !['uitheme-vue/nuxt', 'uitheme-vue/bootstrap'].includes(module.text)
-      )
-        diagnostics.push(
-          `Unsupported legacy entry ${module.text}: choose an explicit uitheme-web subpath before migration.`
-        );
-      const value = specifier(module.text);
-
-      if (value !== module.text)
-        edits.push({
-          start: module.getStart(ast) + 1,
-          end: module.end - 1,
-          text: value,
-        });
-
-      return;
     }
 
     if (
-      ts.isExportDeclaration(node) &&
-      node.moduleSpecifier &&
-      ts.isStringLiteral(node.moduleSpecifier) &&
-      runtimeModule(node.moduleSpecifier.text)
-    ) {
-      if (
-        !node.exportClause ||
-        !ts.isNamedExports(node.exportClause) ||
-        node.exportClause.elements.some((item) =>
-          removed.has((item.propertyName ?? item.name).text)
-        )
-      ) {
-        diagnostics.push(
-          'Removed styled control re-exports need manual migration to local registry components.'
-        );
-      }
+      runtimeModule(module.value) &&
+      node.specifiers.some((item) => item.type === 'ImportNamespaceSpecifier')
+    )
+      diagnostics.push(
+        'Namespace theme imports need a manual check for removed styled controls. Replace the namespace with explicit provider/composable imports.'
+      );
+
+    if (
+      module.value.startsWith('uitheme-vue/') &&
+      !['uitheme-vue/nuxt', 'uitheme-vue/bootstrap'].includes(module.value)
+    )
+      diagnostics.push(
+        `Unsupported legacy entry ${module.value}: choose an explicit uitheme-web subpath before migration.`
+      );
+    const value = specifier(module.value);
+
+    if (value !== module.value)
+      edits.push({
+        start: module.start! + 1,
+        end: module.end! - 1,
+        text: value,
+      });
+  };
+
+  const nuxtConfig = /(?:^|[/\\])nuxt\.config\.[cm]?[jt]s$/.test(filename);
+
+  walk(ast, (node, parents) => {
+    if (node.type === 'ImportDeclaration') {
+      importDeclaration(node);
+
+      return false;
     }
 
-    if (ts.isStringLiteralLike(node)) {
-      const parent = node.parent;
+    if (
+      (node.type === 'ExportNamedDeclaration' ||
+        node.type === 'ExportAllDeclaration') &&
+      node.source &&
+      runtimeModule(node.source.value) &&
+      (node.type === 'ExportAllDeclaration' ||
+        node.specifiers.some(
+          (item) =>
+            item.type !== 'ExportSpecifier' ||
+            removed.has(moduleName(item.local))
+        ))
+    )
+      diagnostics.push(
+        'Removed styled control re-exports need manual migration to local registry components.'
+      );
+
+    const value =
+      stringValue(node) ??
+      (nuxtConfig && node.type === 'DirectiveLiteral' ? node.value : undefined);
+
+    if (value !== undefined) {
+      const parent = parents.at(-1);
+      const grandparent = parents.at(-2);
+
+      const call =
+        parent?.type === 'ImportExpression'
+          ? parent.source === node
+          : !!parent &&
+            isCall(parent) &&
+            parent.arguments[0] === node &&
+            (parent.callee.type === 'Import' ||
+              (parent.callee.type === 'Identifier' &&
+                parent.callee.name === 'require'));
 
       const isModule =
-        (ts.isExportDeclaration(parent) && parent.moduleSpecifier === node) ||
-        (ts.isCallExpression(parent) &&
-          parent.arguments[0] === node &&
-          (parent.expression.kind === ts.SyntaxKind.ImportKeyword ||
-            (ts.isIdentifier(parent.expression) &&
-              parent.expression.text === 'require'))) ||
-        ts.isExternalModuleReference(parent) ||
-        (ts.isLiteralTypeNode(parent) && ts.isImportTypeNode(parent.parent)) ||
-        (/(?:^|[/\\])nuxt\.config\.[cm]?[jt]s$/.test(filename) &&
-          node.text === 'uitheme-vue/nuxt');
+        call ||
+        ((parent?.type === 'ExportNamedDeclaration' ||
+          parent?.type === 'ExportAllDeclaration') &&
+          parent.source === node) ||
+        parent?.type === 'TSExternalModuleReference' ||
+        parent?.type === 'TSImportType' ||
+        (parent?.type === 'TSLiteralType' &&
+          grandparent?.type === 'TSImportType') ||
+        (nuxtConfig && value === 'uitheme-vue/nuxt');
 
       if (isModule) {
-        if (ts.isCallExpression(parent) && runtimeModule(node.text))
+        if (call && runtimeModule(value))
           diagnostics.push(
             'Dynamic or require theme imports need a manual check for removed styled controls. Use explicit named imports first.'
           );
-        const value = specifier(node.text);
+        const next = specifier(value);
 
-        if (value !== node.text)
+        if (next !== value)
           edits.push({
-            start: node.getStart(ast) + 1,
-            end: node.end - 1,
-            text: value,
+            start: node.start! + 1,
+            end: node.end! - 1,
+            text: next,
           });
       }
     }
 
-    if (ts.isPropertyAccessExpression(node) && removed.has(node.name.text))
-      diagnostics.push(
-        `${node.name.text}: namespace control access requires a local component import and a manual prop review.`
-      );
-    ts.forEachChild(node, visit);
-  };
+    const member =
+      memberName(node) ??
+      (node.type === 'JSXMemberExpression' ? node.property.name : undefined);
 
-  visit(ast);
+    if (member && removed.has(member))
+      diagnostics.push(
+        `${member}: namespace control access requires a local component import and a manual prop review.`
+      );
+  });
 
   return { text: applyEdits(source, edits), diagnostics };
 }
@@ -388,25 +406,19 @@ export function rewriteSource(
 
 export function rewriteManifest(source: string): string {
   const manifest = JSON.parse(source);
-  const ast = ts.parseJsonText('package.json', source);
-  const statement = ast.statements[0];
+  const expression = parseObjectExpression(source);
 
-  if (
-    !statement ||
-    !ts.isExpressionStatement(statement) ||
-    !ts.isObjectLiteralExpression(statement.expression)
-  )
+  if (expression.type !== 'ObjectExpression')
     throw new Error('package.json must contain an object.');
-  const expression = statement.expression;
   const edits: Edit[] = [];
 
   for (const property of expression.properties) {
     if (
-      !ts.isPropertyAssignment(property) ||
-      !ts.isStringLiteral(property.name)
+      property.type !== 'ObjectProperty' ||
+      property.key.type !== 'StringLiteral'
     )
       continue;
-    const key = property.name.text;
+    const key = property.key.value;
 
     if (
       ![
@@ -419,7 +431,7 @@ export function rewriteManifest(source: string): string {
       continue;
     const values = manifest[key];
 
-    if (!ts.isObjectLiteralExpression(property.initializer)) continue;
+    if (property.value.type !== 'ObjectExpression') continue;
 
     if (
       !['@ui-theme/web', 'uitheme-vue', 'uitheme-web'].some(
@@ -436,8 +448,8 @@ export function rewriteManifest(source: string): string {
     const indent = /^([ \t]+)"/m.exec(source)?.[1] ?? '  ';
 
     const prefix = source.slice(
-      source.lastIndexOf('\n', property.getStart(ast)) + 1,
-      property.getStart(ast)
+      source.lastIndexOf('\n', property.start!) + 1,
+      property.start!
     );
 
     const text = JSON.stringify(next, null, indent).replaceAll(
@@ -446,8 +458,8 @@ export function rewriteManifest(source: string): string {
     );
 
     edits.push({
-      start: property.initializer.getStart(ast),
-      end: property.initializer.end,
+      start: property.value.start!,
+      end: property.value.end!,
       text,
     });
   }

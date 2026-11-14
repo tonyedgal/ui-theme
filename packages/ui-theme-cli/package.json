@@ -18,20 +18,22 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/detection*.test.ts tests/registry*.test.ts && vitest run tests/install.test.ts tests/tailwind.test.ts tests/commands.test.ts tests/migrate.test.ts tests/write.test.ts",
+    "test": "node --test tests/detection*.test.ts tests/registry*.test.ts && vitest run tests/install.test.ts tests/tailwind.test.ts tests/commands.test.ts tests/migrate.test.ts tests/write.test.ts tests/shared-utils.test.ts tests/config-files.test.ts tests/rewrites.test.ts",
     "test:package": "node scripts/smoke-package.mjs",
     "prepublishOnly": "pnpm build && pnpm test:package"
   },
   "dependencies": {
     "cross-spawn": "^7.0.6",
     "postcss": "^8.5.31",
-    "semver": "^7.8.5",
-    "typescript": "^6.0.3"
+    "semver": "^7.8.5"
   },
   "devDependencies": {
+    "@babel/parser": "8.0.8",
+    "@babel/types": "8.0.8",
     "@types/cross-spawn": "^6.0.6",
     "@types/node": "^26.6.5",
     "@types/semver": "^7.8.0",
+    "get-tsconfig": "4.14.3",
     "tsup": "^9.0.0",
     "vitest": "^5.0.5"
   },
