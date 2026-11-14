@@ -36,18 +36,8 @@ const PALETTE_MODES = { add: 0, custom: 1, exclusive: 2 } as const;
  * 0/1 flags storage, dataTheme, systemClasses, systemCss and the palette mode
  * (0 add, 1 add unless `default`, 2 toggle every configured palette).
  */
-const RUNTIME = `(function(k,K,t,c,d,D,g,p,s,a,x,y,m){try{
-var r=function(n,v,f){try{var o=s&&localStorage.getItem(n);return o&&(v?v.indexOf(o)>-1:!/\\s/.test(o))?o:f}catch(e){return f}},
-h=document.documentElement,l=h.classList,T=r(k,t,d),P=r(K,c,D),z=T==="system"&&y,
-q=T==="dark"||T==="system"&&!z&&matchMedia("(prefers-color-scheme: dark)").matches;
-a?h.setAttribute("data-theme",q?"dark":"light"):l.toggle(g,q);
-x&&l.remove("auto","system");z&&l.add("system");
-h.style.colorScheme=z?"":q?"dark":"light";
-if(m==2)(c||[]).forEach(function(v){l.toggle(p+v,v===P)});else if(!m||P!=="default")l.add(p+P)
-}catch(e){console.warn("Theme pre-hydration script failed:",e)}})`.replace(
-  /\n/g,
-  ''
-);
+// prettier-ignore
+const RUNTIME = `(function(k,K,t,c,d,D,g,p,s,a,x,y,m){try{var r=function(n,v,f){try{var o=s&&localStorage.getItem(n);return o&&(v?v.indexOf(o)>-1:!/\\s/.test(o))?o:f}catch(e){return f}},h=document.documentElement,l=h.classList,T=r(k,t,d),P=r(K,c,D),z=T=="system"&&y,q=T=="dark"||T=="system"&&!z&&matchMedia("(prefers-color-scheme: dark)").matches;a?h.setAttribute("data-theme",q?"dark":"light"):l.toggle(g,q);x&&l.remove("auto","system");z&&l.add("system");h.style.colorScheme=z?"":q?"dark":"light";m>1?(c||[]).forEach(function(v){l.toggle(p+v,v==P)}):(m&&P=="default")||l.add(p+P)}catch(e){console.warn(e)}})`;
 
 type RuntimeArgs = [
   string,
