@@ -25,15 +25,15 @@ for (const provider of ['next', 'tanstack']) {
     expect(code).not.toContain('</script>');
     expect(code).not.toContain('\u2028');
     const getItem = vi.fn(() => null);
-    const classList = { add: vi.fn(), remove: vi.fn() };
+    const classList = { add: vi.fn(), remove: vi.fn(), toggle: vi.fn() };
     const root = { classList, style: {} };
-    new Function('localStorage', 'document', 'window', code ?? '')(
+    new Function('localStorage', 'document', 'matchMedia', code ?? '')(
       { getItem },
       { documentElement: root },
-      { matchMedia: () => ({ matches: false }) }
+      () => ({ matches: false })
     );
     expect(getItem).toHaveBeenCalledWith(storageKey);
-    expect(classList.add).toHaveBeenCalledWith('dark');
+    expect(classList.toggle).toHaveBeenCalledWith('dark', true);
   });
 }
 
