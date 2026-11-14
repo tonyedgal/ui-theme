@@ -1056,6 +1056,9 @@ importers:
       get-tsconfig:
         specifier: 4.14.3
         version: 4.14.3
+      resolve-pkg-maps:
+        specifier: 1.0.0
+        version: 1.0.0
       tsup:
         specifier: ^9.0.0
         version: 9.0.0(jiti@2.7.0)(postcss@8.5.31)(typescript@6.0.3)
