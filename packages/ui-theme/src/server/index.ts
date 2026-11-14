@@ -1,5 +1,5 @@
 import type { Theme, ThemeConfig } from '../core/types';
-import { buildThemeScript } from '../core/theme-script';
+import { DARK, js, themeScript } from '../core/theme-script';
 import {
   STORAGE_KEY,
   COLOR_STORAGE_KEY,
@@ -47,19 +47,17 @@ export function getThemeScript(options: ThemeBootstrapOptions = {}) {
     );
   }
 
-  return buildThemeScript({
-    themes,
-    colorThemes,
-    defaultTheme,
-    defaultColorTheme,
-    globalClassName,
-    colorThemePrefix,
-    storageKey: options.storageKey ?? STORAGE_KEY,
-    colorStorageKey: options.colorStorageKey ?? COLOR_STORAGE_KEY,
-    storage: options.storage === undefined,
-    dataTheme: false,
-    systemClasses: false,
-    systemCss: false,
-    palette: 'exclusive',
-  });
+  const storage = options.storage === undefined;
+
+  return themeScript(
+    storage,
+    [options.storageKey ?? STORAGE_KEY, themes, defaultTheme],
+    [
+      options.colorStorageKey ?? COLOR_STORAGE_KEY,
+      colorThemes,
+      defaultColorTheme,
+    ],
+    DARK,
+    `l.toggle(${js(globalClassName)},q);d.style.colorScheme=q?"dark":"light";${js(colorThemes)}.forEach(function(v){l.toggle(${js(colorThemePrefix)}+v,v==p)})`
+  );
 }
