@@ -1133,10 +1133,6 @@ importers:
         version: 3.3.13(typescript@6.0.3)
 
   packages/ui-theme-rn:
-    dependencies:
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
     devDependencies:
       '@expo/ui':
         specifier: ~58.0.23
