@@ -1,5 +1,12 @@
 # uitheme-cli
 
+## 1.0.1
+
+### Patch Changes
+
+- 302f48d: The CLI now rejects a registry item that asks for `uitheme-web` from a URL or another source that is not a version, a dist-tag or a local `.tgz` file.
+- 2b16548: The CLI now starts npm, pnpm and Yarn correctly on Windows when it installs dependencies.
+
 ## 1.0.0
 
 ### Major Changes
