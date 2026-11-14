@@ -122,7 +122,19 @@ async function asynchronousCommand(folder, args, label) {
 }
 
 function packageDirectory(require, name) {
-  let path = dirname(require.resolve(name));
+  let path;
+
+  try {
+    path = dirname(require.resolve(name));
+  } catch (error) {
+    // a package with subpath exports only, such as @ui-sdk/react, has no main.
+    if (error.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') throw error;
+    path = require.resolve
+      .paths(name)
+      .map((parent) => join(parent, name))
+      .find((folder) => existsSync(join(folder, 'package.json')));
+    assert.ok(path, `Cannot find ${name}`);
+  }
 
   while (
     !existsSync(join(path, 'package.json')) ||
