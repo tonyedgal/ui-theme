@@ -124,23 +124,26 @@ export const getSlideFromCoords = (direction: SlideDirection) => {
   }
 };
 
-/** Cover the captured snapshot, including fractional zoom and its feather edge. */
-const getSnapshotSize = () => {
-  // innerWidth/Height are integers; the captured CSS box can be fractional at
-  // browser zoom. Read once after ready, and keep every coordinate in CSS px.
-  const snapshot = getComputedStyle(
-    document.documentElement,
-    '::view-transition-new(root)'
-  );
+/**
+ * Origins arrive in viewport CSS px, but Chrome and WebKit resolve px keyframes on
+ * ::view-transition-new(root) in the snapshot's own box, which differs from the
+ * viewport under root zoom. Percentages resolve against that box in every
+ * engine, so emit percentages computed on the same innerWidth/innerHeight basis
+ * as the origin. Fractional browser zoom (a snapshot box slightly larger than
+ * the integer viewport) scales the percentages with the box, so the final
+ * shape still covers every corner.
+ */
+const getViewportSize = () => ({
+  width: window.innerWidth,
+  height: window.innerHeight,
+});
 
-  const width = Math.max(window.innerWidth, parseFloat(snapshot.width) || 0);
-  const height = Math.max(window.innerHeight, parseFloat(snapshot.height) || 0);
+const percentX = (x: number) => (x / window.innerWidth) * 100;
 
-  return { width, height };
-};
+const percentY = (y: number) => (y / window.innerHeight) * 100;
 
 const getCircleRadius = (x: number, y: number): number => {
-  const { width, height } = getSnapshotSize();
+  const { width, height } = getViewportSize();
 
   return (
     Math.hypot(
@@ -148,6 +151,31 @@ const getCircleRadius = (x: number, y: number): number => {
       Math.max(Math.abs(y), Math.abs(height - y))
     ) + 1
   ); // Overscan prevents an antialiased final corner from revealing the old view.
+};
+
+/**
+ * mask-position percentages align the image rather than offset it, so masks
+ * cannot use percentages for a fixed centre. Resolve the same percentages
+ * against the snapshot box in its own px instead (equal to the viewport
+ * unless the root is zoomed).
+ */
+const getSnapshotScale = () => {
+  const snapshot = getComputedStyle(
+    document.documentElement,
+    '::view-transition-new(root)'
+  );
+
+  return {
+    x: (parseFloat(snapshot.width) || window.innerWidth) / window.innerWidth,
+    y: (parseFloat(snapshot.height) || window.innerHeight) / window.innerHeight,
+  };
+};
+
+/** circle() percentages resolve against hypot(width, height) / sqrt(2). */
+const radiusPercent = (radius: number) => {
+  const { width, height } = getViewportSize();
+
+  return (radius / (Math.hypot(width, height) / Math.SQRT2)) * 100;
 };
 
 /** Viewport CSS coordinates for fixed origins; button origins stay in the hook. */
@@ -299,7 +327,9 @@ export const createPolygonGradientAnimation = (
   config: AnimationConfig
 ): Animation => {
   const direction = config.clipPathDirection ?? 'top-left';
-  const { width, height } = getSnapshotSize();
+  const scale = getSnapshotScale();
+  const width = window.innerWidth * scale.x;
+  const height = window.innerHeight * scale.y;
   const diagonal = direction.includes('-');
   const left = direction.includes('left');
   const top = direction.includes('top');
@@ -349,17 +379,20 @@ export const createTriangleAnimation = (config: AnimationConfig): Animation => {
   const radius = getCircleRadius(x, y);
   const side = Math.sqrt(3) * radius;
 
+  const point = (px: number, py: number) => `${percentX(px)}% ${percentY(py)}%`;
+  const origin = point(x, y);
+
   return animateReveal(config, {
     clipPath: [
-      `polygon(${x}px ${y}px, ${x}px ${y}px, ${x}px ${y}px)`,
-      `polygon(${x}px ${y - 2 * radius}px, ${x + side}px ${y + radius}px, ${x - side}px ${y + radius}px)`,
+      `polygon(${origin}, ${origin}, ${origin})`,
+      `polygon(${point(x, y - 2 * radius)}, ${point(x + side, y + radius)}, ${point(x - side, y + radius)})`,
     ],
   });
 };
 
 /** The fixed logo has its own snapshot; only the page reveal grows beneath it. */
 export const createSvgLogoAnimation = (config: AnimationConfig): Animation => {
-  const { width, height } = getSnapshotSize();
+  const { width, height } = getViewportSize();
 
   return createCircleAnimation({ ...config, x: width / 2, y: height / 2 });
 };
@@ -367,11 +400,12 @@ export const createSvgLogoAnimation = (config: AnimationConfig): Animation => {
 /** Native circular clip; browser compositor support varies by engine. */
 export const createCircleAnimation = (config: AnimationConfig): Animation => {
   const { x, y } = config;
+  const at = `at ${percentX(x)}% ${percentY(y)}%`;
 
   return animateReveal(config, {
     clipPath: [
-      `circle(0px at ${x}px ${y}px)`,
-      `circle(${getCircleRadius(x, y)}px at ${x}px ${y}px)`,
+      `circle(0% ${at})`,
+      `circle(${radiusPercent(getCircleRadius(x, y))}% ${at})`,
     ],
   });
 };
@@ -398,7 +432,14 @@ export const createBlurCircleAnimation = (
   if (blurAmount <= 0) return createCircleAnimation(config);
   const feather = Math.min(blurAmount, 20);
   const radius = getCircleRadius(x, y) + feather;
-  const diameter = radius * 2;
+  const scale = getSnapshotScale();
+
+  const [bx, by, rx, ry] = [
+    x * scale.x,
+    y * scale.y,
+    radius * scale.x,
+    radius * scale.y,
+  ];
 
   return animateReveal(config, {
     maskImage: [
@@ -406,7 +447,7 @@ export const createBlurCircleAnimation = (
       `radial-gradient(closest-side, #000 calc(100% - ${feather}px), transparent 100%)`,
     ],
     maskRepeat: ['no-repeat', 'no-repeat'],
-    maskSize: ['0px 0px', `${diameter}px ${diameter}px`],
-    maskPosition: [`${x}px ${y}px`, `${x - radius}px ${y - radius}px`],
+    maskSize: ['0px 0px', `${rx * 2}px ${ry * 2}px`],
+    maskPosition: [`${bx}px ${by}px`, `${bx - rx}px ${by - ry}px`],
   });
 };
