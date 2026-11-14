@@ -9,6 +9,7 @@ import nodePath from 'node:path';
 import { displayPath, isInside, samePath } from '../paths.ts';
 import type { PathApi } from '../paths.ts';
 import { assertSafePath } from '../registry.ts';
+import { baseCssLayer } from '../bases.ts';
 import type { ProjectProfile, RegistryGraph, SavedConfig } from '../types.ts';
 import { messages, type ExistingChoice, type SetupKind } from './messages.ts';
 import type { Evidence, ThemeSetup } from '../theme/detect.ts';
@@ -576,6 +577,23 @@ export async function planRegistryInstall(
       revision: graph.manifest.stable.revision,
       files: installedFiles,
     };
+  }
+
+  const layer = baseCssLayer(profile.base, expectedFramework);
+
+  if (layer) {
+    const css = await readOptional(profile.cssFile);
+
+    if (css === undefined)
+      throw new Error('Existing Tailwind CSS file is required');
+
+    const planned = await planFile(
+      profile,
+      profile.cssFile,
+      (await import('../tailwind/index.ts')).declareLayer(css, layer)
+    );
+
+    if (planned.action !== 'skip') files.set(profile.cssFile, planned);
   }
 
   const config = serializeConfig(profile, {

@@ -2,6 +2,7 @@ import { basename, dirname, join, relative } from 'node:path';
 import { applyEdits, type Edit } from '../migrate/rewrite.ts';
 import { displayPath, isInside } from '../paths.ts';
 import { planSharedUtils } from './shared-utils.ts';
+import { baseCssLayer, registryFramework } from '../bases.ts';
 import { detectThemeSetup, sourcePaths } from '../theme/detect.ts';
 import {
   choicesFor,
@@ -38,6 +39,7 @@ import {
   objectProperty,
   transformTailwind3,
   transformTailwind4,
+  declareLayer,
   transformVariables,
   unwrapExpression,
 } from '../tailwind/index.ts';
@@ -912,6 +914,13 @@ export async function planInit(
       )
     );
   }
+
+  const layer = baseCssLayer(
+    profile.base,
+    registryFramework(profile.framework)
+  );
+
+  if (layer) css = declareLayer(css, layer);
 
   files.push(await planFile(profile, profile.cssFile, css));
 
