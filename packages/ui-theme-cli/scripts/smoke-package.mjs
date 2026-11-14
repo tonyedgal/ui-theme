@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import {
   mkdtempSync,
   mkdirSync,
@@ -45,8 +45,27 @@ try {
       timeout: 20_000,
     });
 
+  const parsers = /^(?:typescript|postcss)$/;
+
+  const trace = `data:text/javascript,${encodeURIComponent(
+    `import { registerHooks } from 'node:module';
+    registerHooks({ resolve(specifier, context, next) {
+      if (${parsers}.test(specifier)) process.stderr.write('loaded ' + specifier + '\\n');
+      return next(specifier, context);
+    } });`
+  )}`;
+
+  const loadedParsers = (...args) =>
+    spawnSync(process.execPath, ['--import', trace, binary, ...args], {
+      cwd: directory,
+      encoding: 'utf8',
+      timeout: 20_000,
+    }).stderr.match(/^loaded \S+$/gm) ?? [];
+
   assert.equal(run('--version').trim(), `uitheme-cli ${manifest.version}`);
   assert.match(run('--help'), /info\|init\|list\|add\|diff\|migrate/);
+  assert.deepEqual(loadedParsers('--help'), []);
+  assert.deepEqual(loadedParsers('--version'), []);
   const app = join(directory, 'app');
   mkdirSync(join(app, 'src'), { recursive: true });
   writeFileSync(
@@ -60,6 +79,9 @@ try {
   assert.equal(profile.framework, 'vite-react');
   assert.equal(profile.tailwind, 4);
   assert.equal(profile.base, 'base-ui');
+  assert.deepEqual(loadedParsers('info', '--cwd', app, '--json'), [
+    'loaded typescript',
+  ]);
   writeFileSync(
     join(app, 'legacy.ts'),
     "import { useTheme } from '@ui-theme/web/react';\n"
