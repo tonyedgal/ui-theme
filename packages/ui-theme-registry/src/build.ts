@@ -9,6 +9,7 @@ import { transform } from '@unovue/detypes';
 const controls = [
   'theme-toggle',
   'icon-theme-toggle',
+  'tactile-theme-toggle',
   'theme-switcher',
   'theme-selector',
   'color-theme-selector',

@@ -28,6 +28,18 @@
       "dependencies": ["@lucide/vue@^1.61.0"],
       "registryDependencies": ["theme-toggle"]
     },
+    "tactile-theme-toggle": {
+      "title": "Tactile Theme Toggle",
+      "description": "Switch between light and dark with a tactile switch that shows a sun or moon icon.",
+      "files": [
+        {
+          "source": "tactile-theme-toggle.vue",
+          "path": "tactile-theme-toggle.vue",
+          "type": "registry:ui"
+        }
+      ],
+      "dependencies": ["@lucide/vue@^1.61.0"]
+    },
     "theme-switcher": {
       "title": "Theme Switcher",
       "description": "Choose system, light, or dark with a sliding selection surface.",
