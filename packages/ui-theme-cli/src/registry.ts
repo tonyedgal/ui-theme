@@ -146,7 +146,23 @@ export function createRegistryClient(
     try {
       return await Promise.race([
         (async () => {
-          const response = await http(url);
+          let response: Awaited<ReturnType<typeof http>>;
+
+          try {
+            response = await http(url);
+          } catch (error) {
+            if (error instanceof Error && error.name === 'TimeoutError')
+              throw new Error(`Registry request timed out: ${url}`);
+
+            const cause =
+              error instanceof Error && isRecord(error.cause)
+                ? (error.cause.code ?? error.cause.message)
+                : undefined;
+
+            throw new Error(
+              `Registry request failed (${String(cause ?? (error instanceof Error ? error.message : error))}): ${url}`
+            );
+          }
 
           if (!response.ok)
             throw new Error(
