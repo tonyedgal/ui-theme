@@ -45,22 +45,39 @@ try {
       timeout: 20_000,
     });
 
-  const parsers = /^(?:typescript|postcss)$/;
-
   const trace = `data:text/javascript,${encodeURIComponent(
     `import { registerHooks } from 'node:module';
     registerHooks({ resolve(specifier, context, next) {
-      if (${parsers}.test(specifier)) process.stderr.write('loaded ' + specifier + '\\n');
-      return next(specifier, context);
+      const result = next(specifier, context);
+      process.stderr.write('loaded ' + result.url + '\\n');
+      return result;
     } });`
   )}`;
 
+  // the parser is bundled, so find it by a message only its chunk contains
   const loadedParsers = (...args) =>
-    spawnSync(process.execPath, ['--import', trace, binary, ...args], {
-      cwd: directory,
-      encoding: 'utf8',
-      timeout: 20_000,
-    }).stderr.match(/^loaded \S+$/gm) ?? [];
+    [
+      ...new Set(
+        spawnSync(process.execPath, ['--import', trace, binary, ...args], {
+          cwd: directory,
+          encoding: 'utf8',
+          timeout: 20_000,
+        })
+          .stderr.match(/^loaded \S+$/gm)
+          ?.map((line) => line.slice('loaded '.length))
+          .flatMap((url) =>
+            /^node:/.test(url)
+              ? []
+              : (/\/node_modules\/(typescript|postcss)\//.exec(url)?.[1] ??
+                (url.startsWith('file:') &&
+                readFileSync(fileURLToPath(url), 'utf8').includes(
+                  'DeferImportRequiresNamespace'
+                )
+                  ? '@babel/parser'
+                  : []))
+          ) ?? []
+      ),
+    ].sort();
 
   assert.equal(run('--version').trim(), `uitheme-cli ${manifest.version}`);
   assert.match(run('--help'), /info\|init\|list\|add\|diff\|migrate/);
@@ -79,9 +96,11 @@ try {
   assert.equal(profile.framework, 'vite-react');
   assert.equal(profile.tailwind, 4);
   assert.equal(profile.base, 'base-ui');
-  assert.deepEqual(loadedParsers('info', '--cwd', app, '--json'), [
-    'loaded typescript',
-  ]);
+  writeFileSync(
+    join(app, 'tsconfig.json'),
+    '{ // aliases\n "compilerOptions": { "paths": { "@/*": ["./src/*"], }, }, }'
+  );
+  assert.deepEqual(loadedParsers('info', '--cwd', app, '--json'), []);
   writeFileSync(
     join(app, 'legacy.ts'),
     "import { useTheme } from '@ui-theme/web/react';\n"
@@ -89,6 +108,19 @@ try {
   const before = readFileSync(join(app, 'legacy.ts'), 'utf8');
   assert.match(run('migrate', '--cwd', app, '--dry-run'), /uitheme-web\/react/);
   assert.equal(readFileSync(join(app, 'legacy.ts'), 'utf8'), before);
+  assert.deepEqual(loadedParsers('migrate', '--cwd', app, '--dry-run'), [
+    '@babel/parser',
+  ]);
+  assert.ok(
+    !Object.keys(
+      JSON.parse(
+        readFileSync(
+          join(directory, 'node_modules/uitheme-cli/package.json'),
+          'utf8'
+        )
+      ).dependencies
+    ).includes('typescript')
+  );
   console.log(
     'Packed CLI installs independently and runs its binary, detector, and migration preview.'
   );
