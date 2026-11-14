@@ -1223,7 +1223,7 @@ test('rejected server callback is reported without an unhandled rejection', asyn
   expect(errors).toEqual([]);
 });
 
-for (const provider of ['hook', 'next', 'ui', 'vite']) {
+for (const provider of ['hook', 'next', 'ui', 'vite', 'tanstack']) {
   test(`${provider} injected styles apply under a nonce-based CSP`, async ({
     page,
   }) => {
