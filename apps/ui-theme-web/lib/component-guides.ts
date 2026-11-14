@@ -1,6 +1,12 @@
-import type { ComponentBase, ComponentDoc } from './component-docs';
+import {
+  componentBase,
+  type ComponentBase,
+  type ComponentDoc,
+} from './component-docs';
 
 export function componentApi(doc: ComponentDoc, base: ComponentBase) {
+  const vue = componentBase(base).framework === 'vue';
+
   const rows = [
     {
       name: 'borderStyle',
@@ -9,7 +15,7 @@ export function componentApi(doc: ComponentDoc, base: ComponentBase) {
         'Use the default solid border or prominent shadow borders. Both use the same space and theme tokens.',
     },
     {
-      name: base === 'reka' ? 'class' : 'className',
+      name: vue ? 'class' : 'className',
       type: 'string',
       description:
         'Extend the root styles. Your classes replace default classes through the local merge helper.',
@@ -111,8 +117,8 @@ export function componentApi(doc: ComponentDoc, base: ComponentBase) {
         description: 'Start with the panel expanded. Defaults to false.',
       },
       {
-        name: base === 'reka' ? 'update:open' : 'onOpenChange',
-        type: base === 'reka' ? 'event' : '(open: boolean) => void',
+        name: vue ? 'update:open' : 'onOpenChange',
+        type: vue ? 'event' : '(open: boolean) => void',
         description:
           'Receive the next expanded state when the trigger is pressed.',
       },

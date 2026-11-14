@@ -14,12 +14,14 @@ import {
 } from '@/lib/docs-navigation';
 import { useSearchParams } from 'next/navigation';
 import {
+  componentBase,
   componentBases,
   componentDocs,
   componentDocUrl,
   componentUsage,
   componentExamples,
   type ComponentBase,
+  type ComponentBaseEntry,
   type ComponentDoc,
   type ComponentSource,
   type ComponentExample,
@@ -48,6 +50,53 @@ import { DocsSelect } from './docs/select';
 import { DocsPagination, PaginationArrows } from './docs/pagination';
 import { shadcnCommand, type PackageManager } from '@/lib/docs-commands';
 import './registry-preview.css';
+
+// The live preview controls of each React base, keyed by base id.
+const reactPreviews = {
+  'base-ui': {
+    ThemeToggle: BaseThemeToggle,
+    ThemeSelector: BaseThemeSelector,
+    ColorThemeSelector: BaseColorThemeSelector,
+    IconThemeToggle: BaseIconThemeToggle,
+    TactileThemeToggle: BaseTactileThemeToggle,
+    ThemeSwitcher: BaseThemeSwitcher,
+    ThemeDisclosure: BaseThemeDisclosure,
+    ColorThemeDisclosure: BaseColorThemeDisclosure,
+  },
+  radix: {
+    ThemeToggle: RadixThemeToggle,
+    ThemeSelector: RadixThemeSelector,
+    ColorThemeSelector: RadixColorThemeSelector,
+    IconThemeToggle: RadixIconThemeToggle,
+    TactileThemeToggle: RadixTactileThemeToggle,
+    ThemeSwitcher: RadixThemeSwitcher,
+    ThemeDisclosure: RadixThemeDisclosure,
+    ColorThemeDisclosure: RadixColorThemeDisclosure,
+  },
+} satisfies Record<
+  string,
+  {
+    ThemeToggle: typeof BaseThemeToggle;
+    ThemeSelector: typeof BaseThemeSelector;
+    ColorThemeSelector: typeof BaseColorThemeSelector;
+    IconThemeToggle: typeof BaseIconThemeToggle;
+    TactileThemeToggle: typeof BaseTactileThemeToggle;
+    ThemeSwitcher: typeof BaseThemeSwitcher;
+    ThemeDisclosure: typeof BaseThemeDisclosure;
+    ColorThemeDisclosure: typeof BaseColorThemeDisclosure;
+  }
+>;
+
+// Vue pages render no live preview, so they never use these controls.
+function reactPreview(entry: ComponentBaseEntry) {
+  const key = entry.framework === 'vue' ? 'base-ui' : entry.base;
+
+  const preview = new Map(Object.entries(reactPreviews)).get(key);
+
+  if (!preview) throw new Error(`Missing React preview for ${entry.base}.`);
+
+  return preview;
+}
 
 interface RegistryPreviewProps {
   component: ComponentDoc['name'];
@@ -114,28 +163,18 @@ function RegistryContent({
     window.dispatchEvent(new Event('docs-navigation-change'));
   }
 
-  const ThemeToggle = base === 'radix' ? RadixThemeToggle : BaseThemeToggle;
+  const entry = componentBase(base);
 
-  const ThemeSelector =
-    base === 'radix' ? RadixThemeSelector : BaseThemeSelector;
-
-  const ColorThemeSelector =
-    base === 'radix' ? RadixColorThemeSelector : BaseColorThemeSelector;
-
-  const IconThemeToggle =
-    base === 'radix' ? RadixIconThemeToggle : BaseIconThemeToggle;
-
-  const TactileThemeToggle =
-    base === 'radix' ? RadixTactileThemeToggle : BaseTactileThemeToggle;
-
-  const ThemeSwitcher =
-    base === 'radix' ? RadixThemeSwitcher : BaseThemeSwitcher;
-
-  const ThemeDisclosure =
-    base === 'radix' ? RadixThemeDisclosure : BaseThemeDisclosure;
-
-  const ColorThemeDisclosure =
-    base === 'radix' ? RadixColorThemeDisclosure : BaseColorThemeDisclosure;
+  const {
+    ThemeToggle,
+    ThemeSelector,
+    ColorThemeSelector,
+    IconThemeToggle,
+    TactileThemeToggle,
+    ThemeSwitcher,
+    ThemeDisclosure,
+    ColorThemeDisclosure,
+  } = reactPreview(entry);
 
   const api = componentApi(doc, base);
 
@@ -164,15 +203,14 @@ function RegistryContent({
         }
       : {};
 
-    return base === 'reka' ? (
+    return entry.framework === 'vue' ? (
       <div className="rounded-lg border border-border px-6 py-10 text-sm leading-[1.75] text-muted-foreground">
-        This component uses Vue and Reka. Install the source below in your Vue
-        or Nuxt app to try it with your theme provider.
+        {`This component uses Vue and ${entry.label}. Install the source below in your Vue or Nuxt app to try it with your theme provider.`}
       </div>
     ) : (
       <div
         role="region"
-        aria-label={`${previewName} (${base === 'radix' ? 'Radix' : 'Base UI'})`}
+        aria-label={`${previewName} (${entry.label})`}
         className="w-full"
       >
         <div
@@ -365,7 +403,7 @@ function RegistryContent({
                 code={usage}
                 html={usageHtml[`${language}:default`]}
                 title={
-                  base === 'reka'
+                  entry.framework === 'vue'
                     ? 'example.vue'
                     : language === 'js'
                       ? 'example.jsx'
@@ -519,11 +557,15 @@ export function RegistryApi() {
 }
 
 export function RegistryReact({ children }: { children: ReactNode }) {
-  return useRegistryBlocks().base === 'reka' ? null : children;
+  return componentBase(useRegistryBlocks().base).framework === 'vue'
+    ? null
+    : children;
 }
 
 export function RegistryVue({ children }: { children: ReactNode }) {
-  return useRegistryBlocks().base === 'reka' ? children : null;
+  return componentBase(useRegistryBlocks().base).framework === 'vue'
+    ? children
+    : null;
 }
 
 export function RegistryAgentCopy() {

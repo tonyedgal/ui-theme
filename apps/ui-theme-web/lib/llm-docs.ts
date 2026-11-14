@@ -17,7 +17,7 @@ export function getLLMPages() {
   return [
     ...sections.flatMap((section) => section.items),
     ...componentBases
-      .filter((base) => base.name !== 'base-ui')
+      .filter((base) => base.name !== componentBases[0].name)
       .flatMap((base) =>
         componentDocs.map((doc) => {
           const content = componentContent.find(
@@ -56,7 +56,8 @@ export async function getLLMPage(href: string): Promise<string | undefined> {
 
   const selected = registry.records.find(
     (record) =>
-      record.base === base.name &&
+      record.base === base.base &&
+      record.framework === base.framework &&
       record.component === doc.name &&
       record.tailwind === 4 &&
       record.language === 'ts'

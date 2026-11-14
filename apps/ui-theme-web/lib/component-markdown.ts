@@ -1,5 +1,6 @@
 import { componentApi } from './component-guides';
 import {
+  componentBase,
   componentUsage,
   componentExamples,
   type ComponentBase,
@@ -23,7 +24,8 @@ export function componentMarkdown({
   markdownSource: string;
   selected?: ComponentSource;
 }) {
-  const command = `npx uitheme-cli add ${doc.name} --base ${base} --tailwind ${tailwind} --language ${language}`;
+  const command = `npx uitheme-cli add ${doc.name} --base ${componentBase(base).base} --tailwind ${tailwind} --language ${language}`;
+  const vue = componentBase(base).framework === 'vue';
   const usageSource = componentUsage(doc, base);
 
   const usage =
@@ -33,10 +35,9 @@ export function componentMarkdown({
 
   const fragments = new Map(
     Object.entries({
-      RegistryLivePreview:
-        base === 'reka'
-          ? 'Install the Vue source in your app to preview it with your theme provider.'
-          : 'Use the live preview to try the control with your theme provider.',
+      RegistryLivePreview: vue
+        ? 'Install the Vue source in your app to preview it with your theme provider.'
+        : 'Use the live preview to try the control with your theme provider.',
       RegistryExamples: componentExamples(doc)
         .map((example) => {
           const source = componentUsage(doc, base, example);
@@ -44,12 +45,12 @@ export function componentMarkdown({
           const code =
             language === 'js' ? source.replace(' lang="ts"', '') : source;
 
-          return `### ${example.title}\n\n${example.description}\n\n\`\`\`${base === 'reka' ? 'vue' : language === 'js' ? 'jsx' : 'tsx'}\n${code}\n\`\`\``;
+          return `### ${example.title}\n\n${example.description}\n\n\`\`\`${vue ? 'vue' : language === 'js' ? 'jsx' : 'tsx'}\n${code}\n\`\`\``;
         })
         .join('\n\n'),
       RegistryInstallation: `\`\`\`sh\n${command}\n\`\`\``,
       RegistryShadcnInstallation: `\`\`\`sh\n${shadcnCommand(doc.name)}\n\`\`\``,
-      RegistryUsage: `\`\`\`${base === 'reka' ? 'vue' : language === 'js' ? 'jsx' : 'tsx'}\n${usage}\n\`\`\``,
+      RegistryUsage: `\`\`\`${vue ? 'vue' : language === 'js' ? 'jsx' : 'tsx'}\n${usage}\n\`\`\``,
       RegistryApi: `| Prop | Type | Behavior |\n| --- | --- | --- |\n${api.map((row) => `| ${row.name} | ${row.type} | ${row.description} |`).join('\n')}`,
       RegistryAgentCopy: '',
       RegistrySource:
@@ -62,7 +63,7 @@ export function componentMarkdown({
   const visibleMarkdown = markdownSource.replace(
     /<Registry(React|Vue)>\s*([\s\S]*?)\s*<\/Registry\1>/g,
     (_, framework: string, body: string) =>
-      (framework === 'Vue') === (base === 'reka') ? body : ''
+      (framework === 'Vue') === vue ? body : ''
   );
 
   const markdown = `# ${doc.title}\n\n${doc.description}\n\n${visibleMarkdown.replace(/<([A-Za-z]+)\s*\/>/g, (match, name: string) => fragments.get(name) ?? match)}`;
