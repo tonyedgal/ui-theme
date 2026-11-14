@@ -73,6 +73,8 @@ export type ThemeControlTransitionProps = { duration?: number } & (
 );
 
 export interface AnimationConfig extends ThemeAnimationSettings {
+  /** CSP nonce for injected `<style>` elements. */
+  nonce?: string;
   /** Asset already selected for the destination theme before capture. */
   logo?: string;
   a?: number;

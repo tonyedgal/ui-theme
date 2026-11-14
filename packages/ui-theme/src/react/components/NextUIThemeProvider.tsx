@@ -70,7 +70,7 @@ export type NextUIThemeProviderProps = ThemeAnimationOptions & {
   globalClassName?: string;
   /** Prefix for color theme classes */
   colorThemePrefix?: string;
-  /** CSP nonce for inline script (SSR apps) */
+  /** CSP nonce for the inline script and the injected transition styles */
   nonce?: string;
   /** Skip animation during initial hydration */
   disableAnimationOnInit?: boolean;
@@ -195,6 +195,7 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
     colorStorageKey,
     globalClassName: attribute === 'class' ? globalClassName : undefined,
     colorThemePrefix,
+    nonce,
   });
 
   const switchThemeWithHydrationAwareness = useCallback(
