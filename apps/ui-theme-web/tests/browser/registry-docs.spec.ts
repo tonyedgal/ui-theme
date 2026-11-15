@@ -136,3 +136,98 @@ test('Vue selects only Reka and migration explains the v1 boundary', async ({
   );
   await expect(page.locator('article')).toContainText('uitheme-vue@1');
 });
+
+const components = [
+  'theme-toggle',
+  'icon-theme-toggle',
+  'tactile-theme-toggle',
+  'theme-switcher',
+  'theme-selector',
+  'color-theme-selector',
+  'theme-disclosure',
+  'color-theme-disclosure',
+];
+
+test('UI SDK React pages render every control with a CLI command and no shadcn path', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+
+  for (const component of components) {
+    await page.goto(`/docs/components/ui-sdk-react/${component}`);
+    await expect(
+      page.getByRole('link', { name: 'UI SDK', exact: true })
+    ).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByTestId('install-command')).toContainText(
+      `add ${component} --base ui-sdk`
+    );
+    await expect(page.getByTestId('shadcn-install-command')).toHaveCount(0);
+    await expect(page.getByTestId('registry-source')).toContainText(
+      '@ui-sdk/react'
+    );
+    await expect(
+      page.getByRole('region', { name: /^Default preview \(UI SDK\)$/ })
+    ).toBeVisible();
+    await expect(page.locator('article')).toContainText('@layer ui-sdk;');
+  }
+
+  expect(errors).toEqual([]);
+});
+
+test('UI SDK pages keep the Tailwind and language choices across bases', async ({
+  page,
+}) => {
+  await page.goto(
+    '/docs/components/ui-sdk-react/theme-toggle?tailwind=3&language=js'
+  );
+  await selectBase(page, 'Vue / UI SDK', 'ui-sdk-vue');
+  await expect(page).toHaveURL(/tailwind=3&language=js/);
+  await expect(page.getByTestId('install-command')).toContainText(
+    '--base ui-sdk --tailwind 3 --language js'
+  );
+  await expect(page.getByTestId('shadcn-install-command')).toHaveCount(0);
+  await expect(page.getByTestId('registry-source')).toContainText(
+    '@ui-sdk/vue'
+  );
+});
+
+test('UI SDK React controls respond to the pointer and the keyboard', async ({
+  page,
+}) => {
+  await page.goto('/docs/components/ui-sdk-react/tactile-theme-toggle');
+
+  const toggle = page
+    .getByRole('region', { name: /^Default preview \(UI SDK\)$/ })
+    .getByRole('switch');
+
+  await expect(toggle).toBeEnabled();
+
+  for (const press of [
+    () => toggle.click(),
+    () => page.keyboard.press('Space'),
+    () => page.keyboard.press('Enter'),
+  ]) {
+    const before = await toggle.getAttribute('aria-checked');
+    await press();
+    await expect(toggle).not.toHaveAttribute('aria-checked', before ?? '');
+  }
+
+  await page.goto('/docs/components/ui-sdk-react/color-theme-selector');
+
+  const preview = page.getByRole('region', {
+    name: /^Default preview \(UI SDK\)$/,
+  });
+
+  const trigger = preview.getByRole('combobox');
+  await trigger.click();
+
+  const box = await trigger.boundingBox();
+  const list = await page.getByRole('listbox').boundingBox();
+  expect(Math.abs((list?.x ?? 0) - (box?.x ?? 99))).toBeLessThan(2);
+  expect((list?.y ?? 0) - ((box?.y ?? 0) + (box?.height ?? 0))).toBeLessThan(
+    16
+  );
+  await page.getByRole('option', { name: 'Caffeine' }).click();
+  await expect(page.locator('html')).toHaveClass(/theme-caffeine/);
+});
