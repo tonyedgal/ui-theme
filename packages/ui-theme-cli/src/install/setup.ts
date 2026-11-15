@@ -1,5 +1,5 @@
 import { dirname, join, relative } from 'node:path';
-import { isInside } from '../paths.ts';
+import { displayPath, isInside } from '../paths.ts';
 import { planSharedUtils } from './shared-utils.ts';
 import { readConfig } from '../config.ts';
 import {
@@ -41,12 +41,12 @@ async function firstFile(
   }
 }
 
-function sourceFile(path: string, content: string): t.Program {
+function sourceFile(cwd: string, path: string, content: string): t.Program {
   try {
     return parseModule(path, content);
   } catch {
     throw new Error(
-      `${path} has a syntax error, so the CLI cannot add the provider. Fix the error and run init again, or add the provider yourself.`
+      `${displayPath(cwd, path)} has a syntax error, so the CLI cannot add the provider. Fix the error and run init again, or add the provider yourself.`
     );
   }
 }
@@ -168,7 +168,7 @@ async function reactProvider(
     return;
   }
 
-  const file = sourceFile(entry.path, entry.content);
+  const file = sourceFile(profile.cwd, entry.path, entry.content);
   const source = entry.content;
   const edits: { start: number; end: number; text: string }[] = [];
   let rootNode: t.Node | undefined;
@@ -187,7 +187,7 @@ async function reactProvider(
 
     if (bodies.length !== 1) {
       manual.push(
-        `Wrap the application content in ${relative(profile.cwd, entry.path)} with UIThemeProvider. The document body is not a single JSX element.`
+        `Wrap the application content in ${displayPath(profile.cwd, entry.path)} with UIThemeProvider. The document body is not a single JSX element.`
       );
 
       return;
@@ -222,7 +222,7 @@ async function reactProvider(
 
     if (renders.length !== 1) {
       manual.push(
-        `Wrap the React root in ${relative(profile.cwd, entry.path)} with UIThemeProvider. The entry uses a custom render function.`
+        `Wrap the React root in ${displayPath(profile.cwd, entry.path)} with UIThemeProvider. The entry uses a custom render function.`
       );
 
       return;
@@ -329,7 +329,7 @@ async function reactProvider(
   if (planned.kept) {
     files.push(planned);
     manual.push(
-      `Kept your ${relative(profile.cwd, wrapperPath)}. Wrap the application root in ${relative(profile.cwd, entry.path)} with the provider.`
+      `Kept your ${displayPath(profile.cwd, wrapperPath)}. Wrap the application root in ${displayPath(profile.cwd, entry.path)} with the provider.`
     );
 
     return;
@@ -343,7 +343,7 @@ async function reactProvider(
     )
   ) {
     manual.push(
-      `Choose an unused provider binding in ${relative(profile.cwd, entry.path)}. ${wrapperName} already belongs to existing source. Rename that binding, or wrap the root with UIThemeProvider yourself.`
+      `Choose an unused provider binding in ${displayPath(profile.cwd, entry.path)}. ${wrapperName} already belongs to existing source. Rename that binding, or wrap the root with UIThemeProvider yourself.`
     );
 
     return;
@@ -391,7 +391,7 @@ async function vueProvider(
     /from\s*['"]uitheme-web\/vue['"]/.test(entry.content)
   )
     return;
-  const file = sourceFile(entry.path, entry.content);
+  const file = sourceFile(profile.cwd, entry.path, entry.content);
   const mounts: (t.CallExpression | t.OptionalCallExpression)[] = [];
   walk(file, (node) => {
     if (isCall(node) && memberName(node.callee) === 'mount') mounts.push(node);
@@ -399,7 +399,7 @@ async function vueProvider(
 
   if (mounts.length !== 1) {
     manual.push(
-      `Install createUITheme() with app.use() in ${relative(profile.cwd, entry.path)}. The entry has no single mount call.`
+      `Install createUITheme() with app.use() in ${displayPath(profile.cwd, entry.path)}. The entry has no single mount call.`
     );
 
     return;
@@ -411,7 +411,7 @@ async function vueProvider(
 
   if (!receiver)
     throw new Error(
-      `Install createUITheme() on the Vue application in ${relative(profile.cwd, entry.path)}. Its mount call is custom.`
+      `Install createUITheme() on the Vue application in ${displayPath(profile.cwd, entry.path)}. Its mount call is custom.`
     );
 
   const createsApp = (node: t.Node) =>
@@ -439,7 +439,7 @@ async function vueProvider(
 
   if (!known) {
     manual.push(
-      `Install createUITheme() on the Vue application in ${relative(profile.cwd, entry.path)}. Its mount receiver is custom.`
+      `Install createUITheme() on the Vue application in ${displayPath(profile.cwd, entry.path)}. Its mount receiver is custom.`
     );
 
     return;
@@ -467,7 +467,7 @@ async function nuxtModule(
     return;
   }
 
-  const file = sourceFile(entry.path, entry.content);
+  const file = sourceFile(profile.cwd, entry.path, entry.content);
   let config: t.ObjectExpression | undefined;
 
   for (const statement of file.body) {
