@@ -1,4 +1,13 @@
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -226,6 +235,18 @@ describe('uitheme.json', () => {
     return root;
   }
 
+  it('reports a directory link as a symbolic link, as the destination checks expect', async () => {
+    const root = await directory();
+    await mkdir(path.join(root, 'target'));
+    await symlink(
+      path.join(root, 'target'),
+      path.join(root, 'link'),
+      process.platform === 'win32' ? 'junction' : 'dir'
+    );
+
+    expect((await lstat(path.join(root, 'link'))).isSymbolicLink()).toBe(true);
+  });
+
   it('reads a file with a byte order mark', async () => {
     const root = await directory();
 
@@ -241,6 +262,12 @@ describe('uitheme.json', () => {
     expect(() =>
       validateConfig({ schemaVersion: 1, cssFile: 'src\\app\\globals.css' })
     ).toThrow(/cssFile must be a relative path that uses "\/"/);
+    expect(() =>
+      validateConfig({ schemaVersion: 1, cssFile: 'src\\app\\globals.css' })
+    ).toThrow(/for example "src\/app\/globals.css"/);
+    expect(() =>
+      validateConfig({ schemaVersion: 1, componentsDir: 'src\\ui' })
+    ).toThrow(/for example "src\/components\/ui"/);
     expect(() => validateConfig({ schemaVersion: 1, base: 'x' })).toThrow(
       /base must be one of/
     );
