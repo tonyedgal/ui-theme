@@ -9,7 +9,7 @@ import {
   writeFileAtomic,
 } from '../src/config';
 import { registryDestination, serializeConfig } from '../src/install/index';
-import { isInside, samePath, stripWildcard } from '../src/paths';
+import { displayPath, isInside, samePath, stripWildcard } from '../src/paths';
 import { aliasDirectory, aliasPath } from '../src/project';
 import type { ProjectProfile } from '../src/types';
 
@@ -301,5 +301,30 @@ describe('uitheme.json', () => {
     expect(calls).toBe(1);
     expect(await readFile(file, 'utf8')).toBe('before');
     expect(await readdir(root)).toEqual(['uitheme.json']);
+  });
+});
+
+describe.each([
+  [
+    'posix',
+    path.posix,
+    '/home/tony/ui-theme',
+    '/home/tony/ui-theme/src/main.js',
+    '/etc/x',
+  ],
+  [
+    'win32',
+    path.win32,
+    'C:\\Users\\tony\\ui-theme',
+    'C:\\Users\\tony\\ui-theme\\src\\main.js',
+    'D:\\x',
+  ],
+] as const)('displayPath on %s', (_, api, root, inside, outside) => {
+  it('shows a project-relative path with "/"', () => {
+    expect(displayPath(root, inside, api)).toBe('src/main.js');
+  });
+
+  it('keeps a path outside the project', () => {
+    expect(displayPath(root, outside, api)).toBe(outside);
   });
 });

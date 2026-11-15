@@ -171,7 +171,9 @@ describe('utils alias resolution', () => {
       'src/lib/utils/index.tsx': 'export function cn() {}',
     });
 
-    expect(plan.file.path).toMatch(/src\/lib\/utils\/index\.tsx$/);
+    expect(plan.file.path.replaceAll('\\', '/')).toMatch(
+      /src\/lib\/utils\/index\.tsx$/
+    );
     expect(plan.file.action).toBe('skip');
   });
 
@@ -196,7 +198,9 @@ describe('utils alias resolution', () => {
     const { plan, accepted } = await accepts({});
 
     expect(accepted).toBe(true);
-    expect(plan.file.path).toMatch(/src\/lib\/utils\.ts$/);
+    expect(plan.file.path.replaceAll('\\', '/')).toMatch(
+      /src\/lib\/utils\.ts$/
+    );
     expect(plan.file.action).toBe('create');
   });
 });

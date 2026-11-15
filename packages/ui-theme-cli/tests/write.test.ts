@@ -46,6 +46,9 @@ it('replaces the file and keeps its permissions', async () => {
   await writeFileAtomic(path, 'after');
 
   expect(await readFile(path, 'utf8')).toBe('after');
-  expect((await stat(path)).mode & 0o777).toBe(0o755);
+
+  // Windows has no permission bits
+  if (process.platform !== 'win32')
+    expect((await stat(path)).mode & 0o777).toBe(0o755);
   expect(await readdir(root)).toEqual(['run.sh']);
 });
