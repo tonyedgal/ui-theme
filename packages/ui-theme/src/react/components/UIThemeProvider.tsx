@@ -6,6 +6,7 @@ import { getThemeLogoOptions } from '../../core/logo';
 
 import React, { createContext, useContext, useMemo, ReactNode } from 'react';
 import { useTheme } from '../hooks/use-theme';
+import { useTransitionFreeze } from '../hooks/use-transition-freeze';
 import type { UseThemeReturn } from '../types';
 import {
   Theme,
@@ -49,6 +50,8 @@ export type UIThemeProviderProps = ThemeAnimationOptions & {
   colorStorageKey?: string;
   /** CSP nonce for the `<style>` elements injected for transitions */
   nonce?: string;
+  /** Freeze CSS transitions while `setTheme` and `setColorTheme` apply a change */
+  disableTransitionOnChange?: boolean;
 };
 
 /**
@@ -78,8 +81,10 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
   storageKey,
   colorStorageKey,
   nonce,
+  disableTransitionOnChange = false,
 }) => {
   const mounted = useHydrated();
+  const freeze = useTransitionFreeze(disableTransitionOnChange, nonce);
 
   const themeState = useTheme({
     themes,
@@ -102,10 +107,12 @@ export const UIThemeProvider: React.FC<UIThemeProviderProps> = ({
   const contextValue = useMemo<UIThemeContextType>(
     () => ({
       ...themeState,
+      setTheme: freeze(themeState.setTheme),
+      setColorTheme: freeze(themeState.setColorTheme),
       switchThemeFromElement: (theme: Theme, element: Element) =>
         themeState.switchTheme(theme, { element }),
     }),
-    [themeState]
+    [themeState, freeze]
   );
 
   if (!mounted) {

@@ -15,6 +15,7 @@ import React, {
   useRef,
 } from 'react';
 import { useTheme } from '../hooks/use-theme';
+import { useTransitionFreeze } from '../hooks/use-transition-freeze';
 import {
   Theme,
   ColorTheme,
@@ -111,6 +112,8 @@ export type TanStackUIThemeProviderProps = ThemeAnimationOptions & {
   onServerError?: (error: Error) => void;
   /** CSP nonce for the `<style>` elements injected for transitions */
   nonce?: string;
+  /** Freeze CSS transitions while `setTheme` and `setColorTheme` apply a change */
+  disableTransitionOnChange?: boolean;
 };
 
 /**
@@ -263,6 +266,7 @@ export const TanStackUIThemeProvider: React.FC<
   onServerColorThemeChange,
   onServerError,
   nonce,
+  disableTransitionOnChange = false,
 }) => {
   const isHydrated = useHydrated();
   const hasServerTheme = serverTheme !== undefined;
@@ -327,8 +331,17 @@ export const TanStackUIThemeProvider: React.FC<
     colorStorageKey,
   ]);
 
-  const setThemeWithServer = themeState.setTheme;
-  const setColorThemeWithServer = themeState.setColorTheme;
+  const freeze = useTransitionFreeze(disableTransitionOnChange, nonce);
+
+  const setThemeWithServer = useMemo(
+    () => freeze(themeState.setTheme),
+    [freeze, themeState.setTheme]
+  );
+
+  const setColorThemeWithServer = useMemo(
+    () => freeze(themeState.setColorTheme),
+    [freeze, themeState.setColorTheme]
+  );
 
   const contextValue = useMemo<TanStackUIThemeContextType>(() => {
     const withoutHydrationAnimation = (
@@ -348,6 +361,8 @@ export const TanStackUIThemeProvider: React.FC<
     return {
       ...themeState,
       isHydrated: true,
+      setTheme: setThemeWithServer,
+      setColorTheme: setColorThemeWithServer,
       switchTheme: switchThemeWithHydrationAwareness,
       switchThemeFromElement: (theme: Theme, element: Element) =>
         switchThemeWithHydrationAwareness(theme, { element }),
@@ -360,7 +375,7 @@ export const TanStackUIThemeProvider: React.FC<
       toggleDarkTheme: (options?: ThemeTransitionInput) =>
         themeState.toggleDarkTheme(withoutHydrationAnimation(options)),
     };
-  }, [themeState, isHydrated]);
+  }, [themeState, isHydrated, setThemeWithServer, setColorThemeWithServer]);
 
   const { systemTheme } = themeState;
 

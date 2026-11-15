@@ -2,7 +2,7 @@
 
 import { SharedThemeContext } from './shared-theme-context';
 import { getThemeLogoOptions } from '../../core/logo';
-import { createStyle } from '../../core/style';
+import { freezeTransitions } from '../hooks/use-transition-freeze';
 
 import React, {
   createContext,
@@ -127,17 +127,7 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
   const applyTransitionDisable = useCallback(() => {
     if (!disableTransitionOnChange) return () => {};
 
-    const css = createStyle(nonce);
-    css.textContent = `*,*::before,*::after{-webkit-transition:none!important;-moz-transition:none!important;-o-transition:none!important;-ms-transition:none!important;transition:none!important}`;
-    document.head.appendChild(css);
-
-    window.getComputedStyle(document.body);
-
-    return () => {
-      setTimeout(() => {
-        document.head.removeChild(css);
-      }, 1);
-    };
+    return freezeTransitions(nonce);
   }, [disableTransitionOnChange, nonce]);
 
   const wrappedSetTheme = useCallback(
