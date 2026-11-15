@@ -29,3 +29,4 @@ packages/ui-theme-registry/releases/
 apps/ui-theme-web/public/r/
 
 apps/ui-theme-web/.generated/
+apps/ui-theme-web/public/vue-preview/
