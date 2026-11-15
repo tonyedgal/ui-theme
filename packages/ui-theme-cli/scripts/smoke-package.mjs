@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
+import spawn from 'cross-spawn';
 import {
   mkdtempSync,
   mkdirSync,
@@ -12,12 +13,24 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// pnpm and npm are .cmd files on Windows, which execFileSync cannot start
+function tool(command, args, options) {
+  const result = spawn.sync(command, args, options);
+
+  if (result.error) throw result.error;
+
+  if (result.status !== 0)
+    throw new Error(
+      `${command} ${args.join(' ')} failed (${result.status}): ${result.stderr}`
+    );
+}
+
 const root = fileURLToPath(new URL('..', import.meta.url));
 
 const directory = mkdtempSync(join(tmpdir(), 'uitheme-cli-consumer-'));
 
 try {
-  execFileSync('pnpm', ['pack', '--pack-destination', directory], {
+  tool('pnpm', ['pack', '--pack-destination', directory], {
     cwd: root,
     stdio: 'pipe',
   });
@@ -31,11 +44,11 @@ try {
       dependencies: { 'uitheme-cli': `file:${join(directory, archive)}` },
     })
   );
-  execFileSync(
-    'npm',
-    ['install', '--ignore-scripts', '--no-audit', '--no-fund'],
-    { cwd: directory, stdio: 'pipe', timeout: 120_000 }
-  );
+  tool('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund'], {
+    cwd: directory,
+    stdio: 'pipe',
+    timeout: 120_000,
+  });
   const binary = join(directory, 'node_modules/uitheme-cli/dist/index.js');
 
   const run = (...args) =>
