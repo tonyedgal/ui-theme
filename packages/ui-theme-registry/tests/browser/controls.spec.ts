@@ -3,13 +3,15 @@ import { basesFor } from '../../../ui-theme-cli/src/bases.ts';
 
 const reactBases = basesFor('react');
 
+const vueBases = basesFor('vue');
+
 const queries = ['ui', 'next', 'vite', 'tanstack']
   .flatMap((provider) =>
     reactBases.map(
       (base) => `framework=react&base=${base}&provider=${provider}`
     )
   )
-  .concat('framework=vue');
+  .concat(vueBases.map((base) => `framework=vue&base=${base}`));
 
 for (const query of queries) {
   test(`${query} shares preferences and supports keyboard controls`, async ({
@@ -113,11 +115,16 @@ for (const query of queries) {
   });
 }
 
-for (const base of reactBases) {
-  test(`${base} tactile toggle switches with Space and Enter`, async ({
+const frameworks = [
+  ...reactBases.map((base) => ({ framework: 'react', base })),
+  ...vueBases.map((base) => ({ framework: 'vue', base })),
+];
+
+for (const { framework, base } of frameworks) {
+  test(`${framework} ${base} tactile toggle switches with Space and Enter`, async ({
     page,
   }) => {
-    await page.goto(`/?framework=react&base=${base}`);
+    await page.goto(`/?framework=${framework}&base=${base}`);
 
     const tactile = page.getByRole('switch', {
       name: 'Dark theme',
@@ -138,10 +145,10 @@ for (const base of reactBases) {
     await expect(page.locator('#state')).toHaveText('dark/default');
   });
 
-  test(`${base} select popup opens below its trigger inside the viewport`, async ({
+  test(`${framework} ${base} select popup opens below its trigger inside the viewport`, async ({
     page,
   }) => {
-    await page.goto(`/?framework=react&base=${base}`);
+    await page.goto(`/?framework=${framework}&base=${base}`);
 
     const trigger = page.getByRole('combobox', { name: 'Theme', exact: true });
 
