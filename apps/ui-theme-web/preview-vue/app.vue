@@ -21,6 +21,7 @@ import { componentDocs, componentExamples } from '@/lib/component-docs';
 import {
   readPreviewMessage,
   type PreviewMessage,
+  type PreviewState,
 } from '../lib/vue-preview-protocol';
 
 const props = defineProps<{
@@ -126,6 +127,22 @@ const root = useTemplateRef<HTMLElement>('root');
 
 let observer: ResizeObserver | undefined;
 
+let latest: PreviewState | undefined;
+
+let waiting: MutationObserver | undefined;
+
+const attribute = 'data-ui-theme-transition';
+
+function apply() {
+  if (!latest) return;
+  const { theme, colorTheme } = latest;
+  latest = undefined;
+
+  if (theme !== ui.theme.value) ui.setTheme(theme);
+
+  if (colorTheme !== ui.colorTheme.value) ui.setColorTheme(colorTheme);
+}
+
 function onMessage(event: MessageEvent) {
   if (event.origin !== location.origin || event.source !== window.parent)
     return;
@@ -133,10 +150,26 @@ function onMessage(event: MessageEvent) {
 
   if (message?.type !== 'uitheme-preview:state') return;
 
-  if (message.theme !== ui.theme.value) ui.setTheme(message.theme);
+  latest = message;
 
-  if (message.colorTheme !== ui.colorTheme.value)
-    ui.setColorTheme(message.colorTheme);
+  // a running transition owns the theme; apply the last state once it ends
+  if (document.documentElement.hasAttribute(attribute)) {
+    if (waiting) return;
+    waiting = new MutationObserver(() => {
+      if (document.documentElement.hasAttribute(attribute)) return;
+      waiting?.disconnect();
+      waiting = undefined;
+      apply();
+    });
+    waiting.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: [attribute],
+    });
+
+    return;
+  }
+
+  apply();
 }
 
 onMounted(() => {
@@ -157,6 +190,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('message', onMessage);
   observer?.disconnect();
+  waiting?.disconnect();
 });
 </script>
 
