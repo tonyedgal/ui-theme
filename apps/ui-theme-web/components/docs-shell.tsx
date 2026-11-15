@@ -31,7 +31,7 @@ function DocsSidebar() {
   return (
     <aside
       id="nd-sidebar"
-      className="fixed top-[var(--site-header-height)] bottom-0 left-0 z-20 hidden w-62 overflow-y-auto bg-background text-sidebar-foreground lg:block 2xl:left-[max(0px,calc((100vw-87.5rem)/2))]"
+      className="fixed top-[var(--site-header-height)] bottom-0 left-0 z-20 hidden w-62 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden bg-background text-sidebar-foreground lg:block 2xl:left-[max(0px,calc((100vw-87.5rem)/2))]"
     >
       <SidebarNav sections={sections} pathname={pathname} />
     </aside>

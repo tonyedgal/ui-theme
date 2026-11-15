@@ -190,7 +190,7 @@ export function DocsMobileNavigation({
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/10 backdrop-blur-sm lg:hidden" />
-        <Dialog.Popup className="fixed top-[max(0.75rem,env(safe-area-inset-top))] bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] z-60 w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain rounded-xl border bg-background shadow-lg outline-none lg:hidden">
+        <Dialog.Popup className="fixed top-[max(0.75rem,env(safe-area-inset-top))] bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] z-60 w-72 max-w-[calc(100vw-1.5rem)] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-contain rounded-xl border bg-background shadow-lg outline-none lg:hidden">
           <div className="flex h-14 items-center justify-between px-4">
             <Dialog.Title className="font-semibold">UI-Theme</Dialog.Title>
             <Dialog.Close
