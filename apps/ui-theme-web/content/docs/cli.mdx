@@ -33,7 +33,7 @@ installed controls, for example `src/components/theme-provider.tsx`. It exports 
 In a Vite entry, the CLI places `ThemeProvider` directly inside
 `<StrictMode>`, around your other providers. If your app already has a
 provider file or a `cn` utility that differs, the CLI asks before it replaces
-the file. If you keep your file, the CLI prints the code to add by hand.
+the file. If you keep your file, the CLI prints a link to the setup guide.
 The first installation creates a shared `cn` utility when it is missing. The CLI
 reuses the utils alias in `components.json`, or uses `lib/utils` in the source
 folder. Later installs reuse it and repair a missing file. A valid callable `cn`
