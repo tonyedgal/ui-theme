@@ -260,7 +260,7 @@ height when the scroll limit changes.
 
 Use one `SiteThemeProvider` for the full website. It wraps `NextUIThemeProvider`
 from `uitheme-web/next`. Disable the Fumadocs appearance provider. Header controls
-and registry previews must consume the same UITheme state. Set transition
+and registry previews must consume the same UITheme state. Vue previews run in an isolated iframe: they follow the site theme, but their own changes stay in the preview. Set transition
 overrides on each control through its props. Other controls keep their own settings.
 
 Define default light and dark tokens in `apps/ui-theme-web/app/global.css`.
