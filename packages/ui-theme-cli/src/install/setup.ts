@@ -1,6 +1,8 @@
 import { dirname, join, relative } from 'node:path';
 import { displayPath, isInside } from '../paths.ts';
 import { planSharedUtils } from './shared-utils.ts';
+import { planNextThemes } from './next-themes.ts';
+import { messages } from './messages.ts';
 import { readConfig } from '../config.ts';
 import {
   hasTrailingComma,
@@ -540,27 +542,18 @@ async function nuxtModule(
   files.push(await planFile(profile, entry.path, content));
 }
 
-// The code for a manual provider step. It uses the defaults of the generated
-// provider, so a manual setup behaves like an automatic one.
-function providerSnippet(profile: ProjectProfile): string {
-  switch (profile.framework) {
-    case 'nuxt':
-      return "Add the module to nuxt.config:\n\nexport default defineNuxtConfig({\n  modules: ['uitheme-web/nuxt'],\n});";
-    case 'vite-vue':
-      return "Install the plugin before mount:\n\nimport { createUITheme } from 'uitheme-web/vue';\n\ncreateApp(App)\n  .use(createUITheme({ defaultTheme: 'system', defaultColorTheme: 'default', colorThemes: ['default'] }))\n  .mount('#app');";
-    case 'next':
-      return "Create a client provider, and wrap the content of <body> with it:\n\n'use client';\n\nimport { NextUIThemeProvider } from 'uitheme-web/next';\n\nexport function ThemeProvider({ children }) {\n  return (\n    <NextUIThemeProvider defaultTheme=\"system\" defaultColorTheme=\"default\" colorThemes={['default']}>\n      {children}\n    </NextUIThemeProvider>\n  );\n}\n\n// app/layout\n<body>\n  <ThemeProvider>{children}</ThemeProvider>\n</body>";
-    default:
-      return `Wrap ${profile.framework === 'tanstack' ? 'the content of <body>' : 'the application root'} with the provider:\n\nimport { UIThemeProvider } from 'uitheme-web/react';\n\n<UIThemeProvider defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>\n  ${profile.framework === 'tanstack' ? '{children}' : '<App />'}\n</UIThemeProvider>`;
-  }
-}
-
 export async function planInit(
   profile: ProjectProfile,
   options: PlanOptions = {}
 ): Promise<InstallPlan> {
   const files: PlannedFile[] = [],
     manualSteps: string[] = [];
+
+  const nextThemes = await planNextThemes(profile);
+  const converted = Boolean(nextThemes?.files.length);
+
+  for (const file of nextThemes?.files ?? [])
+    files.push(await planFile(profile, file.path, file.content));
 
   const utility = await planSharedUtils(profile, options);
   profile = utility.profile;
@@ -600,13 +593,13 @@ export async function planInit(
       await nuxtModule(profile, files, manualSteps);
     else if (profile.framework === 'vite-vue')
       await vueProvider(profile, files, manualSteps);
-    else await reactProvider(profile, files, manualSteps, options);
+    else if (!converted)
+      await reactProvider(profile, files, manualSteps, options);
   } catch (error) {
     manualSteps.push(error instanceof Error ? error.message : String(error));
   }
 
-  if (manualSteps.length > providerSteps)
-    manualSteps.push(providerSnippet(profile));
+  if (manualSteps.length > providerSteps) manualSteps.push(messages.manual());
 
   files.push(
     await planFile(
@@ -620,6 +613,12 @@ export async function planInit(
     profile,
     files,
     manualSteps,
+    ...(nextThemes && {
+      nextThemes: {
+        files: nextThemes.files.length,
+        remove: nextThemes.remove,
+      },
+    }),
     dependencies: await missingDependencies(
       profile,
       [

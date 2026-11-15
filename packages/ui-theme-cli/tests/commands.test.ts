@@ -688,8 +688,9 @@ describe('files that differ from the uitheme version', () => {
       'Kept your src/components/theme-provider.tsx'
     );
     expect(kept.output()).toContain(
-      "import { UIThemeProvider } from 'uitheme-web/react';"
+      'See https://www.ui-theme.dev/docs/guides/next-themes#manual-setup'
     );
+    expect(kept.output()).not.toContain('import { UIThemeProvider }');
 
     expect(
       await runCli(['init', '--cwd', cwd], {
@@ -794,7 +795,7 @@ describe('guided next steps', () => {
     expect(prompt.asked[0]).toContain('Select the base to save instead');
     expect(JSON.parse(out.output()).base).toBe('radix');
   });
-  it('prints the provider code for a manual provider step', async () => {
+  it('prints a docs link instead of provider code for a manual provider step', async () => {
     const cwd = await fixture(),
       out = io();
 
@@ -806,7 +807,8 @@ describe('guided next steps', () => {
       await runCli(['init', '--cwd', cwd, '--yes'], { ...out, runInstall })
     ).toBe(2);
     expect(out.output()).toContain(
-      "manual-required: Wrap the application root with the provider:\n\nimport { UIThemeProvider } from 'uitheme-web/react';"
+      'manual-required: Add the provider yourself. See https://www.ui-theme.dev/docs/guides/next-themes#manual-setup'
     );
+    expect(out.output()).not.toContain('import { UIThemeProvider }');
   });
 });
