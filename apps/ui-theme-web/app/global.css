@@ -944,7 +944,9 @@
   }
 }
 
-:has(> .site-palette-popup) {
+/* registry-preview.css emits unlayered utilities, including .z-50, after this
+   file. The element selector lets this rule win over them. */
+div:has(> .site-palette-popup) {
   z-index: 70;
 }
 
