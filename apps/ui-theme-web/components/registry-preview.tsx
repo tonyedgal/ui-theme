@@ -12,9 +12,24 @@ import { ThemeSelector as UISDKThemeSelector } from '../../../packages/ui-theme-
 import { ColorThemeSelector as UISDKColorThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/color-theme-selector';
 import { ThemeDisclosure as UISDKThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/theme-disclosure';
 import { ColorThemeDisclosure as UISDKColorThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/color-theme-disclosure';
-import { createContext, Suspense, useContext, type ReactNode } from 'react';
+import {
+  createContext,
+  Suspense,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import Link from 'next/link';
+import { useNextUITheme } from 'uitheme-web/next';
 import { ThemeAnimationType } from 'uitheme-web/react';
+import {
+  readPreviewMessage,
+  vuePreviewUrl,
+  type PreviewMessage,
+  type PreviewState,
+} from '@/lib/vue-preview-protocol';
 import { SourceDisclosure } from './docs/source-disclosure';
 import {
   getDocsPagination,
@@ -105,7 +120,7 @@ const reactPreviews = {
   }
 >;
 
-// Vue pages render no live preview, so they never use these controls.
+// Vue pages render their controls in an iframe, so they never use these controls.
 function reactPreview(entry: ComponentBaseEntry) {
   const key = entry.framework === 'vue' ? 'base-ui' : entry.base;
 
@@ -114,6 +129,121 @@ function reactPreview(entry: ComponentBaseEntry) {
   if (!preview) throw new Error(`Missing React preview for ${entry.base}.`);
 
   return preview;
+}
+
+function VueFrame({
+  base,
+  component,
+  example,
+  title,
+  reserved,
+}: {
+  base: string;
+  component: string;
+  example: string;
+  title: string;
+  reserved: number;
+}) {
+  const { theme, colorTheme, colorThemes, setTheme, setColorTheme } =
+    useNextUITheme();
+
+  const holder = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLIFrameElement>(null);
+  const ready = useRef(false);
+  const latest = useRef<PreviewState>({ theme, colorTheme });
+  const [start, setStart] = useState<PreviewState>();
+  const [height, setHeight] = useState(reserved);
+
+  useEffect(() => {
+    latest.current = { theme, colorTheme };
+  });
+
+  useEffect(() => {
+    const node = holder.current;
+
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setStart((current) => current ?? { ...latest.current });
+        observer.disconnect();
+      },
+      { rootMargin: '200px' }
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    function send(message: PreviewMessage) {
+      frame.current?.contentWindow?.postMessage(
+        message,
+        window.location.origin
+      );
+    }
+
+    function receive(event: MessageEvent) {
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== frame.current?.contentWindow
+      )
+        return;
+
+      const message = readPreviewMessage(event.data);
+
+      if (message?.type === 'uitheme-preview:height')
+        setHeight(Math.max(1, message.height));
+
+      if (message?.type === 'uitheme-preview:ready') {
+        ready.current = true;
+        send({ type: 'uitheme-preview:state', ...latest.current });
+      }
+
+      if (message?.type === 'uitheme-preview:state') {
+        if (message.theme !== latest.current.theme) setTheme(message.theme);
+
+        if (message.colorTheme !== latest.current.colorTheme)
+          setColorTheme(message.colorTheme);
+      }
+    }
+
+    window.addEventListener('message', receive);
+
+    return () => window.removeEventListener('message', receive);
+  }, [setTheme, setColorTheme]);
+
+  useEffect(() => {
+    if (ready.current)
+      frame.current?.contentWindow?.postMessage(
+        { type: 'uitheme-preview:state', theme, colorTheme },
+        window.location.origin
+      );
+  }, [theme, colorTheme]);
+
+  return (
+    <div ref={holder} className="w-full">
+      <iframe
+        ref={frame}
+        title={title}
+        src={
+          start
+            ? vuePreviewUrl({
+                base,
+                component,
+                example,
+                state: start,
+                palettes: colorThemes,
+              })
+            : undefined
+        }
+        style={{ height, colorScheme: 'light dark' }}
+        className="block w-full border-0 bg-transparent"
+      />
+    </div>
+  );
 }
 
 interface RegistryPreviewProps {
@@ -223,9 +353,19 @@ function RegistryContent({
       : {};
 
     return entry.framework === 'vue' ? (
-      <div className="rounded-lg border border-border px-6 py-10 text-sm leading-[1.75] text-muted-foreground">
-        {`This component uses Vue and ${entry.label}. Install the source below in your Vue or Nuxt app to try it with your theme provider.`}
-      </div>
+      <VueFrame
+        base={entry.name}
+        component={component}
+        example={example?.id ?? 'default'}
+        title={`${previewName} (${entry.label}) live preview`}
+        reserved={
+          doc.category === 'disclosures'
+            ? 384
+            : doc.category === 'selectors'
+              ? 256
+              : 40
+        }
+      />
     ) : (
       <div
         role="region"
