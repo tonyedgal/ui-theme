@@ -114,7 +114,17 @@ export function validateConfig(value: unknown): SavedConfig {
       invalid(key, 'is not a known field');
   }
 
-  for (const key of ['cssFile', 'tailwindConfigFile', 'componentsDir']) {
+  const examples = {
+    cssFile: 'src/app/globals.css',
+    tailwindConfigFile: 'tailwind.config.ts',
+    componentsDir: 'src/components/ui',
+  } as const;
+
+  for (const key of [
+    'cssFile',
+    'tailwindConfigFile',
+    'componentsDir',
+  ] as const) {
     const path = value[key];
 
     if (
@@ -123,7 +133,7 @@ export function validateConfig(value: unknown): SavedConfig {
     )
       invalid(
         key,
-        `must be a relative path that uses "/" (for example "src/app"), not "${path}"`
+        `must be a relative path that uses "/" (for example "${examples[key]}"), not "${path}"`
       );
 
     if (

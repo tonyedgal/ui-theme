@@ -6,7 +6,7 @@ import spawn from 'cross-spawn';
 import semver from 'semver';
 import { readConfig, writeFileAtomic } from '../config.ts';
 import nodePath from 'node:path';
-import { isInside, samePath } from '../paths.ts';
+import { displayPath, isInside, samePath } from '../paths.ts';
 import type { PathApi } from '../paths.ts';
 import { assertSafePath } from '../registry.ts';
 import type { ProjectProfile, RegistryGraph, SavedConfig } from '../types.ts';
@@ -114,6 +114,40 @@ export async function readOptional(path: string): Promise<string | undefined> {
   }
 }
 
+const lockedCodes = new Set(['EBUSY', 'EPERM', 'EACCES']);
+
+/**
+ * Read a destination file. A file that another program holds open (Windows
+ * locks it exclusively) gets one short message instead of the raw error. The
+ * saved `uitheme.json` may start with a byte order mark, which is not a change.
+ */
+async function readDestination(
+  profile: ProjectProfile,
+  path: string
+): Promise<string | undefined> {
+  let content: string | undefined;
+
+  try {
+    content = await readOptional(path);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      lockedCodes.has(String(error.code))
+    )
+      throw new Error(
+        `Cannot read ${displayPath(profile.cwd, path)}: another program has the file open. Close it and run the command again.`,
+        { cause: error }
+      );
+
+    throw error;
+  }
+
+  return samePath(path, profile.configFile)
+    ? content?.replace(/^\uFEFF/, '')
+    : content;
+}
+
 export async function assertDestination(
   cwd: string,
   path: string
@@ -200,7 +234,7 @@ export async function planFile(
   content: string
 ): Promise<PlannedFile> {
   await assertProfileDestination(profile, path);
-  const before = await readOptional(path);
+  const before = await readDestination(profile, path);
 
   return {
     path,
@@ -612,7 +646,7 @@ export async function applyPlan(
   for (const file of plan.files) {
     await assertProfileDestination(plan.profile, file.path);
 
-    if ((await readOptional(file.path)) !== file.before)
+    if ((await readDestination(plan.profile, file.path)) !== file.before)
       throw new Error(`File changed since planning: ${file.path}`);
   }
 
