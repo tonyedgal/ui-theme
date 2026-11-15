@@ -62,9 +62,9 @@ The website opens at `http://localhost:3000`.
 ## Components
 
 The control templates are in `packages/ui-theme-registry/src/templates`, with
-one folder for each primitive base: `react/base-ui`, `react/radix`, and
-`vue/reka`. Write TypeScript for Tailwind 4. The build creates the other
-variants.
+one folder for each primitive base and framework: `react/base-ui`,
+`react/radix`, `react/ui-sdk`, `vue/reka`, and `vue/ui-sdk`. Write TypeScript for
+Tailwind 4. The build creates the other variants.
 
 When you add or change a control:
 
