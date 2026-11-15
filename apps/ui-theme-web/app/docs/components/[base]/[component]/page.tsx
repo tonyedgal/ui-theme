@@ -13,6 +13,9 @@ import {
   RegistryApi,
   RegistryReact,
   RegistryVue,
+  RegistryShadcn,
+  RegistryBaseInstallation,
+  RegistryBaseAccessibility,
   RegistryAgentCopy,
   RegistrySource,
 } from '@/components/registry-preview';
@@ -216,6 +219,9 @@ export default async function Page({
             RegistryApi,
             RegistryReact,
             RegistryVue,
+            RegistryShadcn,
+            RegistryBaseInstallation,
+            RegistryBaseAccessibility,
             RegistryAgentCopy,
             RegistrySource,
           })}

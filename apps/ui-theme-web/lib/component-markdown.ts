@@ -1,4 +1,4 @@
-import { componentApi } from './component-guides';
+import { componentApi, componentBaseFacts } from './component-guides';
 import {
   componentBase,
   componentUsage,
@@ -25,7 +25,9 @@ export function componentMarkdown({
   selected?: ComponentSource;
 }) {
   const command = `npx uitheme-cli add ${doc.name} --base ${componentBase(base).base} --tailwind ${tailwind} --language ${language}`;
-  const vue = componentBase(base).framework === 'vue';
+  const entry = componentBase(base);
+  const vue = entry.framework === 'vue';
+  const facts = componentBaseFacts(doc, base);
   const usageSource = componentUsage(doc, base);
 
   const usage =
@@ -49,6 +51,12 @@ export function componentMarkdown({
         })
         .join('\n\n'),
       RegistryInstallation: `\`\`\`sh\n${command}\n\`\`\``,
+      RegistryBaseInstallation: facts.installation
+        .map((fact) => `- ${fact}`)
+        .join('\n'),
+      RegistryBaseAccessibility: facts.accessibility
+        .map((fact) => `- ${fact}`)
+        .join('\n'),
       RegistryShadcnInstallation: `\`\`\`sh\n${shadcnCommand(doc.name)}\n\`\`\``,
       RegistryUsage: `\`\`\`${vue ? 'vue' : language === 'js' ? 'jsx' : 'tsx'}\n${usage}\n\`\`\``,
       RegistryApi: `| Prop | Type | Behavior |\n| --- | --- | --- |\n${api.map((row) => `| ${row.name} | ${row.type} | ${row.description} |`).join('\n')}`,
@@ -66,7 +74,12 @@ export function componentMarkdown({
       (framework === 'Vue') === vue ? body : ''
   );
 
-  const markdown = `# ${doc.title}\n\n${doc.description}\n\n${visibleMarkdown.replace(/<([A-Za-z]+)\s*\/>/g, (match, name: string) => fragments.get(name) ?? match)}`;
+  const shadcnMarkdown = visibleMarkdown.replace(
+    /<RegistryShadcn>\s*([\s\S]*?)\s*<\/RegistryShadcn>/g,
+    (_, body: string) => (entry.shadcn ? body : '')
+  );
+
+  const markdown = `# ${doc.title}\n\n${doc.description}\n\n${shadcnMarkdown.replace(/<([A-Za-z]+)\s*\/>/g, (match, name: string) => fragments.get(name) ?? match)}`;
 
   return markdown;
 }
