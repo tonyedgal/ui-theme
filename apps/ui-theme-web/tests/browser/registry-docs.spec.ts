@@ -234,3 +234,138 @@ test('UI SDK React controls respond to the pointer and the keyboard', async ({
   await page.getByRole('option', { name: 'Caffeine' }).click();
   await expect(page.locator('html')).toHaveClass(/theme-caffeine/);
 });
+
+const vueSets = [
+  { base: 'reka', label: 'Reka' },
+  { base: 'ui-sdk-vue', label: 'UI SDK' },
+];
+
+function vueFrame(page: Page, label: string) {
+  return page.frameLocator(`iframe[title^="Default preview (${label})"]`);
+}
+
+test('Vue pages render every control in a same-origin iframe', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+
+  for (const { base, label } of vueSets) {
+    for (const component of components) {
+      await page.goto(`/docs/components/${base}/${component}`);
+
+      const preview = vueFrame(page, label).getByRole('region', {
+        name: `Default preview (${label})`,
+      });
+
+      await expect(preview).toBeVisible();
+
+      await expect(
+        preview
+          .locator(
+            'button, [role="switch"], [role="radiogroup"], [role="combobox"]'
+          )
+          .first()
+      ).toBeVisible();
+    }
+  }
+
+  expect(errors).toEqual([]);
+});
+
+test('a Vue control changes the site theme and the header changes the iframe', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/docs/components/reka/theme-toggle');
+
+  const frame = vueFrame(page, 'Reka');
+  const html = page.locator('html');
+  const inner = frame.locator('html');
+  await expect(inner).not.toHaveClass(/dark/);
+
+  await frame.getByRole('button', { name: /Toggle theme/ }).click();
+  await expect(html).toHaveClass(/dark/);
+  await expect(inner).toHaveClass(/dark/);
+
+  await page.getByRole('radio', { name: 'Light theme' }).click();
+  await expect(inner).not.toHaveClass(/dark/);
+  await expect(html).not.toHaveClass(/dark/);
+});
+
+test('a Vue color theme selector changes the site palette', async ({
+  page,
+}) => {
+  await page.goto('/docs/components/ui-sdk-vue/color-theme-selector');
+
+  const frame = vueFrame(page, 'UI SDK');
+  await frame.getByRole('combobox').click();
+  await frame.getByRole('option', { name: 'Caffeine' }).click();
+  await expect(page.locator('html')).toHaveClass(/theme-caffeine/);
+  await expect(frame.locator('html')).toHaveClass(/theme-caffeine/);
+});
+
+test('a Vue select popup stays inside its iframe', async ({ page }) => {
+  for (const { base, label, component } of [
+    { base: 'ui-sdk-vue', label: 'UI SDK', component: 'color-theme-selector' },
+    { base: 'reka', label: 'Reka', component: 'theme-selector' },
+  ]) {
+    await page.goto(`/docs/components/${base}/${component}`);
+
+    const frame = vueFrame(page, label);
+    await frame.getByRole('combobox').click();
+
+    const list = await frame.getByRole('listbox').boundingBox();
+
+    const outer = await page
+      .locator(`iframe[title^="Default preview (${label})"]`)
+      .boundingBox();
+
+    expect(list).not.toBeNull();
+    expect(outer).not.toBeNull();
+    expect(list!.y).toBeGreaterThanOrEqual(outer!.y);
+    expect(list!.y + list!.height).toBeLessThanOrEqual(
+      outer!.y + outer!.height
+    );
+    expect(list!.x + list!.width).toBeLessThanOrEqual(outer!.x + outer!.width);
+  }
+});
+
+test('a Vue tactile toggle responds to the pointer and the keyboard', async ({
+  page,
+}) => {
+  await page.goto('/docs/components/ui-sdk-vue/tactile-theme-toggle');
+
+  const toggle = vueFrame(page, 'UI SDK').getByRole('switch');
+  await expect(toggle).toBeEnabled();
+
+  for (const press of [
+    () => toggle.click(),
+    () => page.keyboard.press('Space'),
+    () => page.keyboard.press('Enter'),
+  ]) {
+    const before = await toggle.getAttribute('aria-checked');
+    await press();
+    await expect(toggle).not.toHaveAttribute('aria-checked', before ?? '');
+  }
+});
+
+test('the Vue iframe has the site theme before its script runs', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('theme', 'dark');
+    localStorage.setItem('color-theme', 'caffeine');
+  });
+  await page.route('**/vue-preview/assets/*.js', (route) => route.abort());
+  await page.goto('/docs/components/reka/theme-toggle');
+
+  const iframe = page.locator('iframe[title^="Default preview (Reka)"]');
+  await expect(iframe).toHaveAttribute('src', /vue-preview/);
+  const handle = await iframe.elementHandle();
+
+  const frame = await handle!.contentFrame();
+  await frame!.waitForLoadState('domcontentloaded');
+  await expect(frame!.locator('html')).toHaveClass(/dark/);
+  await expect(frame!.locator('html')).toHaveClass(/theme-caffeine/);
+});
