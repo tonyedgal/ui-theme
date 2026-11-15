@@ -5,8 +5,9 @@ the website all serve what it builds. It is private and not published to npm.
 
 ## Source (edit these)
 
-- `src/templates/react/radix/`, `src/templates/react/base-ui/` and
-  `src/templates/vue/reka/`: one file per control, plus a `metadata.json` with
+- `src/templates/react/radix/`, `src/templates/react/base-ui/`,
+  `src/templates/react/ui-sdk/`, `src/templates/vue/reka/` and
+  `src/templates/vue/ui-sdk/`: one file per control, plus a `metadata.json` with
   its title, description and dependencies.
 - `src/build.ts`: turns the templates into registry records and lists the
   shadcn styles.
