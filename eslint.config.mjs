@@ -31,6 +31,7 @@ export default defineConfig([
     '**/.next/**',
     '**/.expo/**',
     '**/.nuxt/**',
+    'apps/ui-theme-web/public/vue-preview/**',
     'apps/examples/example-*/ios/**',
     'apps/examples/example-*/android/**',
     '**/expo-env.d.ts',
