@@ -37,9 +37,8 @@ export function componentMarkdown({
 
   const fragments = new Map(
     Object.entries({
-      RegistryLivePreview: vue
-        ? 'Install the Vue source in your app to preview it with your theme provider.'
-        : 'Use the live preview to try the control with your theme provider.',
+      RegistryLivePreview:
+        'Use the live preview to try the control with your theme provider.',
       RegistryExamples: componentExamples(doc)
         .map((example) => {
           const source = componentUsage(doc, base, example);
