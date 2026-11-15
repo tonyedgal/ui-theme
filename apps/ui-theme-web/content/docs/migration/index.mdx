@@ -27,7 +27,7 @@ For controls without custom props inside a recognized provider, review the migra
 Apply the migration with `npx uitheme-cli migrate --yes`. Controls with custom props or unrecognized providers need manual changes.
 The command reports these cases before it writes files.
 
-Choose `--base radix` for Radix React controls. Vue uses `--base reka`.
+Choose `--base radix` for Radix React controls, or `--base ui-sdk` for UI SDK controls. Vue uses `--base reka` by default.
 Select the Tailwind major already used by the app with `--tailwind 3` or `--tailwind 4`.
 The installed files use the selected base. They do not switch bases at runtime.
 
