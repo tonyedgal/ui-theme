@@ -10,11 +10,13 @@ export function ComponentPreview({
   children,
   code,
   html,
+  flush = false,
 }: {
   label?: string;
   children: ReactNode;
   code: string;
   html?: string;
+  flush?: boolean;
 }) {
   return (
     <DocsTabs
@@ -30,7 +32,11 @@ export function ComponentPreview({
         {
           id: 'preview',
           label: 'Preview',
-          content: (
+          content: flush ? (
+            <div className="min-h-30 min-w-0 overflow-hidden rounded-lg border">
+              {children}
+            </div>
+          ) : (
             <div className="min-h-30 min-w-0 overflow-x-auto rounded-lg border p-4 sm:p-8 lg:p-20">
               <div className="mx-auto flex w-full max-w-lg items-center justify-center">
                 {children}

@@ -22,10 +22,8 @@ import {
   readPreviewMessage,
   type PreviewMessage,
 } from '../lib/vue-preview-protocol';
-import type { PreviewBridge } from './bridge';
 
 const props = defineProps<{
-  bridge: PreviewBridge;
   post: (message: PreviewMessage) => void;
   params: Record<string, string>;
 }>();
@@ -122,8 +120,12 @@ function onMessage(event: MessageEvent) {
     return;
   const message = readPreviewMessage(event.data);
 
-  if (message?.type === 'uitheme-preview:state')
-    props.bridge.apply(message, ui);
+  if (message?.type !== 'uitheme-preview:state') return;
+
+  if (message.theme !== ui.theme.value) ui.setTheme(message.theme);
+
+  if (message.colorTheme !== ui.colorTheme.value)
+    ui.setColorTheme(message.colorTheme);
 }
 
 onMounted(() => {
@@ -148,12 +150,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="root" class="flow-root">
+  <div
+    ref="root"
+    class="flex min-h-30 items-center justify-center"
+    style="padding: var(--preview-padding, 1rem)"
+  >
     <div
       v-if="control"
       role="region"
       :aria-label="`${example?.title ?? 'Default preview'} (${label})`"
-      class="w-full"
+      class="mx-auto flex w-full max-w-lg items-center justify-center"
     >
       <div :class="`w-full max-w-sm ${reserved}`">
         <div v-if="centered" class="flex justify-center">
