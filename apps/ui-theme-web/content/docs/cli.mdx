@@ -48,11 +48,12 @@ npx uitheme-cli init
 ```
 
 For React, the CLI selects the base that the app already uses. It selects Radix
-when the app depends on `radix-ui` or `@radix-ui/*`, and Base UI when the app
-depends on `@base-ui/react`. If the app has both or neither, the shadcn style in
-`components.json` decides: `base-*` styles select Base UI, and other styles
+when the app depends on `radix-ui` or `@radix-ui/*`, Base UI when the app
+depends on `@base-ui/react`, and UI SDK when the app depends on
+`@ui-sdk/react`. If the app has more than one of these or none, the shadcn style
+in `components.json` decides: `base-*` styles select Base UI, and other styles
 select Radix. Otherwise, the CLI uses Base UI. Set `--base` to choose another
-base. Vue uses Reka.
+base. Vue uses Reka, unless the app depends on `@ui-sdk/vue`.
 Interactive runs can ask for a framework or component base when a choice is needed.
 For unattended runs, provide explicit choices and `--yes`.
 
@@ -201,7 +202,7 @@ compatible component configuration, then automatic detection.
 | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--cwd <app>`                       | Select an existing app. Defaults to the current directory. The `-c` alias is available only for `migrate`.                                     |
 | `--framework <name>`                | `vite-react`, `vite-vue`, `next`, `tanstack`, or `nuxt`. Select a supported framework installed in the app.                                    |
-| `--base <name>`                     | `base-ui` or `radix` for React; `reka` for Vue.                                                                                                |
+| `--base <name>`                     | `base-ui`, `radix`, or `ui-sdk` for React; `reka` or `ui-sdk` for Vue.                                                                         |
 | `--language <name>`                 | `ts` or `js`. Select the language of the installed component source.                                                                           |
 | `--tailwind <major>`                | `3` or `4`. Match the Tailwind major already installed in the app.                                                                             |
 | `--package-manager <name>`          | `npm`, `pnpm`, `yarn`, or `bun`. Select the package manager for dependency installation.                                                       |
