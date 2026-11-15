@@ -56,3 +56,7 @@ export function vuePreviewUrl(options: {
 
   return `${vuePreviewPath}?${query}`;
 }
+
+// shown under every Vue preview and repeated in the Markdown copy
+export const vuePreviewNote =
+  'This preview runs in an iframe. The theme transition stays in the preview frame. In your app, the transition covers the full page.';
