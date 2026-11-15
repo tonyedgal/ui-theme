@@ -13,7 +13,10 @@ import {
   resolveWebDependency,
   planRegistryInstall,
   readOptional,
+  removalCommand,
+  runPackageRemoval,
 } from '../install/index.ts';
+import { messages } from '../install/messages.ts';
 import { cliVersion, installedWebVersion } from './version.ts';
 import type {
   ConflictReason,
@@ -33,6 +36,7 @@ export interface CliIO {
   env?: Record<string, string | undefined>;
   registry?: ReturnType<typeof createRegistryClient>;
   runInstall?: InstallRunner;
+  runRemoval?: InstallRunner;
   /** Resolve undefined when nobody can answer, for example in CI. */
   confirm?: (plan: InstallPlan) => Promise<boolean | undefined>;
   select?: (
@@ -218,6 +222,14 @@ function printablePlan(plan: InstallPlan) {
       dependencies: install.dependencies,
     })),
     manualSteps: plan.manualSteps,
+    ...(plan.nextThemes?.remove && {
+      removals: [
+        {
+          package: 'next-themes',
+          command: removalCommand(plan.profile, ['next-themes']),
+        },
+      ],
+    }),
   };
 }
 
@@ -587,6 +599,23 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
 
     await applyPlan(plan, { runInstall: io.runInstall });
 
+    let removalFailed = false;
+
+    if (plan.nextThemes?.remove)
+      try {
+        await (io.runRemoval ?? runPackageRemoval)(plan.profile, [
+          'next-themes',
+        ]);
+      } catch {
+        removalFailed = true;
+        stdout(
+          messages.removalFailed(
+            plan.nextThemes.files,
+            removalCommand(plan.profile, ['next-themes'])
+          )
+        );
+      }
+
     // Files that nobody chose to keep exit with 2, so a script can find them.
     const unanswered = plan.files
       .filter((file) => file.kept && !file.kept.asked)
@@ -609,7 +638,14 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
       return 2;
     }
 
-    if (unanswered.length) return 2;
+    if (unanswered.length || removalFailed) return 2;
+
+    if (plan.nextThemes?.files)
+      stdout(
+        plan.nextThemes.remove
+          ? messages.replaced(plan.nextThemes.files)
+          : messages.replacedPackageKept(plan.nextThemes.files)
+      );
 
     stdout(
       command === 'init'

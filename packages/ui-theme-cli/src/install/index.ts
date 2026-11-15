@@ -10,6 +10,7 @@ import { displayPath, isInside, samePath } from '../paths.ts';
 import type { PathApi } from '../paths.ts';
 import { assertSafePath } from '../registry.ts';
 import type { ProjectProfile, RegistryGraph, SavedConfig } from '../types.ts';
+import { messages } from './messages.ts';
 
 export interface PlannedFile {
   path: string;
@@ -54,6 +55,8 @@ export interface InstallPlan {
   dependencyInstalls?: { profile: ProjectProfile; dependencies: string[] }[];
   manualSteps: string[];
   revision?: string;
+  /** next-themes was replaced in `files` source files; `remove` asks for the uninstall. */
+  nextThemes?: { files: number; remove: boolean };
 }
 
 export interface PlanOptions {
@@ -612,14 +615,14 @@ export async function planRegistryInstall(
   return plan;
 }
 
-export const runPackageInstall: InstallRunner = async (
-  profile,
-  dependencies
-) => {
-  if (!dependencies.length) return;
+function run(
+  profile: ProjectProfile,
+  args: string[],
+  label: string
+): Promise<void> {
   const command = profile.packageManager;
-  const args = [command === 'npm' ? 'install' : 'add', ...dependencies];
-  await new Promise<void>((resolveRun, reject) => {
+
+  return new Promise<void>((resolveRun, reject) => {
     const child = spawn(command, args, {
       cwd: profile.cwd,
       stdio: 'inherit',
@@ -630,12 +633,45 @@ export const runPackageInstall: InstallRunner = async (
     child.on('close', (code) =>
       code === 0
         ? resolveRun()
-        : reject(
-            new Error(`${command} dependency installation failed (${code})`)
-          )
+        : reject(new Error(`${command} ${label} failed (${code})`))
     );
   });
+}
+
+export const runPackageInstall: InstallRunner = async (
+  profile,
+  dependencies
+) => {
+  if (!dependencies.length) return;
+
+  await run(
+    profile,
+    [profile.packageManager === 'npm' ? 'install' : 'add', ...dependencies],
+    'dependency installation'
+  );
 };
+
+export function removalArguments(
+  profile: ProjectProfile,
+  packages: string[]
+): string[] {
+  return [
+    profile.packageManager === 'npm' ? 'uninstall' : 'remove',
+    ...packages,
+  ];
+}
+
+export function removalCommand(
+  profile: ProjectProfile,
+  packages: string[]
+): string {
+  return [profile.packageManager, ...removalArguments(profile, packages)].join(
+    ' '
+  );
+}
+
+export const runPackageRemoval: InstallRunner = (profile, packages) =>
+  run(profile, removalArguments(profile, packages), 'removal');
 
 export async function applyPlan(
   plan: InstallPlan,
@@ -792,6 +828,9 @@ export function describePlan(plan: InstallPlan): string {
           `dependency ${dependency} (in ${relative(plan.profile.cwd, install.profile.cwd).replaceAll('\\', '/')})`
       )
     ),
+    ...(plan.nextThemes?.remove
+      ? [messages.removalPlan(removalCommand(plan.profile, ['next-themes']))]
+      : []),
     ...plan.manualSteps.map((step) => `manual-required: ${step}`),
   ].join('\n');
 }
