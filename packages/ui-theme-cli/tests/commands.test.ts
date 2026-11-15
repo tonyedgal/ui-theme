@@ -1,4 +1,11 @@
-import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
+import {
+  chmod,
+  mkdtemp,
+  mkdir,
+  readFile,
+  writeFile,
+  rm,
+} from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -619,6 +626,45 @@ describe('files that differ from the uitheme version', () => {
       )
     ).toBe(0);
     expect(await readFile(toggle, 'utf8')).toBe('new source');
+  });
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+    'reports a file that another program holds as one line and writes nothing',
+    async () => {
+      const { cwd, toggle } = await installedApp(),
+        out = io();
+
+      await chmod(toggle, 0o000);
+
+      try {
+        expect(
+          await runCli(
+            ['add', 'theme-toggle', '--cwd', cwd, '--yes', '--overwrite'],
+            { ...out, runInstall, registry: registryWith('new source') }
+          )
+        ).toBe(1);
+      } finally {
+        await chmod(toggle, 0o644);
+      }
+
+      expect(out.output()).toBe(
+        'Cannot read src/components/ui/theme-toggle.tsx: another program has the file open. Close it and run the command again.\n'
+      );
+      expect(await readFile(toggle, 'utf8')).toBe('my edit');
+    }
+  );
+  it('treats a uitheme.json that differs only by a byte order mark as unchanged', async () => {
+    const { cwd } = await installedApp(),
+      file = join(cwd, 'uitheme.json'),
+      out = io();
+
+    await writeFile(file, '\uFEFF' + (await readFile(file, 'utf8')));
+    expect(
+      await runCli(['diff', 'theme-toggle', '--cwd', cwd], {
+        ...out,
+        registry: registryWith(),
+      })
+    ).toBe(0);
+    expect(out.output()).not.toContain('uitheme.json');
   });
   it('asks about an existing provider file during init', async () => {
     const cwd = await fixture(),
