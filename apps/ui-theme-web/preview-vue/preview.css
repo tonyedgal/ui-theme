@@ -1,9 +1,0 @@
-html,
-body {
-  background: transparent;
-}
-
-/* the iframe stays transparent only while its scheme matches the element's */
-:root {
-  color-scheme: light dark !important;
-}

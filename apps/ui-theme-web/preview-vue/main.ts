@@ -1,5 +1,4 @@
 import '../app/global.css';
-import './preview.css';
 import { createApp } from 'vue';
 import { createUITheme } from 'uitheme-web/vue';
 import {
@@ -8,7 +7,6 @@ import {
   type PreviewState,
 } from '../lib/vue-preview-protocol';
 import App from './app.vue';
-import { createBridge } from './bridge';
 
 const params = new URLSearchParams(location.search);
 
@@ -28,7 +26,24 @@ const initial: PreviewState = {
 const post = (message: PreviewMessage) =>
   window.parent.postMessage(message, location.origin);
 
-const bridge = createBridge(initial, post);
+// the frame padding follows the site's breakpoints, not this narrower viewport
+const host = window.parent;
+
+const widths = [
+  [host.matchMedia('(min-width: 1024px)'), '5rem'],
+  [host.matchMedia('(min-width: 640px)'), '2rem'],
+] as const;
+
+function syncPadding() {
+  document.documentElement.style.setProperty(
+    '--preview-padding',
+    widths.find(([query]) => query.matches)?.[1] ?? '1rem'
+  );
+}
+
+syncPadding();
+
+for (const [query] of widths) query.addEventListener('change', syncPadding);
 
 // the parent owns the next/font faces; copy them so the iframe matches the site
 try {
@@ -58,15 +73,13 @@ try {
   // the system fonts remain when the parent styles are unreadable
 }
 
-createApp(App, { bridge, post, params: Object.fromEntries(params) })
+createApp(App, { post, params: Object.fromEntries(params) })
   .use(
     createUITheme({
       colorThemes: palettes,
       defaultTheme: initial.theme,
       defaultColorTheme: initial.colorTheme,
       storage: false,
-      onThemeChange: bridge.themeChanged,
-      onColorThemeChange: bridge.colorThemeChanged,
     })
   )
   .mount('#app');

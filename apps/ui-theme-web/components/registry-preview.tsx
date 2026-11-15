@@ -14,6 +14,7 @@ import { ThemeDisclosure as UISDKThemeDisclosure } from '../../../packages/ui-th
 import { ColorThemeDisclosure as UISDKColorThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/color-theme-disclosure';
 import {
   createContext,
+  type CSSProperties,
   Suspense,
   useContext,
   useEffect,
@@ -144,15 +145,14 @@ function VueFrame({
   title: string;
   reserved: number;
 }) {
-  const { theme, colorTheme, colorThemes, setTheme, setColorTheme } =
-    useNextUITheme();
+  const { theme, colorTheme, colorThemes } = useNextUITheme();
 
   const holder = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const ready = useRef(false);
   const latest = useRef<PreviewState>({ theme, colorTheme });
   const [start, setStart] = useState<PreviewState>();
-  const [height, setHeight] = useState(reserved);
+  const [height, setHeight] = useState<number>();
 
   useEffect(() => {
     latest.current = { theme, colorTheme };
@@ -201,19 +201,12 @@ function VueFrame({
         ready.current = true;
         send({ type: 'uitheme-preview:state', ...latest.current });
       }
-
-      if (message?.type === 'uitheme-preview:state') {
-        if (message.theme !== latest.current.theme) setTheme(message.theme);
-
-        if (message.colorTheme !== latest.current.colorTheme)
-          setColorTheme(message.colorTheme);
-      }
     }
 
     window.addEventListener('message', receive);
 
     return () => window.removeEventListener('message', receive);
-  }, [setTheme, setColorTheme]);
+  }, []);
 
   useEffect(() => {
     if (ready.current)
@@ -239,8 +232,9 @@ function VueFrame({
               })
             : undefined
         }
-        style={{ height, colorScheme: 'light dark' }}
-        className="block w-full border-0 bg-transparent"
+        // SAFETY: CSSProperties has no index for custom properties; --reserved is a string length.
+        style={{ height, '--reserved': `${reserved}px` } as CSSProperties}
+        className="block h-[max(7.5rem,calc(var(--reserved)+2rem))] w-full rounded-[calc(var(--radius-lg)-1px)] border-0 bg-background sm:h-[max(7.5rem,calc(var(--reserved)+4rem))] lg:h-[max(7.5rem,calc(var(--reserved)+10rem))]"
       />
     </div>
   );
@@ -480,6 +474,7 @@ function RegistryContent({
               <ComponentPreview
                 code={usage}
                 html={usageHtml[`${language}:default`]}
+                flush={entry.framework === 'vue'}
               >
                 {renderPreview('Default preview')}
               </ComponentPreview>
@@ -511,6 +506,7 @@ function RegistryContent({
                       label={`${example.title} example`}
                       code={code}
                       html={usageHtml[`${language}:${example.id}`]}
+                      flush={entry.framework === 'vue'}
                     >
                       {renderPreview(example.title, example)}
                     </ComponentPreview>
