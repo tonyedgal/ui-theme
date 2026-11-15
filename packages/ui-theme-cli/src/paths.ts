@@ -45,3 +45,19 @@ export function stripWildcard(
 ): string {
   return target.replace(path.sep === '\\' ? /[\\/]\*$/ : /\/\*$/, '');
 }
+
+/**
+ * A path for a message: relative to the project root and written with `/` on
+ * every OS. A target outside the root keeps its own form.
+ */
+export function displayPath(
+  root: string,
+  target: string,
+  path: PathApi = nodePath
+): string {
+  if (!isInside(root, target, path)) return target;
+
+  return path
+    .relative(path.resolve(root), path.resolve(target))
+    .replaceAll('\\', '/');
+}

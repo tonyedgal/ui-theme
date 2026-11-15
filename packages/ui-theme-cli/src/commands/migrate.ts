@@ -4,7 +4,7 @@ import { basename, dirname, extname, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import type { CliIO } from './index.ts';
 import { readConfig, writeFileAtomic } from '../config.ts';
-import { isInside, samePath } from '../paths.ts';
+import { displayPath, isInside, samePath } from '../paths.ts';
 import {
   rewriteManifest,
   rewriteSource,
@@ -172,7 +172,7 @@ export async function runMigration(
       const result = rewriteSource(before, file, controls);
       diagnostics.push(
         ...result.diagnostics.map(
-          (message) => `${relative(root, file)}: ${message}`
+          (message) => `${displayPath(root, file)}: ${message}`
         )
       );
 
@@ -189,7 +189,7 @@ export async function runMigration(
     const report = {
       status,
       files: changes.map((change) => ({
-        path: relative(root, change.file),
+        path: displayPath(root, change.file),
         before: change.before,
         after: change.after,
       })),
@@ -206,7 +206,7 @@ export async function runMigration(
             `Migration status: ${status}.`,
             ...changes.map(
               (change) =>
-                `--- ${relative(root, change.file)}\n${change.before}\n+++ ${relative(root, change.file)}\n${change.after}`
+                `--- ${displayPath(root, change.file)}\n${change.before}\n+++ ${displayPath(root, change.file)}\n${change.after}`
             ),
             ...(report.dependencies.length
               ? [
