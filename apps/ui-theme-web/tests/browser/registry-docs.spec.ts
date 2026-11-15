@@ -273,7 +273,7 @@ test('Vue pages render every control in a same-origin iframe', async ({
   expect(errors).toEqual([]);
 });
 
-test('a Vue control changes the site theme and the header changes the iframe', async ({
+test('a Vue control changes only the iframe and the header still updates it', async ({
   page,
 }) => {
   await page.emulateMedia({ colorScheme: 'light' });
@@ -283,17 +283,21 @@ test('a Vue control changes the site theme and the header changes the iframe', a
   const html = page.locator('html');
   const inner = frame.locator('html');
   await expect(inner).not.toHaveClass(/dark/);
+  const stored = await page.evaluate(() => JSON.stringify(localStorage));
 
   await frame.getByRole('button', { name: /Toggle theme/ }).click();
-  await expect(html).toHaveClass(/dark/);
   await expect(inner).toHaveClass(/dark/);
-
-  await page.getByRole('radio', { name: 'Light theme' }).click();
-  await expect(inner).not.toHaveClass(/dark/);
   await expect(html).not.toHaveClass(/dark/);
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).toBe(stored);
+
+  await page.getByRole('radio', { name: 'Dark theme' }).click();
+  await expect(html).toHaveClass(/dark/);
+  await page.getByRole('radio', { name: 'Light theme' }).click();
+  await expect(html).not.toHaveClass(/dark/);
+  await expect(inner).not.toHaveClass(/dark/);
 });
 
-test('a Vue color theme selector changes the site palette', async ({
+test('a Vue color theme selector changes only the iframe palette and the site palette still updates it', async ({
   page,
 }) => {
   await page.goto('/docs/components/ui-sdk-vue/color-theme-selector');
@@ -301,8 +305,56 @@ test('a Vue color theme selector changes the site palette', async ({
   const frame = vueFrame(page, 'UI SDK');
   await frame.getByRole('combobox').click();
   await frame.getByRole('option', { name: 'Caffeine' }).click();
-  await expect(page.locator('html')).toHaveClass(/theme-caffeine/);
   await expect(frame.locator('html')).toHaveClass(/theme-caffeine/);
+  await expect(page.locator('html')).not.toHaveClass(/theme-caffeine/);
+  await expect(frame.locator('html')).not.toHaveAttribute(
+    'data-ui-theme-transition',
+    ''
+  );
+
+  await page.getByRole('combobox', { name: 'Site color theme' }).click();
+  await page.getByRole('option', { name: 'Supabase' }).click();
+  await expect(page.locator('html')).toHaveClass(/theme-supabase/);
+  await expect(frame.locator('html')).toHaveClass(/theme-supabase/);
+  await expect(frame.locator('html')).not.toHaveClass(/theme-caffeine/);
+});
+
+test('the Vue iframe paints the Preview frame surface when themes match', async ({
+  page,
+}) => {
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/docs/components/reka/theme-toggle');
+
+    const frame = vueFrame(page, 'Reka');
+    await expect(frame.getByRole('button').first()).toBeVisible();
+
+    // the site and the iframe bundle compile the colour differently, so
+    // compare the painted pixels
+    const colors = await page.evaluate(() => {
+      const iframe = document.querySelector('iframe')!;
+      const doc = iframe.contentDocument!;
+      const context = document.createElement('canvas').getContext('2d')!;
+
+      const pixel = (value: string) => {
+        context.clearRect(0, 0, 1, 1);
+        context.fillStyle = value;
+        context.fillRect(0, 0, 1, 1);
+
+        return [...context.getImageData(0, 0, 1, 1).data];
+      };
+
+      return {
+        frame: pixel(getComputedStyle(iframe).backgroundColor),
+        page: pixel(getComputedStyle(document.body).backgroundColor),
+        inner: pixel(getComputedStyle(doc.body).backgroundColor),
+      };
+    });
+
+    expect(colors.frame).toEqual(colors.page);
+    expect(colors.inner).toEqual(colors.page);
+    expect(colors.inner[3]).toBe(255);
+  }
 });
 
 test('a Vue select popup stays inside its iframe', async ({ page }) => {
