@@ -383,6 +383,96 @@ test('a Vue select popup stays inside its iframe', async ({ page }) => {
   }
 });
 
+function swatchColor(frame: ReturnType<Page['frameLocator']>, name: string) {
+  return frame
+    .locator(`[data-testid="theme-swatches"] [data-swatch="${name}"]`)
+    .evaluate((node) => getComputedStyle(node).backgroundColor);
+}
+
+test('Vue previews draw a decorative swatch strip that follows the preview theme', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+
+  for (const [base, label, component] of [
+    ['reka', 'Reka', 'theme-toggle'],
+    ['ui-sdk-vue', 'UI SDK', 'color-theme-selector'],
+  ]) {
+    await page.goto(`/docs/components/${base}/${component}`);
+
+    const frame = vueFrame(page, label);
+    const strip = frame.getByTestId('theme-swatches');
+    await expect(strip).toHaveAttribute('aria-hidden', 'true');
+    await expect(strip.locator('[data-swatch]')).toHaveCount(7);
+    await expect(strip.locator('button, a, [tabindex]')).toHaveCount(0);
+  }
+
+  await page.goto('/docs/components/ui-sdk-vue/color-theme-selector');
+
+  const frame = vueFrame(page, 'UI SDK');
+  const primary = await swatchColor(frame, 'primary');
+  await frame.getByRole('combobox').click();
+  await frame.getByRole('option', { name: 'Caffeine' }).click();
+  await expect(frame.locator('html')).toHaveClass(/theme-caffeine/);
+  await expect.poll(() => swatchColor(frame, 'primary')).not.toBe(primary);
+
+  await page.goto('/docs/components/reka/theme-toggle');
+
+  const toggleFrame = vueFrame(page, 'Reka');
+  const background = await swatchColor(toggleFrame, 'background');
+  await toggleFrame.getByRole('button', { name: /Toggle theme/ }).click();
+  await expect(toggleFrame.locator('html')).toHaveClass(/dark/);
+  await expect
+    .poll(() => swatchColor(toggleFrame, 'background'))
+    .not.toBe(background);
+});
+
+test('the Vue swatch strip stays clear of an open popup and an upward panel', async ({
+  page,
+}) => {
+  const overlaps = (frame: ReturnType<Page['frameLocator']>) =>
+    frame.locator('html').evaluate((html) => {
+      const strip = html
+        .querySelector('[data-testid="theme-swatches"]')!
+        .getBoundingClientRect();
+
+      return [
+        ...html.querySelectorAll(
+          '[role="region"] button, [role="region"] [role="radio"], [role="listbox"], [data-state="open"]'
+        ),
+      ].flatMap((node) => {
+        const box = node.getBoundingClientRect();
+
+        return box.width > 0 &&
+          box.height > 0 &&
+          box.left < strip.right &&
+          box.right > strip.left &&
+          box.top < strip.bottom &&
+          box.bottom > strip.top
+          ? [box]
+          : [];
+      }).length;
+    });
+
+  await page.goto('/docs/components/ui-sdk-vue/color-theme-selector');
+
+  const selector = vueFrame(page, 'UI SDK');
+  await selector.getByRole('combobox').click();
+  await expect(selector.getByRole('listbox')).toBeVisible();
+  expect(await overlaps(selector)).toBe(0);
+
+  await page.goto('/docs/components/ui-sdk-vue/theme-disclosure');
+
+  const upward = page.frameLocator('iframe[title^="Opens upward (UI SDK)"]');
+
+  await page
+    .locator('iframe[title^="Opens upward (UI SDK)"]')
+    .scrollIntoViewIfNeeded();
+  await upward.getByRole('region').getByRole('button').first().click();
+  await expect(upward.getByRole('radio').first()).toBeVisible();
+  expect(await overlaps(upward)).toBe(0);
+});
+
 test('a Vue tactile toggle responds to the pointer and the keyboard', async ({
   page,
 }) => {
