@@ -297,6 +297,37 @@ test('a Vue control changes only the iframe and the header still updates it', as
   await expect(inner).not.toHaveClass(/dark/);
 });
 
+test('a Vue iframe applies a header theme change made during its own transition', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/docs/components/reka/theme-toggle');
+
+  const frame = vueFrame(page, 'Reka');
+  const inner = frame.locator('html');
+  await expect(inner).not.toHaveClass(/dark/);
+
+  // hold the frame's theme update back so the header changes arrive first
+  await inner.evaluate(() => {
+    const start = document.startViewTransition.bind(document);
+
+    document.startViewTransition = (update) =>
+      start(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        if (update instanceof Function) await update();
+      });
+  });
+
+  await frame.getByRole('button', { name: /Toggle theme/ }).click();
+  await expect(inner).toHaveAttribute('data-ui-theme-transition', '');
+  await page.getByRole('radio', { name: 'Dark theme' }).click();
+  await page.getByRole('radio', { name: 'Light theme' }).click();
+
+  await expect(inner).not.toHaveAttribute('data-ui-theme-transition', '');
+  await expect(inner).not.toHaveClass(/dark/);
+});
+
 test('a Vue color theme selector changes only the iframe palette and the site palette still updates it', async ({
   page,
 }) => {
