@@ -1,6 +1,7 @@
 import {
   baseVariants,
   findBase,
+  registryFrameworks,
   type Base,
   type RegistryFramework,
 } from '../../../packages/ui-theme-cli/src/bases';
@@ -21,9 +22,13 @@ export interface ComponentBaseEntry {
   cssLayer?: string;
 }
 
-// One page set per base and framework pair, from the base manifest.
-export const componentBases: ComponentBaseEntry[] = baseVariants().map(
-  ({ framework, base, support }) => {
+// One page set per base and framework pair, from the base manifest. React sets
+// come first, then Vue sets; the manifest order holds inside each framework.
+export const componentBases: ComponentBaseEntry[] = registryFrameworks
+  .flatMap((framework) =>
+    baseVariants().filter((variant) => variant.framework === framework)
+  )
+  .map(({ framework, base, support }) => {
     const definition = findBase(base)!;
 
     const shared = Object.keys(definition.frameworks).length > 1;
@@ -44,8 +49,7 @@ export const componentBases: ComponentBaseEntry[] = baseVariants().map(
       },
       cssLayer: support.css?.layer,
     };
-  }
-);
+  });
 
 export function componentBase(name: ComponentBase): ComponentBaseEntry {
   const entry = componentBases.find((item) => item.name === name);
