@@ -13,6 +13,7 @@ import React, {
   useMemo,
 } from 'react';
 import { useTheme } from '../hooks/use-theme';
+import { useTransitionFreeze } from '../hooks/use-transition-freeze';
 import type { UseThemeReturn, ThemeTransitionInput } from '../types';
 import {
   Theme,
@@ -74,6 +75,8 @@ export type NextUIThemeProviderProps = ThemeAnimationOptions & {
   nonce?: string;
   /** Skip animation during initial hydration */
   disableAnimationOnInit?: boolean;
+  /** Freeze CSS transitions while `setTheme` and `setColorTheme` apply a change */
+  disableTransitionOnChange?: boolean;
   /** Disable flash prevention script (for SPAs without SSR) */
   disablePreHydrationScript?: boolean;
 };
@@ -171,8 +174,10 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
   nonce,
   disableAnimationOnInit = true,
   disablePreHydrationScript = false,
+  disableTransitionOnChange = false,
 }) => {
   const mounted = useHydrated();
+  const freeze = useTransitionFreeze(disableTransitionOnChange, nonce);
 
   const themeState = useTheme({
     themes,
@@ -214,10 +219,17 @@ export const NextUIThemeProvider: React.FC<NextUIThemeProviderProps> = ({
   const contextValue = useMemo<NextUIThemeContextType>(
     () => ({
       ...themeState,
+      setTheme: freeze(themeState.setTheme),
+      setColorTheme: freeze(themeState.setColorTheme),
       switchTheme: switchThemeWithHydrationAwareness,
       switchThemeFromElement,
     }),
-    [themeState, switchThemeWithHydrationAwareness, switchThemeFromElement]
+    [
+      themeState,
+      freeze,
+      switchThemeWithHydrationAwareness,
+      switchThemeFromElement,
+    ]
   );
 
   if (!mounted) {
