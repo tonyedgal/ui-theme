@@ -1,10 +1,13 @@
 import { readFile, access, readdir } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { resolve, dirname, join, relative, isAbsolute } from 'node:path';
+import nodePath from 'node:path';
+import { resolve, dirname, join } from 'node:path';
 import semver from 'semver';
 import { readConfig, relativeProjectPath, isRecord } from './config.ts';
 import { parseJsonc } from './jsonc.ts';
+import { isInside, stripWildcard } from './paths.ts';
+import type { PathApi } from './paths.ts';
 import { readProjectConfigs } from './tsconfig.ts';
 import type {
   Base,
@@ -100,6 +103,40 @@ async function cssFiles(root: string, depth = 0): Promise<string[]> {
   }
 
   return result.sort();
+}
+
+/**
+ * The directory that an `@/*` style alias names. `target` is a resolved
+ * tsconfig `paths` target with native separators, so the wildcard is stripped
+ * for the platform. A target below the real project root is written under
+ * `cwd`, which keeps symlinked project paths.
+ */
+export function aliasDirectory(
+  cwd: string,
+  realCwd: string,
+  target: string | undefined,
+  path: PathApi = nodePath
+): string | undefined {
+  if (!target) return;
+  const directory = stripWildcard(target, path);
+
+  if (!isInside(realCwd, directory, path)) return directory;
+
+  return path.resolve(cwd, path.relative(realCwd, directory));
+}
+
+/** Map an alias import path, such as `@/components/ui`, to a directory. */
+export function aliasPath(
+  alias: string,
+  aliasPrefix: string,
+  directory: string,
+  path: PathApi = nodePath
+): string {
+  const prefix = `${aliasPrefix}/`;
+
+  return alias.startsWith(prefix)
+    ? path.join(directory, alias.slice(prefix.length))
+    : alias;
 }
 
 export async function detectProject(
@@ -225,20 +262,17 @@ export async function detectProject(
     aliasKey?.slice(0, -2) ??
     '@';
 
-  let aliasTarget = paths[`${aliasPrefix}/*`]?.[0]?.replace(/\/\*$/, '');
-
-  if (aliasTarget) {
-    const local = relative(realpathSync(cwd), aliasTarget);
-
-    if (local !== '..' && !local.startsWith('../') && !isAbsolute(local))
-      aliasTarget = resolve(cwd, local);
-  }
+  const aliasTarget = aliasDirectory(
+    cwd,
+    realpathSync(cwd),
+    paths[`${aliasPrefix}/*`]?.[0]
+  );
 
   const explicitComponents =
     overrides.componentsDir ??
     saved?.componentsDir ??
     (existing?.aliases?.ui && aliasTarget
-      ? existing.aliases.ui.replace(`${aliasPrefix}/`, `${aliasTarget}/`)
+      ? aliasPath(existing.aliases.ui, aliasPrefix, aliasTarget)
       : undefined);
 
   const componentsDir =

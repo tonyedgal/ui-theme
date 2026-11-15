@@ -1,4 +1,5 @@
-import { dirname, join, relative, isAbsolute } from 'node:path';
+import { dirname, join, relative } from 'node:path';
+import { isInside } from '../paths.ts';
 import { planSharedUtils } from './shared-utils.ts';
 import { readConfig } from '../config.ts';
 import {
@@ -253,14 +254,9 @@ async function reactProvider(
       });
   }
 
-  const localComponents = relative(profile.cwd, profile.componentsDir);
-
-  const wrapperDirectory =
-    localComponents === '..' ||
-    localComponents.startsWith('../') ||
-    isAbsolute(localComponents)
-      ? join(profile.cwd, 'components')
-      : dirname(profile.componentsDir);
+  const wrapperDirectory = isInside(profile.cwd, profile.componentsDir)
+    ? dirname(profile.componentsDir)
+    : join(profile.cwd, 'components');
 
   const wrapperPath = join(
     wrapperDirectory,
