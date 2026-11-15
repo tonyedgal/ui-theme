@@ -127,6 +127,11 @@ const builtInBases = [
         },
         css: { layer: 'ui-sdk' },
       },
+      vue: {
+        templates: 'vue/ui-sdk',
+        packages: ['@ui-sdk/vue'],
+        css: { layer: 'ui-sdk' },
+      },
     },
   },
 ] as const satisfies readonly BaseDefinition[];
