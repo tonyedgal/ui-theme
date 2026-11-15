@@ -38,7 +38,7 @@ export function ThemeProvider({
 `;
 
 const layout = (
-  props = 'attribute="class" defaultTheme="system" enableSystem'
+  props = 'attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange'
 ) =>
   `import { ThemeProvider } from "@/components/theme-provider"
 
@@ -161,6 +161,12 @@ async function init(
   args: string[] = ['--yes'],
   extra: {
     runInstall?: () => Promise<void>;
+    choose?: (
+      lines: string[],
+      prompt: string,
+      keys: string[],
+      defaultKey: string
+    ) => Promise<string | undefined>;
     runRemoval?: (
       profile: { cwd: string },
       packages: string[]
@@ -174,6 +180,8 @@ async function init(
     stdout: (text) => (output += text + '\n'),
     stderr: (text) => (output += text + '\n'),
     runInstall: extra.runInstall ?? (async () => {}),
+    choose: extra.choose,
+    confirm: extra.choose ? async () => true : undefined,
     runRemoval:
       extra.runRemoval ??
       (async (profile, packages) => {
@@ -207,7 +215,9 @@ const accepts: Accept[] = [
       'components/mode-toggle.tsx': [
         'import { useNextUITheme as useTheme } from "uitheme-web/next"',
       ],
-      'app/layout.tsx': ['<ThemeProvider defaultTheme="system">'],
+      'app/layout.tsx': [
+        '<ThemeProvider defaultTheme="system" disableTransitionOnChange>',
+      ],
     },
     lacks: {
       'app/layout.tsx': ['enableSystem', 'attribute="class"'],
@@ -259,6 +269,17 @@ const accepts: Accept[] = [
       ),
     },
     has: { 'app/layout.tsx': ['storageKey="mode"', 'nonce={nonce}'] },
+  },
+  {
+    name: 'a true disableTransitionOnChange is kept',
+    files: {
+      'app/layout.tsx': direct(
+        'attribute="class" disableTransitionOnChange={true}'
+      ),
+    },
+    has: {
+      'app/layout.tsx': ['<ThemeProvider disableTransitionOnChange={true}>'],
+    },
   },
   {
     name: 'enableColorScheme and a false disableTransitionOnChange are dropped',
@@ -383,7 +404,6 @@ const refuses: Refuse[] = [
     'defaultTheme={theme}',
     '{...rest}',
     'attribute="class" enableColorScheme={false}',
-    'attribute="class" disableTransitionOnChange',
     'attribute="class" enableSystem={flag}',
     'attribute="class" themes={["sepia"]}',
     'attribute="class" enableSystem={false} defaultTheme="system"',
@@ -700,5 +720,244 @@ describe('next-themes end to end', () => {
 
     expect(compiled.stdout).toBe('');
     expect(compiled.status).toBe(0);
+  });
+});
+
+const noArgs: string[] = [];
+
+const providerFiles = [
+  'app/layout.tsx',
+  'components/theme-provider.tsx',
+  'components/mode-toggle.tsx',
+  'package.json',
+];
+
+async function files(cwd: string, paths: string[]) {
+  return Promise.all(paths.map((path) => read(cwd, path)));
+}
+
+const answer = (key: string | undefined) => {
+  const calls: { lines: string[]; prompt: string; keys: string[] }[] = [];
+
+  return {
+    calls,
+    choose: async (
+      lines: string[],
+      prompt: string,
+      keys: string[],
+      defaultKey: string
+    ) => {
+      calls.push({ lines, prompt, keys });
+
+      return key === 'enter' ? defaultKey : key;
+    },
+  };
+};
+
+describe('next-themes modes', () => {
+  it.each([
+    ['y', 'replace'],
+    ['enter', 'replace'],
+    [undefined, 'replace'],
+  ])('answer %s runs the %s mode', async (key) => {
+    const cwd = await app(shadcn);
+    const asked = answer(key);
+    const result = await init(cwd, [], { choose: asked.choose });
+
+    expect(result.code).toBe(0);
+    expect(result.removals).toHaveLength(1);
+    expect(await read(cwd, 'components/theme-provider.tsx')).toContain(
+      'uitheme-web/next'
+    );
+    expect(asked.calls[0].prompt).toBe(
+      'Replace next-themes with UI-Theme? [Y/n/c]'
+    );
+    expect(asked.calls[0].keys).toEqual(['y', 'n', 'c']);
+    expect(asked.calls[0].lines).toHaveLength(3);
+  });
+  it.each([
+    ['answer n', { key: 'n', args: noArgs }],
+    [
+      '--next-themes keep',
+      { key: undefined, args: ['--yes', '--next-themes', 'keep'] },
+    ],
+  ])('keeps next-themes: %s', async (_name, { key, args }) => {
+    const cwd = await app(shadcn);
+    const before = await files(cwd, providerFiles);
+    const asked = answer(key);
+    const result = await init(cwd, args, { choose: asked.choose });
+
+    expect(result.code).toBe(2);
+    expect(result.removals).toEqual([]);
+    expect(await files(cwd, providerFiles)).toEqual(before);
+    expect(result.output).toContain(`See ${docsUrl}#manual-setup`);
+    expect(result.output).not.toMatch(/import \{|<NextUIThemeProvider/);
+    expect(await read(cwd, 'src/style.css')).not.toBe(
+      '@import "tailwindcss";\n'
+    );
+    await expect(read(cwd, 'uitheme.json')).resolves.toContain('schemaVersion');
+  });
+  it.each([
+    ['answer c', { key: 'c', args: noArgs }],
+    [
+      '--next-themes create',
+      { key: undefined, args: ['--yes', '--next-themes', 'create'] },
+    ],
+  ])('creates one separate file: %s', async (_name, { key, args }) => {
+    const cwd = await app(shadcn);
+    const before = await files(cwd, providerFiles);
+    const names = await readdir(join(cwd, 'components'));
+    const asked = answer(key);
+    const result = await init(cwd, args, { choose: asked.choose });
+
+    expect(result.code).toBe(2);
+    expect(result.removals).toEqual([]);
+    expect(await files(cwd, providerFiles)).toEqual(before);
+
+    const created = (await readdir(join(cwd, 'components'))).filter(
+      (name) => !names.includes(name)
+    );
+
+    expect(created).toEqual(['ui-theme-provider.tsx']);
+    const content = await read(cwd, 'components/ui-theme-provider.tsx');
+
+    expect(content).toContain("'use client';");
+    expect(content).toContain(
+      "import { NextUIThemeProvider } from 'uitheme-web/next';"
+    );
+    expect(content).toContain(
+      'export function AppUIThemeProvider({ children }'
+    );
+    expect(result.output).toContain('Created components/ui-theme-provider.tsx');
+    expect(result.output).toContain(`#manual-setup`);
+  });
+  it('picks a free name when the provider file name is taken', async () => {
+    const cwd = await app({
+      ...shadcn,
+      'components/ui-theme-provider.tsx': 'export const Mine = 1;\n',
+    });
+
+    const result = await init(cwd, ['--yes', '--next-themes', 'create']);
+
+    expect(result.code).toBe(2);
+    expect(await read(cwd, 'components/ui-theme-provider.tsx')).toBe(
+      'export const Mine = 1;\n'
+    );
+    expect(await read(cwd, 'components/ui-theme-provider-2.tsx')).toContain(
+      'AppUIThemeProvider'
+    );
+
+    const again = await init(cwd, ['--yes', '--next-themes', 'create']);
+
+    expect(again.code).toBe(2);
+    expect(await readdir(join(cwd, 'components'))).not.toContain(
+      'ui-theme-provider-3.tsx'
+    );
+  });
+  it('without a way to ask, or with --yes, the default is replace', async () => {
+    const cwd = await app(shadcn);
+    const result = await init(cwd, ['--yes'], { choose: answer('n').choose });
+
+    expect(result.code).toBe(0);
+    expect(result.removals).toHaveLength(1);
+  });
+  it('lets a flag override the default and the answer', async () => {
+    const cwd = await app(shadcn);
+    const asked = answer('y');
+
+    const result = await init(cwd, ['--next-themes', 'keep'], {
+      choose: asked.choose,
+    });
+
+    expect(asked.calls).toEqual([]);
+    expect(result.code).toBe(2);
+  });
+  it('rejects an unknown mode', async () => {
+    const cwd = await app(shadcn);
+    const result = await init(cwd, ['--next-themes', 'maybe']);
+
+    expect(result.code).toBe(1);
+    expect(result.output).toContain('Invalid value maybe');
+  });
+  it.each([
+    ['c', 2, true],
+    ['enter', 2, false],
+    [undefined, 1, false],
+  ])(
+    'a refused form offers only c and N: answer %s',
+    async (key, code, created) => {
+      const cwd = await app({
+        ...shadcn,
+        'app/layout.tsx': layout('forcedTheme="dark"'),
+      });
+
+      const before = await files(cwd, providerFiles);
+      const asked = answer(key);
+      const result = await init(cwd, [], { choose: asked.choose });
+
+      expect(asked.calls[0].prompt).toBe(
+        'Create the UI-Theme provider as a separate file? [c/N]'
+      );
+      expect(asked.calls[0].keys).toEqual(['c', 'n']);
+      expect(asked.calls[0].lines[0]).toContain('Stopped. No file changed.');
+      expect(result.code).toBe(code);
+      expect(await files(cwd, providerFiles)).toEqual(before);
+      expect(
+        (await readdir(join(cwd, 'components'))).includes(
+          'ui-theme-provider.tsx'
+        )
+      ).toBe(created);
+    }
+  );
+  it('a refused form stops a run that cannot ask, and --next-themes create still works', async () => {
+    const cwd = await app({
+      ...shadcn,
+      'app/layout.tsx': layout('forcedTheme="dark"'),
+    });
+
+    const stopped = await init(cwd, ['--yes']);
+
+    expect(stopped.code).toBe(1);
+    expect(stopped.output).toContain('Stopped. No file changed.');
+    const created = await init(cwd, ['--yes', '--next-themes', 'create']);
+
+    expect(created.code).toBe(2);
+    expect(await readdir(join(cwd, 'components'))).toContain(
+      'ui-theme-provider.tsx'
+    );
+  });
+  it.each([
+    ['replace', true],
+    ['keep', false],
+    ['create', false],
+  ])('--json shows the %s mode', async (mode, removes) => {
+    const cwd = await app(shadcn);
+    const before = await snapshot(cwd);
+
+    const result = await init(cwd, [
+      '--dry-run',
+      '--json',
+      '--next-themes',
+      mode,
+    ]);
+
+    const json = JSON.parse(result.output);
+
+    expect(json.nextThemes.mode).toBe(mode);
+    expect(Boolean(json.removals)).toBe(removes);
+    expect(json.nextThemes.files).toBe(mode === 'replace' ? 3 : 0);
+    expect(
+      json.files.some(
+        (file: { path: string }) =>
+          file.path === 'components/ui-theme-provider.tsx'
+      )
+    ).toBe(mode === 'create');
+    expect(await snapshot(cwd)).toBe(before);
+  });
+  it('--dry-run names the default mode', async () => {
+    const cwd = await app(shadcn);
+    const result = await init(cwd, ['--dry-run']);
+
+    expect(result.output).toContain('next-themes: replace');
   });
 });
