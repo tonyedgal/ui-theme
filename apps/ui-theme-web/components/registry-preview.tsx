@@ -27,6 +27,7 @@ import { useNextUITheme } from 'uitheme-web/next';
 import { ThemeAnimationType } from 'uitheme-web/react';
 import {
   readPreviewMessage,
+  vuePreviewNote,
   vuePreviewUrl,
   type PreviewMessage,
   type PreviewState,
@@ -476,6 +477,7 @@ function RegistryContent({
                 code={usage}
                 html={usageHtml[`${language}:default`]}
                 flush={entry.framework === 'vue'}
+                note={entry.framework === 'vue' ? vuePreviewNote : undefined}
               >
                 {renderPreview('Default preview')}
               </ComponentPreview>
@@ -508,6 +510,9 @@ function RegistryContent({
                       code={code}
                       html={usageHtml[`${language}:${example.id}`]}
                       flush={entry.framework === 'vue'}
+                      note={
+                        entry.framework === 'vue' ? vuePreviewNote : undefined
+                      }
                     >
                       {renderPreview(example.title, example)}
                     </ComponentPreview>
