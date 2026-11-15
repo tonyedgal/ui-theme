@@ -1,16 +1,10 @@
 import { createHash } from 'node:crypto';
 import { lstat, readdir, readFile } from 'node:fs/promises';
-import {
-  basename,
-  dirname,
-  extname,
-  isAbsolute,
-  relative,
-  resolve,
-} from 'node:path';
+import { basename, dirname, extname, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import type { CliIO } from './index.ts';
 import { readConfig, writeFileAtomic } from '../config.ts';
+import { isInside, samePath } from '../paths.ts';
 import {
   rewriteManifest,
   rewriteSource,
@@ -84,20 +78,14 @@ async function localControls(root: string): Promise<LocalControls> {
 
     for (const entry of record.files) {
       const file = resolve(root, entry.path);
-      const local = relative(root, file);
 
-      if (
-        !local ||
-        local === '..' ||
-        local.startsWith('../') ||
-        isAbsolute(local)
-      ) {
+      if (samePath(root, file) || !isInside(root, file)) {
         valid = false;
         break;
       }
 
       try {
-        for (let part = file; part !== root; part = dirname(part))
+        for (let part = file; !samePath(part, root); part = dirname(part))
           if ((await lstat(part)).isSymbolicLink())
             throw new Error('Symlink control');
 

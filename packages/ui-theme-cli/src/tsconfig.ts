@@ -1,6 +1,7 @@
 /* eslint-disable anti-slop/no-runtime-typeof, anti-slop/no-unsafe-dictionary-type -- parse untrusted project configuration at this boundary */
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
+import { isInside } from './paths.ts';
 import {
   createPathsMatcher,
   findTsconfig,
@@ -115,8 +116,7 @@ function realPackage(root: string, from: string): string {
   for (let directory = from; ; directory = dirname(directory)) {
     const prefix = realpathSync(directory);
 
-    if (real === prefix || real.startsWith(prefix + sep))
-      return directory + real.slice(prefix.length);
+    if (isInside(prefix, real)) return directory + real.slice(prefix.length);
 
     if (dirname(directory) === directory) return real;
   }

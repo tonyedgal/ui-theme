@@ -1,10 +1,13 @@
 import { createHash } from 'node:crypto';
 import { readFile, mkdir, lstat, unlink, rmdir } from 'node:fs/promises';
-import { resolve, relative, dirname, isAbsolute, join } from 'node:path';
+import { resolve, relative, dirname, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import spawn from 'cross-spawn';
 import semver from 'semver';
 import { readConfig, writeFileAtomic } from '../config.ts';
+import nodePath from 'node:path';
+import { isInside, samePath } from '../paths.ts';
+import type { PathApi } from '../paths.ts';
 import { assertSafePath } from '../registry.ts';
 import type { ProjectProfile, RegistryGraph, SavedConfig } from '../types.ts';
 
@@ -116,19 +119,13 @@ export async function assertDestination(
   path: string
 ): Promise<void> {
   const root = resolve(cwd),
-    destination = resolve(path),
-    local = relative(root, destination);
+    destination = resolve(path);
 
-  if (
-    !local ||
-    local === '..' ||
-    local.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`) ||
-    isAbsolute(local)
-  )
+  if (samePath(root, destination) || !isInside(root, destination))
     throw new Error(`Unsafe destination path: ${path}`);
   let current = destination;
 
-  while (current !== root) {
+  while (!samePath(current, root)) {
     try {
       if ((await lstat(current)).isSymbolicLink())
         throw new Error(
@@ -143,26 +140,18 @@ export async function assertDestination(
         throw error;
     }
 
-    current = dirname(current);
+    const parent = dirname(current);
+
+    if (parent === current) break;
+    current = parent;
   }
-}
-
-function contains(root: string, path: string): boolean {
-  const local = relative(resolve(root), resolve(path));
-
-  return (
-    local === '' ||
-    (local !== '..' &&
-      !local.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`) &&
-      !isAbsolute(local))
-  );
 }
 
 async function assertProfileDestination(
   profile: ProjectProfile,
   path: string
 ): Promise<string> {
-  if (contains(profile.cwd, path)) {
+  if (isInside(profile.cwd, path)) {
     await assertDestination(profile.cwd, path);
 
     return profile.cwd;
@@ -174,7 +163,7 @@ async function assertProfileDestination(
     return profile.workspaceRoot;
   }
 
-  if (!contains(profile.componentsDir, path))
+  if (!isInside(profile.componentsDir, path))
     throw new Error(`Unsafe destination path: ${path}`);
   await assertDestination(profile.workspaceRoot, path);
 
@@ -184,7 +173,7 @@ async function assertProfileDestination(
 export async function componentOwner(
   profile: ProjectProfile
 ): Promise<ProjectProfile> {
-  if (contains(profile.cwd, profile.componentsDir)) return profile;
+  if (isInside(profile.cwd, profile.componentsDir)) return profile;
   await assertProfileDestination(
     profile,
     join(profile.componentsDir, 'destination')
@@ -255,7 +244,8 @@ export async function settleConflict(
 
 export function serializeConfig(
   profile: ProjectProfile,
-  saved: Partial<SavedConfig> = {}
+  saved: Partial<SavedConfig> = {},
+  pathApi: PathApi = nodePath
 ): string {
   const cwd = profile.cwd;
 
@@ -278,7 +268,7 @@ export function serializeConfig(
 
   for (const key of ['cssFile', 'tailwindConfigFile', 'componentsDir'] as const)
     if (value[key])
-      value[key] = relative(cwd, value[key]!).replaceAll('\\', '/');
+      value[key] = pathApi.relative(cwd, value[key]!).replaceAll('\\', '/');
 
   return `${JSON.stringify(value, null, 2)}\n`;
 }
@@ -422,11 +412,15 @@ export async function resolveDependencies(
   return { install: [...result.values()], updates };
 }
 
-function registryDestination(profile: ProjectProfile, path: string): string {
+export function registryDestination(
+  profile: ProjectProfile,
+  path: string,
+  pathApi: PathApi = nodePath
+): string {
   assertSafePath(path);
   const local = path.replace(/^components\/ui\//, '').replace(/^ui\//, '');
 
-  return resolve(profile.componentsDir, local);
+  return pathApi.resolve(profile.componentsDir, local);
 }
 
 export async function planRegistryInstall(
