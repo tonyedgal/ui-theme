@@ -145,7 +145,7 @@ test('the CLI accepts, lists, and detects a base that only the manifest adds', a
       },
     });
     assert.deepEqual(prompts, [
-      ['Select the Vue component base', ['reka', 'fake-kit']],
+      ['Select the Vue component base', ['reka', 'ui-sdk', 'fake-kit']],
     ]);
 
     const errors: string[] = [];
