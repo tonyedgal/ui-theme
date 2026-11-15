@@ -1,14 +1,10 @@
 /* eslint-disable anti-slop/no-runtime-typeof, anti-slop/no-unknown-parameters, anti-slop/no-unsafe-dictionary-type -- parse untrusted JSON and HTTP input at this boundary */
 import { randomBytes } from 'node:crypto';
 import { chmod, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
-import {
-  basename,
-  dirname,
-  join,
-  resolve,
-  relative,
-  isAbsolute,
-} from 'node:path';
+import { basename, dirname, join, resolve, isAbsolute } from 'node:path';
+import nodePath from 'node:path';
+import { isInside } from './paths.ts';
+import type { PathApi } from './paths.ts';
 import type { ProjectProfile, SavedConfig } from './types.ts';
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -37,19 +33,50 @@ export async function writeFileAtomic(
     await writeFile(temporary, content, { flag: 'wx' });
 
     if (mode !== undefined) await chmod(temporary, mode);
-    await move(temporary, path);
-  } catch (error) {
+    await moveOntoTarget(temporary, path, content, move);
+  } finally {
     await rm(temporary, { force: true });
-    throw error;
   }
 }
 
+const busyCodes = new Set(['EPERM', 'EBUSY', 'EACCES']);
+
+const pause = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
+/**
+ * Windows refuses to rename over a file that an antivirus scanner, a sync
+ * client, an editor or a dev server holds open. Retry a few times, then write
+ * the target directly.
+ */
+async function moveOntoTarget(
+  temporary: string,
+  path: string,
+  content: string | Uint8Array,
+  move: typeof rename
+): Promise<void> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await move(temporary, path);
+    } catch (error) {
+      if (!(isRecord(error) && busyCodes.has(String(error.code)))) throw error;
+
+      if (attempt === 3) break;
+      await pause(25 * attempt);
+    }
+  }
+
+  await writeFile(path, content);
+}
+
 export function validateConfig(value: unknown): SavedConfig {
-  const invalid = () => {
-    throw new Error('Invalid uitheme.json configuration');
+  const invalid = (field = 'the file', reason = 'is not valid'): never => {
+    throw new Error(`Invalid uitheme.json configuration: ${field} ${reason}`);
   };
 
-  if (!isRecord(value) || value.schemaVersion !== 1) return invalid();
+  if (!isRecord(value)) return invalid('the file', 'must be a JSON object');
+
+  if (value.schemaVersion !== 1)
+    return invalid('schemaVersion', 'must be the number 1');
 
   const enums = {
     framework: ['vite-react', 'vite-vue', 'next', 'tanstack', 'nuxt'],
@@ -74,16 +101,17 @@ export function validateConfig(value: unknown): SavedConfig {
     if (Object.hasOwn(enums, key)) {
       const allowed = Object.entries(enums).find(([name]) => name === key)?.[1];
 
-      if (!allowed?.some((option) => option === field)) invalid();
+      if (!allowed?.some((option) => option === field))
+        invalid(key, `must be one of ${allowed?.join(', ')}`);
     } else if (strings.includes(key)) {
       if (
         typeof field !== 'string' ||
         !field.trim() ||
         Array.from(field).some((char) => char.charCodeAt(0) < 32)
       )
-        invalid();
+        invalid(key, 'must be a non-empty string without control characters');
     } else if (!['schemaVersion', 'revision', 'installed'].includes(key))
-      invalid();
+      invalid(key, 'is not a known field');
   }
 
   for (const key of ['cssFile', 'tailwindConfigFile', 'componentsDir']) {
@@ -93,14 +121,17 @@ export function validateConfig(value: unknown): SavedConfig {
       typeof path === 'string' &&
       (isAbsolute(path) || path.includes('\\') || /^[a-z]:/i.test(path))
     )
-      invalid();
+      invalid(
+        key,
+        `must be a relative path that uses "/" (for example "src/app"), not "${path}"`
+      );
 
     if (
       key !== 'componentsDir' &&
       typeof path === 'string' &&
       path.split('/').includes('..')
     )
-      invalid();
+      invalid(key, 'must stay inside the project and not contain ".."');
   }
 
   if (
@@ -108,10 +139,11 @@ export function validateConfig(value: unknown): SavedConfig {
     (typeof value.revision !== 'string' ||
       !/^\w[\w-]{7,127}$/.test(value.revision))
   )
-    invalid();
+    invalid('revision', 'must be a revision identifier');
 
   if (value.installed !== undefined) {
-    if (!isRecord(value.installed)) return invalid();
+    if (!isRecord(value.installed))
+      return invalid('installed', 'must be an object');
 
     for (const [name, record] of Object.entries(value.installed)) {
       if (
@@ -121,7 +153,7 @@ export function validateConfig(value: unknown): SavedConfig {
         !/^\w[\w-]{7,127}$/.test(record.revision) ||
         !Array.isArray(record.files)
       )
-        return invalid();
+        return invalid(`installed.${name}`, 'is not a valid record');
       const seen = new Set<string>();
 
       for (const file of record.files) {
@@ -137,7 +169,10 @@ export function validateConfig(value: unknown): SavedConfig {
           !/^[a-f0-9]{64}$/.test(file.hash) ||
           seen.has(file.path)
         )
-          return invalid();
+          return invalid(
+            `installed.${name}.files`,
+            'needs a unique relative "path" that uses "/" and a sha256 "hash"'
+          );
         seen.add(file.path);
       }
     }
@@ -159,21 +194,21 @@ export async function readConfig(
     throw error;
   }
 
-  return validateConfig(JSON.parse(source));
+  return validateConfig(JSON.parse(source.replace(/^\uFEFF/, '')));
 }
 
 export function relativeProjectPath(
   cwd: string,
   path: string,
-  approvedRoot = cwd
+  approvedRoot = cwd,
+  pathApi: PathApi = nodePath
 ): string {
-  const absolute = resolve(cwd, path),
-    within = relative(approvedRoot, absolute);
+  const absolute = pathApi.resolve(cwd, path);
 
-  if (within === '..' || within.startsWith('../') || isAbsolute(within))
+  if (!isInside(approvedRoot, absolute, pathApi))
     throw new Error(`Path is outside the approved workspace: ${path}`);
 
-  return relative(cwd, absolute).replaceAll('\\', '/');
+  return pathApi.relative(cwd, absolute).replaceAll('\\', '/');
 }
 
 export async function writeConfig(
