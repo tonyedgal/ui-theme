@@ -2,7 +2,11 @@ import { dirname, join, relative } from 'node:path';
 import { displayPath, isInside } from '../paths.ts';
 import { planSharedUtils } from './shared-utils.ts';
 import { planNextThemes } from './next-themes.ts';
-import { messages } from './messages.ts';
+import {
+  NextThemesRefusal,
+  messages,
+  type NextThemesMode,
+} from './messages.ts';
 import { readConfig } from '../config.ts';
 import {
   hasTrailingComma,
@@ -140,6 +144,34 @@ function isReactRoot(receiver: t.Expression, file: t.Program): boolean {
   return known;
 }
 
+function wrapperSource(profile: ProjectProfile, name: string): string {
+  const provider =
+    profile.framework === 'next' ? 'NextUIThemeProvider' : 'UIThemeProvider';
+
+  return `${profile.framework === 'next' ? "'use client';\n\n" : ''}import { ${provider} } from 'uitheme-web/${profile.framework === 'next' ? 'next' : 'react'}';\n${profile.language === 'ts' ? "import type { ReactNode } from 'react';\n" : ''}\nexport function ${name}({ children }${profile.language === 'ts' ? ': { children: ReactNode }' : ''}) {\n  return <${provider} defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>{children}</${provider}>;\n}\n`;
+}
+
+// a new provider file next to the existing one, under a name that is free
+async function separateProvider(profile: ProjectProfile): Promise<PlannedFile> {
+  const directory = isInside(profile.cwd, profile.componentsDir)
+      ? dirname(profile.componentsDir)
+      : join(profile.cwd, 'components'),
+    extension = profile.language === 'ts' ? 'tsx' : 'jsx',
+    source = wrapperSource(profile, 'AppUIThemeProvider');
+
+  for (let number = 1; ; number++) {
+    const path = join(
+      directory,
+      `ui-theme-provider${number === 1 ? '' : `-${number}`}.${extension}`
+    );
+
+    const existing = await readOptional(path);
+
+    if (existing === undefined || existing === source)
+      return planFile(profile, path, source);
+  }
+}
+
 async function reactProvider(
   profile: ProjectProfile,
   files: PlannedFile[],
@@ -265,10 +297,7 @@ async function reactProvider(
     `theme-provider.${profile.language === 'ts' ? 'tsx' : 'jsx'}`
   );
 
-  const provider =
-    profile.framework === 'next' ? 'NextUIThemeProvider' : 'UIThemeProvider';
-
-  const wrapper = `${profile.framework === 'next' ? "'use client';\n\n" : ''}import { ${provider} } from 'uitheme-web/${profile.framework === 'next' ? 'next' : 'react'}';\n${profile.language === 'ts' ? "import type { ReactNode } from 'react';\n" : ''}\nexport function ${wrapperName}({ children }${profile.language === 'ts' ? ': { children: ReactNode }' : ''}) {\n  return <${provider} defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>{children}</${provider}>;\n}\n`;
+  const wrapper = wrapperSource(profile, wrapperName);
   const directProviders = new Set<string>();
   let setupImported = false;
   let setupConflict = false;
@@ -549,11 +578,33 @@ export async function planInit(
   const files: PlannedFile[] = [],
     manualSteps: string[] = [];
 
-  const nextThemes = await planNextThemes(profile);
-  const converted = Boolean(nextThemes?.files.length);
+  let nextThemes: Awaited<ReturnType<typeof planNextThemes>>,
+    refusal: NextThemesRefusal | undefined;
 
-  for (const file of nextThemes?.files ?? [])
-    files.push(await planFile(profile, file.path, file.content));
+  try {
+    nextThemes = await planNextThemes(profile);
+  } catch (error) {
+    if (!(error instanceof NextThemesRefusal)) throw error;
+    refusal = error;
+  }
+
+  let mode: NextThemesMode | undefined;
+
+  if (nextThemes || refusal) {
+    mode =
+      options.nextThemesMode ??
+      (await options.chooseNextThemes?.(refusal?.message)) ??
+      'replace';
+
+    if (mode === 'replace' && refusal) throw refusal;
+  }
+
+  const replacing = mode === 'replace' && Boolean(nextThemes);
+  const converted = replacing && Boolean(nextThemes?.files.length);
+
+  if (replacing)
+    for (const file of nextThemes?.files ?? [])
+      files.push(await planFile(profile, file.path, file.content));
 
   const utility = await planSharedUtils(profile, options);
   profile = utility.profile;
@@ -593,13 +644,25 @@ export async function planInit(
       await nuxtModule(profile, files, manualSteps);
     else if (profile.framework === 'vite-vue')
       await vueProvider(profile, files, manualSteps);
+    else if (mode === 'create') {
+      const separate = await separateProvider(profile);
+      files.push(separate);
+      manualSteps.push(
+        messages.created(displayPath(profile.cwd, separate.path))
+      );
+    } else if (mode === 'keep') manualSteps.push(messages.manual());
     else if (!converted)
       await reactProvider(profile, files, manualSteps, options);
   } catch (error) {
     manualSteps.push(error instanceof Error ? error.message : String(error));
   }
 
-  if (manualSteps.length > providerSteps) manualSteps.push(messages.manual());
+  if (
+    manualSteps.length > providerSteps &&
+    mode !== 'keep' &&
+    mode !== 'create'
+  )
+    manualSteps.push(messages.manual());
 
   files.push(
     await planFile(
@@ -613,10 +676,11 @@ export async function planInit(
     profile,
     files,
     manualSteps,
-    ...(nextThemes && {
+    ...(mode && {
       nextThemes: {
-        files: nextThemes.files.length,
-        remove: nextThemes.remove,
+        mode,
+        files: replacing ? (nextThemes?.files.length ?? 0) : 0,
+        remove: replacing && Boolean(nextThemes?.remove),
       },
     }),
     dependencies: await missingDependencies(

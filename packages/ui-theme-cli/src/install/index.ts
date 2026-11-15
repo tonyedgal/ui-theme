@@ -10,7 +10,7 @@ import { displayPath, isInside, samePath } from '../paths.ts';
 import type { PathApi } from '../paths.ts';
 import { assertSafePath } from '../registry.ts';
 import type { ProjectProfile, RegistryGraph, SavedConfig } from '../types.ts';
-import { messages } from './messages.ts';
+import { messages, type NextThemesMode } from './messages.ts';
 
 export interface PlannedFile {
   path: string;
@@ -56,7 +56,7 @@ export interface InstallPlan {
   manualSteps: string[];
   revision?: string;
   /** next-themes was replaced in `files` source files; `remove` asks for the uninstall. */
-  nextThemes?: { files: number; remove: boolean };
+  nextThemes?: { mode: NextThemesMode; files: number; remove: boolean };
 }
 
 export interface PlanOptions {
@@ -67,6 +67,10 @@ export interface PlanOptions {
   resolveConflict?: ConflictResolver;
   /** The uitheme-web dependency to install, from `resolveWebDependency`. */
   webDependency?: string;
+  /** The chosen way to treat next-themes. Without it, `chooseNextThemes` asks. */
+  nextThemesMode?: NextThemesMode;
+  /** Ask which mode to use. `refusal` is set when replacing is not possible. */
+  chooseNextThemes?: (refusal?: string) => Promise<NextThemesMode | undefined>;
 }
 
 const defaultWebDependency = 'uitheme-web@latest';
@@ -828,6 +832,7 @@ export function describePlan(plan: InstallPlan): string {
           `dependency ${dependency} (in ${relative(plan.profile.cwd, install.profile.cwd).replaceAll('\\', '/')})`
       )
     ),
+    ...(plan.nextThemes ? [messages.modePlan(plan.nextThemes.mode)] : []),
     ...(plan.nextThemes?.remove
       ? [messages.removalPlan(removalCommand(plan.profile, ['next-themes']))]
       : []),

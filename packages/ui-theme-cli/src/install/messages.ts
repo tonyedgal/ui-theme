@@ -3,6 +3,14 @@ export const docsUrl = 'https://www.ui-theme.dev/docs/guides/next-themes';
 export type DocsAnchor =
   'provider-props' | 'provider-shape' | 'usetheme' | 'manual-setup';
 
+export type NextThemesMode = 'replace' | 'keep' | 'create';
+
+export const nextThemesModes: readonly NextThemesMode[] = [
+  'replace',
+  'keep',
+  'create',
+];
+
 export class NextThemesRefusal extends Error {}
 
 export const messages = {
@@ -17,5 +25,17 @@ export const messages = {
   removalFailed: (files: number, command: string) =>
     `Replaced next-themes in ${files} files. The package is still installed. Run: ${command}`,
   manual: () => `Add the provider yourself. See ${docsUrl}#manual-setup`,
+  prompt: 'Replace next-themes with UI-Theme? [Y/n/c]',
+  promptRefused: 'Create the UI-Theme provider as a separate file? [c/N]',
+  options: {
+    y: '  y  Replace: convert the provider and every useTheme import, then remove next-themes (default)',
+    n: '  n  Keep: leave next-themes alone and set up the provider yourself',
+    c: '  c  Create: keep next-themes and add the UI-Theme provider as a separate file',
+    refusedN:
+      '  N  Keep: leave next-themes alone and set up the provider yourself (default)',
+  },
+  created: (file: string) =>
+    `Created ${file} with the UI-Theme provider. next-themes is unchanged. Add the provider yourself. See ${docsUrl}#manual-setup`,
+  modePlan: (mode: NextThemesMode) => `next-themes: ${mode}`,
   removalPlan: (command: string) => `remove next-themes (${command})`,
 };

@@ -551,10 +551,7 @@ class Converter {
           refuse(attribute, 'enableColorScheme={false}');
         removed.add(attribute);
       } else if (name === 'disableTransitionOnChange') {
-        // setTheme of UI-Theme does not freeze css transitions, so the prop is not preserved
-        if (flag(attribute, name))
-          refuse(attribute, 'disableTransitionOnChange');
-        removed.add(attribute);
+        if (!flag(attribute, name)) removed.add(attribute);
       } else if (name === 'storageKey' || name === 'nonce') {
         if (!attribute.value) refuse(attribute, `a ${name} without a value`);
       } else if (name === 'themes') {
