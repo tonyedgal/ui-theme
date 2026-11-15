@@ -352,12 +352,13 @@ function RegistryContent({
         component={component}
         example={example?.id ?? 'default'}
         title={`${previewName} (${entry.label}) live preview`}
+        // the control area plus the 30px swatch strip the frame draws below it
         reserved={
           doc.category === 'disclosures'
-            ? 384
+            ? 414
             : doc.category === 'selectors'
-              ? 256
-              : 40
+              ? 286
+              : 70
         }
       />
     ) : (
