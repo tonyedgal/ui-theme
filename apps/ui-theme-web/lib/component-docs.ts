@@ -13,13 +13,17 @@ export interface ComponentBaseEntry {
   title: string;
   /** A short base name for tight labels. */
   label: string;
+  /** True when a shadcn style selects this base and framework. */
+  shadcn: boolean;
+  /** A framework version the app must meet, from the base manifest. */
+  requires?: { package: string; range: string };
+  /** A cascade layer the app stylesheet must declare, from the base manifest. */
+  cssLayer?: string;
 }
 
 // One page set per base and framework pair, from the base manifest.
-// ui-sdk has no website preview or docs yet, so the site does not list it.
-export const componentBases: ComponentBaseEntry[] = baseVariants()
-  .filter(({ base }) => base !== 'ui-sdk')
-  .map(({ framework, base }) => {
+export const componentBases: ComponentBaseEntry[] = baseVariants().map(
+  ({ framework, base, support }) => {
     const definition = findBase(base)!;
 
     const shared = Object.keys(definition.frameworks).length > 1;
@@ -33,8 +37,15 @@ export const componentBases: ComponentBaseEntry[] = baseVariants()
           ? `Vue / ${definition.shortName}`
           : definition.displayName,
       label: definition.shortName,
+      shadcn: Boolean(support.shadcn),
+      requires: support.requires && {
+        package: support.requires.package,
+        range: support.requires.range,
+      },
+      cssLayer: support.css?.layer,
     };
-  });
+  }
+);
 
 export function componentBase(name: ComponentBase): ComponentBaseEntry {
   const entry = componentBases.find((item) => item.name === name);

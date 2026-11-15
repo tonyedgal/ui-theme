@@ -139,3 +139,67 @@ export function componentApi(doc: ComponentDoc, base: ComponentBase) {
 
   return rows;
 }
+
+const uiSdkPrimitives = {
+  'theme-toggle': [{ name: 'Toggle', entry: 'toggle' }],
+  'icon-theme-toggle': [{ name: 'Toggle', entry: 'toggle' }],
+  'tactile-theme-toggle': [{ name: 'Switch', entry: 'switch' }],
+  'theme-switcher': [{ name: 'SegmentedControl', entry: 'segmented-control' }],
+  'theme-selector': [{ name: 'Select', entry: 'select' }],
+  'color-theme-selector': [{ name: 'Select', entry: 'select' }],
+  'theme-disclosure': [
+    { name: 'Collapsible', entry: 'collapsible' },
+    { name: 'RadioGroup', entry: 'radio' },
+  ],
+  'color-theme-disclosure': [
+    { name: 'Collapsible', entry: 'collapsible' },
+    { name: 'RadioGroup', entry: 'radio' },
+  ],
+} satisfies Record<string, { name: string; entry: string }[]>;
+
+// Facts that only some bases have. Each line may use `code` spans.
+export function componentBaseFacts(doc: ComponentDoc, base: ComponentBase) {
+  const entry = componentBase(base);
+  const installation: string[] = [];
+  const accessibility: string[] = [];
+
+  if (entry.base !== 'ui-sdk') return { installation, accessibility };
+
+  const scope = `@ui-sdk/${entry.framework}`;
+
+  const primitives =
+    new Map<string, { name: string; entry: string }[]>(
+      Object.entries(uiSdkPrimitives)
+    ).get(doc.name) ?? [];
+
+  if (doc.name !== 'icon-theme-toggle')
+    installation.push(
+      `This control uses the UI SDK ${primitives.map((item) => `\`${item.name}\` from \`${scope}/${item.entry}\``).join(' and ')}.`
+    );
+  else
+    installation.push(
+      'This control wraps Theme Toggle, which uses `Toggle` from UI SDK.'
+    );
+
+  if (entry.requires)
+    installation.push(
+      `UI SDK needs \`${entry.requires.package} ${entry.requires.range}\`${entry.requires.package === 'react' ? ' and `@types/react >=19.2.10`' : ''}. The CLI stops before it writes a file when the app has an older \`${entry.requires.package}\`.`
+    );
+
+  if (entry.cssLayer)
+    installation.push(
+      `UI SDK adds styles to the \`${entry.cssLayer}\` cascade layer. Declare \`@layer ${entry.cssLayer};\` at the top of your global stylesheet, before other layers. The CLI adds this line for you.`
+    );
+
+  if (doc.name === 'tactile-theme-toggle')
+    accessibility.push(
+      'Enter and Space both toggle the switch. The control handles Enter itself, because the UI SDK `Switch` responds to Space only.'
+    );
+
+  if (doc.category === 'disclosures')
+    accessibility.push(
+      'The choices form a `radiogroup` named by the visible label. Each choice is a button with the `radio` role, not a native radio input.'
+    );
+
+  return { installation, accessibility };
+}

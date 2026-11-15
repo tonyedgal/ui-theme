@@ -28,14 +28,16 @@ The CLI copies Icon Theme Toggle and its Theme Toggle dependency. Both reuse the
 
 <RegistryInstallation />
 
-<RegistryReact>
+<RegistryBaseInstallation />
+
+<RegistryShadcn>
 
 To install with shadcn, first [add the UI-Theme registry](/docs/installation#install-with-shadcn)
 to `components.json`. The style in `components.json` selects Radix or Base UI.
 
 <RegistryShadcnInstallation />
 
-</RegistryReact>
+</RegistryShadcn>
 
 ## Usage
 
@@ -61,6 +63,8 @@ These props belong to the installed control. Its page transition settings overri
 - The control stays disabled until the theme provider mounts.
 - Reduced motion removes travel and rotation. Icon state keeps a short opacity change. The selection surface changes position without travel.
 - Keyboard activation changes the theme without the pointer animation.
+
+<RegistryBaseAccessibility />
 
 ## Theme behavior
 
