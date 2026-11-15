@@ -895,6 +895,12 @@ importers:
       '@radix-ui/react-toggle':
         specifier: ^1.2.1
         version: 1.2.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@ui-sdk/core':
+        specifier: 0.1.0-beta.2
+        version: 0.1.0-beta.2
+      '@ui-sdk/react':
+        specifier: 0.1.0-beta.2
+        version: 0.1.0-beta.2(@types/react@19.3.0)(@ui-sdk/core@0.1.0-beta.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@ui-theme/registry':
         specifier: workspace:*
         version: link:../../packages/ui-theme-registry

@@ -19,6 +19,8 @@
     "@radix-ui/react-slider": "^1.6.1",
     "@radix-ui/react-slot": "^1.5.0",
     "@radix-ui/react-toggle": "^1.2.1",
+    "@ui-sdk/core": "0.1.0-beta.2",
+    "@ui-sdk/react": "0.1.0-beta.2",
     "@ui-theme/registry": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
