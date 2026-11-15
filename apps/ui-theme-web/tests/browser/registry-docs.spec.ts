@@ -73,6 +73,9 @@ test('base selection keeps the preview, installation command and copied source a
   await expect(
     page.getByRole('link', { name: 'Base UI', exact: true })
   ).toHaveAttribute('aria-current', 'page');
+  await expect(
+    page.getByRole('navigation', { name: 'Component base' }).getByRole('link')
+  ).toHaveText(['Base UI', 'Radix UI', 'UI SDK', 'Vue / Reka', 'Vue / UI SDK']);
   await expect(page.getByTestId('install-command')).toContainText(
     '--base base-ui'
   );
