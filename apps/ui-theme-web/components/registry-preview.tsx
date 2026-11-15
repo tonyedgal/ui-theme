@@ -4,6 +4,14 @@ import { ColorThemeDisclosure as RadixColorThemeDisclosure } from '../../../pack
 import { ThemeDisclosure as RadixThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/radix/theme-disclosure';
 import { ColorThemeDisclosure as BaseColorThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/color-theme-disclosure';
 import { ThemeDisclosure as BaseThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/base-ui/theme-disclosure';
+import { ThemeToggle as UISDKThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/theme-toggle';
+import { IconThemeToggle as UISDKIconThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/icon-theme-toggle';
+import { TactileThemeToggle as UISDKTactileThemeToggle } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/tactile-theme-toggle';
+import { ThemeSwitcher as UISDKThemeSwitcher } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/theme-switcher';
+import { ThemeSelector as UISDKThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/theme-selector';
+import { ColorThemeSelector as UISDKColorThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/color-theme-selector';
+import { ThemeDisclosure as UISDKThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/theme-disclosure';
+import { ColorThemeDisclosure as UISDKColorThemeDisclosure } from '../../../packages/ui-theme-registry/src/templates/react/ui-sdk/color-theme-disclosure';
 import { createContext, Suspense, useContext, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ThemeAnimationType } from 'uitheme-web/react';
@@ -39,7 +47,7 @@ import { ThemeSwitcher as RadixThemeSwitcher } from '../../../packages/ui-theme-
 import { ThemeSelector as RadixThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/theme-selector';
 import { ColorThemeSelector as RadixColorThemeSelector } from '../../../packages/ui-theme-registry/src/templates/react/radix/color-theme-selector';
 import { componentMarkdown } from '@/lib/component-markdown';
-import { componentApi } from '@/lib/component-guides';
+import { componentApi, componentBaseFacts } from '@/lib/component-guides';
 import { Prose, ScrollableTable } from './docs/prose';
 import { CopyButton as CopyText } from './docs/copy-button';
 import { CopyPageButton } from './docs/copy-page-button';
@@ -72,6 +80,16 @@ const reactPreviews = {
     ThemeSwitcher: RadixThemeSwitcher,
     ThemeDisclosure: RadixThemeDisclosure,
     ColorThemeDisclosure: RadixColorThemeDisclosure,
+  },
+  'ui-sdk': {
+    ThemeToggle: UISDKThemeToggle,
+    IconThemeToggle: UISDKIconThemeToggle,
+    TactileThemeToggle: UISDKTactileThemeToggle,
+    ThemeSwitcher: UISDKThemeSwitcher,
+    ThemeSelector: UISDKThemeSelector,
+    ColorThemeSelector: UISDKColorThemeSelector,
+    ThemeDisclosure: UISDKThemeDisclosure,
+    ColorThemeDisclosure: UISDKColorThemeDisclosure,
   },
 } satisfies Record<
   string,
@@ -146,7 +164,7 @@ function RegistryContent({
     sourceQuery
   );
 
-  const command = `npx uitheme-cli add ${component} --base ${base} --tailwind ${tailwind} --language ${language}`;
+  const command = `npx uitheme-cli add ${component} --base ${componentBase(base).base} --tailwind ${tailwind} --language ${language}`;
   const usageSource = componentUsage(doc, base);
 
   const usage =
@@ -177,6 +195,7 @@ function RegistryContent({
   } = reactPreview(entry);
 
   const api = componentApi(doc, base);
+  const facts = componentBaseFacts(doc, base);
 
   const markdown = componentMarkdown({
     doc,
@@ -446,6 +465,7 @@ function RegistryContent({
           api,
           base,
           agentNotes,
+          facts,
         }}
       >
         <Prose className="[&_h2:not(:where(.not-prose,.not-prose_*))]:mt-12 [&_h2_a]:no-underline">
@@ -490,6 +510,7 @@ interface RegistryBlockValues {
   api: ReturnType<typeof componentApi>;
   base: ComponentBase;
   agentNotes: string;
+  facts: ReturnType<typeof componentBaseFacts>;
 }
 
 const RegistryBlocks = createContext<RegistryBlockValues | null>(null);
@@ -566,6 +587,36 @@ export function RegistryVue({ children }: { children: ReactNode }) {
   return componentBase(useRegistryBlocks().base).framework === 'vue'
     ? children
     : null;
+}
+
+export function RegistryShadcn({ children }: { children: ReactNode }) {
+  return componentBase(useRegistryBlocks().base).shadcn ? children : null;
+}
+
+function BaseFacts({ items }: { items: string[] }) {
+  if (!items.length) return null;
+
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item}>
+          {item
+            .split('`')
+            .map((part, index) =>
+              index % 2 ? <code key={index}>{part}</code> : part
+            )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function RegistryBaseInstallation() {
+  return <BaseFacts items={useRegistryBlocks().facts.installation} />;
+}
+
+export function RegistryBaseAccessibility() {
+  return <BaseFacts items={useRegistryBlocks().facts.accessibility} />;
 }
 
 export function RegistryAgentCopy() {

@@ -28,14 +28,16 @@ The control has no primitive dependency. It uses Lucide icons and reuses the sha
 
 <RegistryInstallation />
 
-<RegistryReact>
+<RegistryBaseInstallation />
+
+<RegistryShadcn>
 
 To install with shadcn, first [add the UI-Theme registry](/docs/installation#install-with-shadcn)
 to `components.json`.
 
 <RegistryShadcnInstallation />
 
-</RegistryReact>
+</RegistryShadcn>
 
 ## Usage
 
@@ -63,6 +65,8 @@ These props belong to the installed control. Its page transition settings overri
 - The control stays disabled until the theme provider mounts.
 - Reduced motion removes the icon rotation and scale. The thumb travel and the icon fade take 120ms.
 - In forced-colors mode, the control keeps a visible border.
+
+<RegistryBaseAccessibility />
 
 ## Theme behavior
 
