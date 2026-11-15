@@ -395,4 +395,46 @@ describe('the UI SDK base', () => {
       JSON.parse(await readFile(join(cwd, 'uitheme.json'), 'utf8')).base
     ).toBe('ui-sdk');
   });
+  it('is detected from @ui-sdk/vue and declares @layer ui-sdk once in a Vue app', async () => {
+    const cwd = await mkdtemp(join(tmpdir(), 'uitheme-base-vue-')),
+      out = io();
+
+    roots.push(cwd);
+    await mkdir(join(cwd, 'src'), { recursive: true });
+    await writeFile(
+      join(cwd, 'package.json'),
+      JSON.stringify({
+        name: 'consumer',
+        dependencies: {
+          vite: '7',
+          vue: '^3.5.0',
+          tailwindcss: '4.1.0',
+          '@ui-sdk/vue': '0.1.0-beta.2',
+        },
+      })
+    );
+    await writeFile(join(cwd, 'src/style.css'), '@import "tailwindcss";\n');
+    await writeFile(
+      join(cwd, 'tsconfig.json'),
+      '{"compilerOptions":{"paths":{"@/*":["./src/*"]}}}'
+    );
+    await writeFile(
+      join(cwd, 'src/main.ts'),
+      "import { createApp } from 'vue';\nimport './style.css';\ncreateApp({}).mount('#app');\n"
+    );
+
+    expect(await runCli(['info', '--cwd', cwd], out)).toBe(0);
+    expect(JSON.parse(out.output()).base).toBe('ui-sdk');
+
+    for (let run = 0; run < 2; run++)
+      expect(
+        await runCli(['init', '--cwd', cwd, '--base', 'ui-sdk', '--yes'], {
+          ...io(),
+          runInstall,
+        })
+      ).toBe(0);
+
+    const css = await readFile(join(cwd, 'src/style.css'), 'utf8');
+    expect(css.match(/@layer ui-sdk;/g)).toHaveLength(1);
+  });
 });
