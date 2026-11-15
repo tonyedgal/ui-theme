@@ -8,6 +8,7 @@ import {
   type ComponentSource,
 } from './component-docs';
 import { shadcnCommand } from './docs-commands';
+import { vuePreviewNote } from './vue-preview-protocol';
 
 export function componentMarkdown({
   doc,
@@ -37,8 +38,7 @@ export function componentMarkdown({
 
   const fragments = new Map(
     Object.entries({
-      RegistryLivePreview:
-        'Use the live preview to try the control with your theme provider.',
+      RegistryLivePreview: `Use the live preview to try the control with your theme provider.${vue ? ` ${vuePreviewNote}` : ''}`,
       RegistryExamples: componentExamples(doc)
         .map((example) => {
           const source = componentUsage(doc, base, example);
