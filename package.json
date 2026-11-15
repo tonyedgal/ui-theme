@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "turbo typecheck",
-    "clean": "turbo clean && rm -rf node_modules",
+    "clean": "turbo clean && node -e \"require('fs').rmSync('node_modules',{recursive:true,force:true})\"",
     "changeset": "changeset",
     "changeset:patch": "changeset add --type patch",
     "changeset:feature": "changeset add --type minor",

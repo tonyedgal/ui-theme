@@ -122,12 +122,12 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsup && tsup --config tsup.vue.config.ts && node scripts/mark-react-client.mjs",
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsup && tsup --config tsup.vue.config.ts && node scripts/mark-react-client.mjs",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests --exclude \"tests/browser/**\" --exclude \"tests/vue-browser/**\"",
     "test:watch": "vitest --exclude \"tests/browser/**\" --exclude \"tests/vue-browser/**\"",
-    "clean": "rm -rf dist",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "prepublishOnly": "npm run build",
     "test:browser": "playwright test",
     "test:browser:serve": "vite tests/browser --host 127.0.0.1 --port 4179 --strictPort",
