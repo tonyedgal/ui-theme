@@ -185,7 +185,7 @@ specified by section 8 of `AGENTS.md`. Adapt examples to UI-Theme rather than
 copying a reference's layout or wording without judgment.
 
 Write component documentation in `apps/ui-theme-web/content/components/<name>.mdx`.
-Each control has one document shared by Base UI, Radix, and Reka. Use H2 headings
+Each control has one document shared by Base UI, Radix, Reka, and UI SDK. Use H2 headings
 for the required sections, in the order defined by `lib/component-sections.ts`.
 The `componentContent` Fumadocs collection applies `remark-component-sections.ts`
 during MDX compilation. Missing, duplicate, empty, or reordered sections fail the
