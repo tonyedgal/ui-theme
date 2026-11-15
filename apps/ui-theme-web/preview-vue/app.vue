@@ -109,6 +109,17 @@ const reserved =
       ? 'h-64'
       : '';
 
+// decorative: one dot per theme token, painted by the active palette
+const swatches = [
+  'bg-background',
+  'bg-foreground',
+  'bg-primary',
+  'bg-secondary',
+  'bg-accent',
+  'bg-muted',
+  'bg-border',
+];
+
 const ui = useUITheme();
 
 const root = useTemplateRef<HTMLElement>('root');
@@ -152,21 +163,35 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="root"
-    class="flex min-h-30 items-center justify-center"
+    class="flex min-h-30 flex-col gap-4"
     style="padding: var(--preview-padding, 1rem)"
   >
-    <div
-      v-if="control"
-      role="region"
-      :aria-label="`${example?.title ?? 'Default preview'} (${label})`"
-      class="mx-auto flex w-full max-w-lg items-center justify-center"
-    >
-      <div :class="`w-full max-w-sm ${reserved}`">
-        <div v-if="centered" class="flex justify-center">
-          <component :is="control" v-bind="controlProps" />
+    <div class="flex flex-1 items-center justify-center">
+      <div
+        v-if="control"
+        role="region"
+        :aria-label="`${example?.title ?? 'Default preview'} (${label})`"
+        class="mx-auto flex w-full max-w-lg items-center justify-center"
+      >
+        <div :class="`w-full max-w-sm ${reserved}`">
+          <div v-if="centered" class="flex justify-center">
+            <component :is="control" v-bind="controlProps" />
+          </div>
+          <component :is="control" v-else v-bind="controlProps" />
         </div>
-        <component :is="control" v-else v-bind="controlProps" />
       </div>
+    </div>
+    <div
+      aria-hidden="true"
+      data-testid="theme-swatches"
+      class="flex shrink-0 items-center justify-center gap-1.5"
+    >
+      <span
+        v-for="swatch in swatches"
+        :key="swatch"
+        :data-swatch="swatch.slice(3)"
+        :class="`size-3.5 rounded-full border border-border ${swatch}`"
+      />
     </div>
   </div>
 </template>
