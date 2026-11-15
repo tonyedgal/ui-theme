@@ -642,11 +642,17 @@ const serverPreferences: Pick<
 
 const app =
   provider === 'ui' ? (
-    <UIThemeProvider {...config}>
+    <UIThemeProvider
+      {...config}
+      disableTransitionOnChange={params.has('disableTransitions')}
+    >
       <UIControls />
     </UIThemeProvider>
   ) : provider === 'next' ? (
-    <NextUIThemeProvider {...config}>
+    <NextUIThemeProvider
+      {...config}
+      disableTransitionOnChange={params.has('disableTransitions')}
+    >
       <NextControls />
     </NextUIThemeProvider>
   ) : provider === 'vite' ? (
@@ -661,6 +667,7 @@ const app =
       {...config}
       {...callbacks}
       {...serverPreferences}
+      disableTransitionOnChange={params.has('disableTransitions')}
       onServerError={(error) =>
         inspection.callbacks.push(`error:${error.message}`)
       }

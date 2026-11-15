@@ -1351,3 +1351,42 @@ test('vite disableTransitionOnChange style carries the CSP nonce', async ({
   expect(nonces).toEqual(['uitheme-test']);
   await expect(page.locator('html')).toHaveClass(/dark/);
 });
+
+for (const provider of ['ui', 'next', 'tanstack', 'vite']) {
+  for (const frozen of [true, false]) {
+    test(`${provider} setTheme ${frozen ? 'skips' : 'runs'} a CSS transition ${frozen ? 'with' : 'without'} disableTransitionOnChange`, async ({
+      page,
+    }) => {
+      await open(
+        page,
+        `provider=${provider}${frozen ? '&disableTransitions' : ''}`
+      );
+
+      const color = await page.evaluate(async () => {
+        const style = document.createElement('style');
+        style.textContent =
+          '.probe{background-color:rgb(255,255,255);transition:background-color 1s linear}.dark .probe{background-color:rgb(0,0,0)}';
+        document.head.append(style);
+        const probe = document.createElement('div');
+        probe.className = 'probe';
+        document.body.append(probe);
+        void getComputedStyle(probe).backgroundColor;
+        window.themeFixture.state.setTheme('dark');
+        const now = getComputedStyle(probe).backgroundColor;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        return {
+          now,
+          restored: ![...document.head.querySelectorAll('style')].some(
+            (element) => element.textContent?.includes('transition:none')
+          ),
+        };
+      });
+
+      if (frozen) expect(color.now).toBe('rgb(0, 0, 0)');
+      else expect(color.now).not.toBe('rgb(0, 0, 0)');
+      expect(color.restored).toBe(true);
+      await settle(page);
+    });
+  }
+}

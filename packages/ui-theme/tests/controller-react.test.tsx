@@ -324,3 +324,64 @@ test('providers read systemTheme from the controller without calling matchMedia 
   expect(matchMedia).not.toHaveBeenCalled();
   expect(container.querySelector('span')?.textContent).toBe('light');
 });
+
+test.each([
+  ['UIThemeProvider', UIThemeProvider],
+  ['NextUIThemeProvider', NextUIThemeProvider],
+  ['TanStackUIThemeProvider', TanStackUIThemeProvider],
+] as const)(
+  '%s freezes transitions for setTheme and setColorTheme only with disableTransitionOnChange',
+  async (_name, Provider) => {
+    const Consumer = () => {
+      const shared = useUITheme();
+
+      useLayoutEffect(() => {
+        state = shared;
+      });
+
+      return null;
+    };
+
+    const frozen = () =>
+      [...document.head.querySelectorAll('style')].filter((style) =>
+        style.textContent?.includes('transition:none')
+      );
+
+    for (const enabled of [false, true]) {
+      localStorage.clear();
+      await act(async () =>
+        root.render(
+          <Provider
+            colorThemes={['default', 'ocean']}
+            disableTransitionOnChange={enabled}
+            nonce="n1"
+          >
+            <Consumer />
+          </Provider>
+        )
+      );
+      let seen: string[] = [];
+
+      const observer = new MutationObserver((records) => {
+        for (const record of records)
+          for (const node of record.addedNodes)
+            if (
+              node instanceof HTMLStyleElement &&
+              node.textContent?.includes('transition:none')
+            )
+              seen.push(node.nonce);
+      });
+
+      observer.observe(document.head, { childList: true });
+      await act(async () => state.setTheme('dark'));
+      await act(async () => state.setColorTheme('ocean'));
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+      observer.disconnect();
+      expect(seen).toEqual(enabled ? ['n1', 'n1'] : []);
+      expect(frozen()).toHaveLength(0);
+      seen = [];
+    }
+  }
+);

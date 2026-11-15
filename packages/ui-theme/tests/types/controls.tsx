@@ -55,6 +55,18 @@ export const providerAnimationNames = [
   </TanStackUIThemeProvider>,
 ];
 
+export const transitionFreezeProviders = [
+  <UIThemeProvider key="ui" disableTransitionOnChange>
+    {null}
+  </UIThemeProvider>,
+  <NextUIThemeProvider key="next" disableTransitionOnChange={false}>
+    {null}
+  </NextUIThemeProvider>,
+  <TanStackUIThemeProvider key="tanstack" disableTransitionOnChange>
+    {null}
+  </TanStackUIThemeProvider>,
+];
+
 export const unknownProviderAnimation = (
   // @ts-expect-error Providers accept only the built-in animation names.
   <UIThemeProvider animationType="spin">{null}</UIThemeProvider>
