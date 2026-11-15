@@ -269,7 +269,8 @@ describe('workspace packages', () => {
     });
     await symlink(
       join(root, 'packages/ui'),
-      join(root, 'apps/web/node_modules/@workspace/ui')
+      join(root, 'apps/web/node_modules/@workspace/ui'),
+      process.platform === 'win32' ? 'junction' : 'dir'
     );
 
     const cwd = join(root, 'apps/web');

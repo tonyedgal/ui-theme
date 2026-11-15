@@ -304,7 +304,11 @@ describe('installation plans and transactions', () => {
     const outside = await mkdtemp(join(tmpdir(), 'uitheme-outside-'));
     roots.push(outside);
     await mkdir(join(cwd, 'src/components'), { recursive: true });
-    await symlink(outside, profile.componentsDir);
+    await symlink(
+      outside,
+      profile.componentsDir,
+      process.platform === 'win32' ? 'junction' : 'dir'
+    );
     await expect(planRegistryInstall(profile, graph())).rejects.toThrow(
       /symlink|outside|path/i
     );
@@ -446,7 +450,11 @@ describe('installation plans and transactions', () => {
     await expect(planRegistryInstall(shared, graph())).rejects.toThrow(
       /owning|package/i
     );
-    await symlink(app, join(cwd, 'linked'));
+    await symlink(
+      app,
+      join(cwd, 'linked'),
+      process.platform === 'win32' ? 'junction' : 'dir'
+    );
     shared.componentsDir = join(cwd, 'linked/ui');
     await expect(planRegistryInstall(shared, graph())).rejects.toThrow(
       /symlink/i
