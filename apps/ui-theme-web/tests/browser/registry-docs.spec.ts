@@ -511,3 +511,21 @@ test('the Vue iframe has the site theme before its script runs', async ({
   await expect(frame!.locator('html')).toHaveClass(/dark/);
   await expect(frame!.locator('html')).toHaveClass(/theme-caffeine/);
 });
+
+test('Vue pages explain the iframe preview and React pages do not', async ({
+  page,
+}) => {
+  const note =
+    'This preview runs in an iframe. The theme transition stays in the preview frame. In your app, the transition covers the full page.';
+
+  for (const base of ['reka', 'ui-sdk-vue']) {
+    await page.goto(`/docs/components/${base}/theme-toggle`);
+    await expect(page.getByText(note).first()).toBeVisible();
+  }
+
+  for (const base of ['base-ui', 'ui-sdk-react']) {
+    await page.goto(`/docs/components/${base}/theme-toggle`);
+    await expect(page.getByRole('region').first()).toBeVisible();
+    await expect(page.getByText(note)).toHaveCount(0);
+  }
+});
