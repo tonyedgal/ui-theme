@@ -11,6 +11,7 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 test('Vue JavaScript variants preserve public prop declarations and typed emits', async () => {
   const js = await javascriptSource(
@@ -256,7 +257,11 @@ test('revision identifies serialized records and origin, while frozen releases s
 
   try {
     const { snapshotRegistry } = await import('../src/build.ts');
-    const sourceDir = new URL('../src/templates/', import.meta.url).pathname;
+
+    const sourceDir = fileURLToPath(
+      new URL('../src/templates/', import.meta.url)
+    );
+
     const releaseDir = join(root, 'releases');
 
     const first = await buildRegistry({
