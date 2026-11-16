@@ -805,7 +805,7 @@ export async function planInit(
 
   const setups = await detectThemeSetup(profile),
     label = labelFor(setups),
-    choices = choicesFor(setups);
+    choices = choicesFor(setups, profile);
 
   let choice: ExistingChoice | undefined, conversion: Conversion | undefined;
 

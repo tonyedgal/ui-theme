@@ -227,3 +227,190 @@ describe('UI-Theme 1', () => {
     }
   );
 });
+
+const customProvider = `import { createContext, useEffect, useState } from 'react'
+
+const ThemeContext = createContext({ dark: false, toggle: () => {} })
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [dark, setDark] = useState(() => localStorage.getItem('dark-mode') === 'true')
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('dark-mode', String(dark))
+  }, [dark])
+
+  return <ThemeContext.Provider value={{ dark, toggle: () => setDark(!dark) }}>{children}</ThemeContext.Provider>
+}
+`;
+
+describe('known theme libraries', () => {
+  it.each([
+    [
+      'vite-react',
+      'remix-themes',
+      'src/App.tsx',
+      "import { ThemeProvider } from 'remix-themes'\nexport default function App() { return null }\n",
+      'remix-themes',
+    ],
+    [
+      'nuxt',
+      '@nuxtjs/color-mode',
+      'app.vue',
+      '<template><div /></template>\n',
+      '@nuxtjs/color-mode',
+    ],
+    [
+      'vite-vue',
+      '@vueuse/core',
+      'src/dark.ts',
+      "import { useDark } from '@vueuse/core'\nexport const dark = useDark()\n",
+      'useColorMode or useDark from @vueuse/core',
+    ],
+  ] as const)(
+    'stops for %s with %s',
+    async (framework, name, path, content, label) => {
+      const cwd = await app(
+        framework,
+        { [path]: content },
+        { [name]: '1.0.0' }
+      );
+
+      const result = await init(cwd);
+
+      expect(result.code).toBe(2);
+      expect(result.output).toContain(`The app uses ${label}`);
+      expect(result.output).toContain('#other-library');
+      expect(await read(cwd, path)).toBe(content);
+    }
+  );
+  it('ignores @vueuse/core when the app does not use its color mode', async () => {
+    const cwd = await app(
+      'vite-vue',
+      {
+        'src/a.ts':
+          "import { useMouse } from '@vueuse/core'\nexport const m = useMouse()\n",
+      },
+      { '@vueuse/core': '1.0.0' }
+    );
+
+    expect((await init(cwd)).code).toBe(0);
+  });
+});
+
+describe('custom theme providers', () => {
+  it('prints each signal with file and line, writes safe parts and exits 2', async () => {
+    const cwd = await app('vite-react', {
+      'src/theme-provider.tsx': customProvider,
+    });
+
+    const main = await read(cwd, 'src/main.tsx');
+    const result = await init(cwd);
+
+    expect(result.code).toBe(2);
+    expect(result.output).toContain(
+      'existing theme setup: a custom theme provider -> manual'
+    );
+    expect(result.output).toContain(
+      '  src/theme-provider.tsx:6 stores a theme in localStorage'
+    );
+    expect(result.output).toContain(
+      '  src/theme-provider.tsx:9 sets the dark class on the document'
+    );
+    expect(result.output).toContain('#custom-provider');
+    expect(await read(cwd, 'src/main.tsx')).toBe(main);
+    expect(await read(cwd, 'src/theme-provider.tsx')).toBe(customProvider);
+    expect(await read(cwd, 'src/style.css')).toContain('--background');
+  });
+  it('writes the UI-Theme provider without mounting it with --existing alongside', async () => {
+    const cwd = await app('vite-react', {
+      'src/theme-provider.tsx': customProvider,
+    });
+
+    const main = await read(cwd, 'src/main.tsx');
+    const result = await init(cwd, ['--yes', '--existing', 'alongside']);
+
+    expect(result.code).toBe(2);
+    expect(await read(cwd, 'src/main.tsx')).toBe(main);
+    expect(await read(cwd, 'src/components/ui-theme-provider.tsx')).toContain(
+      'UIThemeProvider'
+    );
+    expect(result.output).toContain(
+      'Created src/components/ui-theme-provider.tsx'
+    );
+
+    await init(cwd, ['--yes', '--existing', 'alongside']);
+    expect(await read(cwd, 'src/components/ui-theme-provider.tsx')).toContain(
+      'UIThemeProvider'
+    );
+  });
+  it('detects an inline theme script in index.html', async () => {
+    const cwd = await app('vite-react', {
+      'index.html': `<!doctype html>\n<html>\n<head>\n<script>\nif (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark')\n</script>\n</head>\n</html>\n`,
+    });
+
+    const result = await init(cwd);
+
+    expect(result.code).toBe(2);
+    expect(result.output).toContain('index.html:5');
+  });
+  it('treats a custom provider together with next-themes as two setups', async () => {
+    const cwd = await app(
+      'vite-react',
+      {
+        'src/theme-provider.tsx': customProvider,
+        'src/mode.tsx':
+          "import { useTheme } from 'next-themes'\nexport const m = useTheme\n",
+      },
+      { 'next-themes': '0.4.6' }
+    );
+
+    const result = await init(cwd);
+
+    expect(result.code).toBe(2);
+    expect(result.output).toContain(
+      'more than one theme setup (next-themes, a custom theme provider)'
+    );
+    expect(result.removals).toEqual([]);
+  });
+  it.each([
+    [
+      '@mui/material',
+      "import { ThemeProvider, createTheme } from '@mui/material/styles'",
+    ],
+    [
+      '@chakra-ui/react',
+      "import { ChakraProvider as ThemeProvider } from '@chakra-ui/react'",
+    ],
+    [
+      '@mantine/core',
+      "import { MantineProvider as ThemeProvider } from '@mantine/core'",
+    ],
+    ['styled-components', "import { ThemeProvider } from 'styled-components'"],
+    ['@emotion/react', "import { ThemeProvider } from '@emotion/react'"],
+  ])(
+    'does not treat a %s ThemeProvider as a theme setup',
+    async (name, imported) => {
+      const cwd = await app(
+        'vite-react',
+        {
+          'src/App.tsx': `${imported}\nconst prefersDark = matchMedia('(prefers-color-scheme: dark)').matches\nexport default function App() { return <ThemeProvider theme={{ dark: prefersDark }}>x</ThemeProvider> }\n`,
+        },
+        { [name]: '1.0.0' }
+      );
+
+      const result = await init(cwd);
+
+      expect(result.code).toBe(0);
+      expect(result.output).not.toContain('existing theme setup');
+    }
+  );
+  it('does not treat a component named ThemeProvider without behaviour as a setup', async () => {
+    const cwd = await app('vite-react', {
+      'src/theme-provider.tsx':
+        'export function ThemeProvider({ children }: { children: React.ReactNode }) { return children }\n',
+    });
+
+    expect((await init(cwd)).code).toBe(0);
+  });
+});
