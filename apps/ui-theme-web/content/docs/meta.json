@@ -4,9 +4,9 @@
     "index",
     "installation",
     "cli",
-    "migration",
     "llms",
     "guides",
-    "components"
+    "components",
+    "migration"
   ]
 }
