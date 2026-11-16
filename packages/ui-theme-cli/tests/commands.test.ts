@@ -775,7 +775,7 @@ describe('files that differ from the uitheme version', () => {
       'Kept your src/components/theme-provider.tsx'
     );
     expect(kept.output()).toContain(
-      'See https://www.ui-theme.dev/docs/migration/next-themes#manual-setup'
+      'See https://www.ui-theme.dev/docs/migration/existing-theme-setup#manual-setup'
     );
     expect(kept.output()).not.toContain('import { UIThemeProvider }');
 
@@ -894,7 +894,7 @@ describe('guided next steps', () => {
       await runCli(['init', '--cwd', cwd, '--yes'], { ...out, runInstall })
     ).toBe(2);
     expect(out.output()).toContain(
-      'manual-required: Add the provider yourself. See https://www.ui-theme.dev/docs/migration/next-themes#manual-setup'
+      'manual-required: Add the provider yourself. See https://www.ui-theme.dev/docs/migration/existing-theme-setup#manual-setup'
     );
     expect(out.output()).not.toContain('import { UIThemeProvider }');
   });

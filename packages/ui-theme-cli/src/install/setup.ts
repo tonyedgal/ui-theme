@@ -1,16 +1,23 @@
 import { dirname, join, relative } from 'node:path';
 import { displayPath, isInside } from '../paths.ts';
 import { planSharedUtils } from './shared-utils.ts';
-import { planNextThemes } from '../theme/converters/next-themes.ts';
+import { detectThemeSetup } from '../theme/detect.ts';
+import {
+  choicesFor,
+  convert,
+  labelFor,
+  manualStep,
+  type Conversion,
+} from '../theme/plan.ts';
 import {
   reactProviders,
   targetFor,
   type ReactTarget,
 } from '../theme/targets.ts';
 import {
-  NextThemesRefusal,
+  ConversionRefusal,
   messages,
-  type NextThemesMode,
+  type ExistingChoice,
 } from './messages.ts';
 import { readConfig } from '../config.ts';
 import {
@@ -669,33 +676,41 @@ export async function planInit(
   const files: PlannedFile[] = [],
     manualSteps: string[] = [];
 
-  let nextThemes: Awaited<ReturnType<typeof planNextThemes>>,
-    refusal: NextThemesRefusal | undefined;
+  const setups = await detectThemeSetup(profile),
+    label = labelFor(setups),
+    choices = choicesFor(setups);
 
-  try {
-    nextThemes = await planNextThemes(profile);
-  } catch (error) {
-    if (!(error instanceof NextThemesRefusal)) throw error;
-    refusal = error;
+  let choice: ExistingChoice | undefined, conversion: Conversion | undefined;
+
+  if (setups.length) {
+    choice =
+      options.existing ??
+      (choices.length > 1
+        ? await options.chooseExisting?.(setups, choices)
+        : undefined) ??
+      choices[0];
+
+    if (!choices.includes(choice)) {
+      manualSteps.push(messages.invalidChoice(choice, label));
+      choice = 'manual';
+    }
+
+    if (choice === 'convert') {
+      const result = await convert(profile, setups[0]);
+
+      if (result instanceof ConversionRefusal) {
+        manualSteps.push(result.message);
+        choice = 'manual';
+      } else {
+        conversion = result;
+
+        for (const file of conversion.files)
+          files.push(await planFile(profile, file.path, file.content));
+      }
+    }
   }
 
-  let mode: NextThemesMode | undefined;
-
-  if (nextThemes || refusal) {
-    mode =
-      options.nextThemesMode ??
-      (await options.chooseNextThemes?.(refusal?.message)) ??
-      'replace';
-
-    if (mode === 'replace' && refusal) throw refusal;
-  }
-
-  const replacing = mode === 'replace' && Boolean(nextThemes);
-  const converted = replacing && Boolean(nextThemes?.files.length);
-
-  if (replacing)
-    for (const file of nextThemes?.files ?? [])
-      files.push(await planFile(profile, file.path, file.content));
+  const converted = Boolean(conversion?.files.length);
 
   const utility = await planSharedUtils(profile, options);
   profile = utility.profile;
@@ -735,13 +750,13 @@ export async function planInit(
       await nuxtModule(profile, files, manualSteps);
     else if (profile.framework === 'vite-vue')
       await vueProvider(profile, files, manualSteps);
-    else if (mode === 'create') {
+    else if (choice === 'alongside') {
       const separate = await separateProvider(profile);
       files.push(separate);
       manualSteps.push(
-        messages.created(displayPath(profile.cwd, separate.path))
+        messages.alongside(displayPath(profile.cwd, separate.path))
       );
-    } else if (mode === 'keep') manualSteps.push(messages.manual());
+    } else if (choice === 'manual') manualSteps.push(manualStep(setups));
     else if (!converted)
       await reactProvider(profile, files, manualSteps, options);
   } catch (error) {
@@ -750,8 +765,8 @@ export async function planInit(
 
   if (
     manualSteps.length > providerSteps &&
-    mode !== 'keep' &&
-    mode !== 'create'
+    choice !== 'manual' &&
+    choice !== 'alongside'
   )
     manualSteps.push(messages.manual());
 
@@ -774,11 +789,14 @@ export async function planInit(
     profile,
     files,
     manualSteps,
-    ...(mode && {
-      nextThemes: {
-        mode,
-        files: replacing ? (nextThemes?.files.length ?? 0) : 0,
-        remove: replacing && Boolean(nextThemes?.remove),
+    ...(choice && {
+      existing: {
+        label,
+        kinds: setups.map((setup) => setup.kind),
+        choice,
+        files: conversion?.files.length ?? 0,
+        remove: conversion?.remove ?? [],
+        evidence: setups.flatMap((setup) => setup.evidence),
       },
     }),
     dependencies: await missingDependencies(
