@@ -139,6 +139,15 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
     [themeState, applyTransitionDisable]
   );
 
+  const wrappedSetColorTheme = useCallback(
+    (colorTheme: ColorTheme) => {
+      const cleanup = applyTransitionDisable();
+      themeState.setColorTheme(colorTheme);
+      cleanup();
+    },
+    [themeState, applyTransitionDisable]
+  );
+
   const wrappedSwitchTheme = useCallback(
     async (theme: Theme, options: ThemeTransitionInput = false) => {
       const cleanup = applyTransitionDisable();
@@ -195,6 +204,7 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
     () => ({
       ...themeState,
       setTheme: wrappedSetTheme,
+      setColorTheme: wrappedSetColorTheme,
       switchTheme: wrappedSwitchTheme,
       switchThemeFromElement: (theme: Theme, element: Element) =>
         wrappedSwitchTheme(theme, { element }),
@@ -205,6 +215,7 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
     [
       themeState,
       wrappedSetTheme,
+      wrappedSetColorTheme,
       wrappedSwitchTheme,
       wrappedToggleTheme,
       wrappedToggleLightTheme,
