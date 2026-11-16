@@ -63,7 +63,15 @@ test('base selection keeps the preview, installation command and copied source a
   page,
 }) => {
   const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
+  // WebKit reports this when a ResizeObserver callback resizes what it
+  // observes (here the select popover). The Resize Observer specification
+  // defines it as a notification, not as an error in the page, so ignore
+  // only this message and keep every other page error.
+  page.on('pageerror', (error) => {
+    if (!error.message.startsWith('ResizeObserver loop completed')) {
+      errors.push(error.message);
+    }
+  });
   await page.goto('/docs/components/base-ui/theme-toggle');
   await expect(
     page.getByRole('link', { name: 'Base UI', exact: true })
