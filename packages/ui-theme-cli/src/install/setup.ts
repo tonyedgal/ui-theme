@@ -1,4 +1,5 @@
 import { dirname, join, relative } from 'node:path';
+import { applyEdits, type Edit } from '../migrate/rewrite.ts';
 import { displayPath, isInside } from '../paths.ts';
 import { planSharedUtils } from './shared-utils.ts';
 import { detectThemeSetup } from '../theme/detect.ts';
@@ -193,6 +194,107 @@ async function separateProvider(profile: ProjectProfile): Promise<PlannedFile> {
   }
 }
 
+function legacyWrappers(profile: ProjectProfile): string[] {
+  if (targetFor(profile.framework).kind !== 'react') return [];
+
+  return [
+    `import { UIThemeProvider } from 'uitheme-web/react';\n${profile.language === 'ts' ? "import type { ReactNode } from 'react';\n" : ''}\nexport function ${wrapperName}({ children }${profile.language === 'ts' ? ': { children: ReactNode }' : ''}) {\n  return <UIThemeProvider defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>{children}</UIThemeProvider>;\n}\n`,
+  ];
+}
+
+async function upgradeDirect(
+  profile: ProjectProfile,
+  target: ReactTarget,
+  entry: { path: string; content: string },
+  elements: t.JSXOpeningElement[],
+  providers: Map<
+    string,
+    {
+      exported: string;
+      statement: t.ImportDeclaration;
+      specifier: t.ImportSpecifier;
+    }
+  >,
+  htmlEdits: Edit[],
+  files: PlannedFile[],
+  manual: string[]
+): Promise<void> {
+  const location = displayPath(profile.cwd, entry.path),
+    edits = [...htmlEdits],
+    renamed = new Set<string>();
+
+  for (const element of elements) {
+    const local = text(entry.content, element.name),
+      provider = providers.get(local)!;
+
+    if (target.accepts.includes(provider.exported)) continue;
+
+    const attributes = element.attributes.map((attribute) =>
+      attribute.type === 'JSXAttribute' ? String(attribute.name.name) : '...'
+    );
+
+    if (
+      attributes.includes('...') ||
+      (attributes.includes('attribute') && !target.document) ||
+      (attributes.includes('attribute') && target.headScript)
+    ) {
+      manual.push(
+        messages.upgradeRefused(location, provider.exported, target.provider)
+      );
+
+      return;
+    }
+
+    if (target.systemThemeMode && !attributes.includes('systemThemeMode'))
+      edits.push({
+        start: element.name.end!,
+        end: element.name.end!,
+        text: ` systemThemeMode="${target.systemThemeMode}"`,
+      });
+
+    if (renamed.has(local)) continue;
+    renamed.add(local);
+
+    const { statement, specifier } = provider,
+      alias = `${target.provider}${target.provider === local ? '' : ` as ${local}`}`;
+
+    if (statement.source.value === target.module)
+      edits.push({ start: specifier.start!, end: specifier.end!, text: alias });
+    else {
+      edits.push(
+        statement.specifiers.length === 1
+          ? {
+              start: statement.start!,
+              end: statement.end!,
+              text: `import { ${alias} } from '${target.module}';`,
+            }
+          : { start: specifier.start!, end: specifier.end!, text: '' },
+        ...(statement.specifiers.length === 1
+          ? []
+          : [
+              {
+                start: statement.end!,
+                end: statement.end!,
+                text: `\nimport { ${alias} } from '${target.module}';`,
+              },
+            ])
+      );
+    }
+  }
+
+  if (
+    target.headScript &&
+    !new RegExp(`\\b${target.headScript}\\b`).test(entry.content) &&
+    !/\bserverTheme=/.test(entry.content)
+  )
+    manual.push(messages.headScript(location, target.headScript));
+
+  if (edits.length)
+    files.push(
+      await planFile(profile, entry.path, applyEdits(entry.content, edits))
+    );
+}
+
 async function reactProvider(
   profile: ProjectProfile,
   files: PlannedFile[],
@@ -223,7 +325,8 @@ async function reactProvider(
   const source = entry.content;
 
   const edits: { start: number; end: number; text: string }[] = [],
-    scriptEdits: typeof edits = [];
+    scriptEdits: typeof edits = [],
+    htmlEdits: typeof edits = [];
 
   let rootNode: t.Node | undefined,
     scriptUsed = false;
@@ -261,14 +364,37 @@ async function reactProvider(
       text: `</${wrapperName}>`,
     });
 
+    const htmls: t.JSXOpeningElement[] = [];
+
+    walk(file, (node) => {
+      if (
+        node.type === 'JSXOpeningElement' &&
+        text(source, node.name) === 'html'
+      )
+        htmls.push(node);
+    });
+
+    const html = htmls.length === 1 ? htmls[0] : undefined;
+
+    if (
+      html &&
+      !html.attributes.some(
+        (attribute) =>
+          attribute.type === 'JSXAttribute' &&
+          attribute.name.name === 'suppressHydrationWarning'
+      )
+    )
+      htmlEdits.push({
+        start: html.name.end!,
+        end: html.name.end!,
+        text: ' suppressHydrationWarning',
+      });
+
     if (target.headScript) {
-      const heads: t.JSXElement[] = [],
-        htmls: t.JSXOpeningElement[] = [];
+      const heads: t.JSXElement[] = [];
 
       walk(file, (node) => {
-        if (node.type === 'JSXOpeningElement') {
-          if (text(source, node.name) === 'html') htmls.push(node);
-        } else if (
+        if (
           isJsxElement(node) &&
           text(source, node.openingElement.name) === 'head'
         )
@@ -294,22 +420,6 @@ async function reactProvider(
         end: heads[0].openingElement.end!,
         text: `<${scriptName} />`,
       });
-
-      const html = htmls.length === 1 ? htmls[0] : undefined;
-
-      if (
-        html &&
-        !html.attributes.some(
-          (attribute) =>
-            attribute.type === 'JSXAttribute' &&
-            attribute.name.name === 'suppressHydrationWarning'
-        )
-      )
-        scriptEdits.push({
-          start: html.name.end!,
-          end: html.name.end!,
-          text: ' suppressHydrationWarning',
-        });
     }
   } else {
     const renders: t.Node[] = [];
@@ -370,7 +480,16 @@ async function reactProvider(
   );
 
   const wrapper = wrapperSource(profile, wrapperName);
-  const directProviders = new Set<string>();
+
+  const directProviders = new Map<
+    string,
+    {
+      exported: string;
+      statement: t.ImportDeclaration;
+      specifier: t.ImportSpecifier;
+    }
+  >();
+
   let setupImported: t.ImportDeclaration | undefined;
   let setupConflict = false;
 
@@ -386,7 +505,11 @@ async function reactProvider(
         (module === 'uitheme-web/react' || module === 'uitheme-web/next') &&
         reactProviders.includes(exported)
       )
-        directProviders.add(element.local.name);
+        directProviders.set(element.local.name, {
+          exported,
+          statement,
+          specifier: element,
+        });
 
       if (element.local.name === wrapperName) {
         if (
@@ -399,55 +522,63 @@ async function reactProvider(
     }
   }
 
-  let directProviderUsed = false,
-    setupUsed = false;
+  const directElements: t.JSXOpeningElement[] = [];
+  let setupUsed = false;
 
   if (rootNode)
     walk(rootNode, (node) => {
       if (node.type === 'JSXOpeningElement') {
         const tag = text(source, node.name);
 
-        if (directProviders.has(tag)) directProviderUsed = true;
+        if (directProviders.has(tag)) directElements.push(node);
 
         if (tag === wrapperName) setupUsed = true;
       }
     });
 
-  if (directProviderUsed) return;
+  if (directElements.length) {
+    await upgradeDirect(
+      profile,
+      target,
+      entry,
+      directElements,
+      directProviders,
+      htmlEdits,
+      files,
+      manual
+    );
 
-  const planned = await settleConflict(
-    profile,
-    await planFile(profile, wrapperPath, wrapper),
-    'existing',
-    options
-  );
+    return;
+  }
+
+  const fresh = await planFile(profile, wrapperPath, wrapper),
+    planned =
+      fresh.before !== undefined &&
+      legacyWrappers(profile).includes(fresh.before)
+        ? fresh
+        : await settleConflict(profile, fresh, 'existing', options);
 
   if (setupUsed && setupImported) {
     files.push(planned);
+    const upgrade = [...htmlEdits];
 
-    if (!scriptEdits.length || scriptUsed) return;
-
-    if (planned.kept) {
-      manual.push(
-        `Kept your ${displayPath(profile.cwd, wrapperPath)}. It does not export ${scriptName}, so the theme can flash before hydration. Run init with --overwrite, or add ${target.headScript} to the document head yourself.`
-      );
-
-      return;
+    if (scriptEdits.length && !scriptUsed) {
+      if (planned.kept)
+        manual.push(
+          `Kept your ${displayPath(profile.cwd, wrapperPath)}. It does not export ${scriptName}, so the theme can flash before hydration. Run init with --overwrite, or add ${target.headScript} to the document head yourself.`
+        );
+      else
+        upgrade.push(...scriptEdits, {
+          start: setupImported.start!,
+          end: setupImported.end!,
+          text: `import { ${wrapperName}, ${scriptName} } from '${relativeImport(entry.path, wrapperPath)}';`,
+        });
     }
 
-    let content = entry.content;
-
-    for (const edit of [
-      ...scriptEdits,
-      {
-        start: setupImported.start!,
-        end: setupImported.end!,
-        text: `import { ${wrapperName}, ${scriptName} } from '${relativeImport(entry.path, wrapperPath)}';`,
-      },
-    ].sort((a, b) => b.start - a.start))
-      content =
-        content.slice(0, edit.start) + edit.text + content.slice(edit.end);
-    files.push(await planFile(profile, entry.path, content));
+    if (upgrade.length)
+      files.push(
+        await planFile(profile, entry.path, applyEdits(entry.content, upgrade))
+      );
 
     return;
   }
@@ -478,11 +609,7 @@ async function reactProvider(
 
   let content = entry.content;
 
-  for (const edit of [...edits, ...scriptEdits].sort(
-    (a, b) => b.start - a.start
-  ))
-    content =
-      content.slice(0, edit.start) + edit.text + content.slice(edit.end);
+  content = applyEdits(content, [...edits, ...scriptEdits, ...htmlEdits]);
   const imported = `import { ${wrapperName}${scriptEdits.length ? `, ${scriptName}` : ''} } from '${relativeImport(entry.path, wrapperPath)}';\n`;
   let insertAt = 0;
 
@@ -746,7 +873,8 @@ export async function planInit(
   const providerSteps = manualSteps.length;
 
   try {
-    if (profile.framework === 'nuxt')
+    if (choice === 'manual') manualSteps.push(manualStep(setups));
+    else if (profile.framework === 'nuxt')
       await nuxtModule(profile, files, manualSteps);
     else if (profile.framework === 'vite-vue')
       await vueProvider(profile, files, manualSteps);
@@ -756,8 +884,7 @@ export async function planInit(
       manualSteps.push(
         messages.alongside(displayPath(profile.cwd, separate.path))
       );
-    } else if (choice === 'manual') manualSteps.push(manualStep(setups));
-    else if (!converted)
+    } else if (!converted)
       await reactProvider(profile, files, manualSteps, options);
   } catch (error) {
     manualSteps.push(error instanceof Error ? error.message : String(error));

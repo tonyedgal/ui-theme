@@ -251,9 +251,12 @@ describe('CLI commands in existing applications', () => {
     expect(wrapper).toContain('systemThemeMode="js"');
     expect(wrapper).toContain('export function ThemeScript()');
   });
-  it('leaves an older TanStack wrapper alone unless the user overwrites it', async () => {
+  it.each([
+    ['upgrades', ''],
+    ['keeps an edited', ' animationType="fade"'],
+  ])('%s older TanStack wrapper from an earlier init', async (_name, extra) => {
     const cwd = await fixture('tanstack'),
-      old = `import { UIThemeProvider } from 'uitheme-web/react';\nimport type { ReactNode } from 'react';\n\nexport function ThemeProvider({ children }: { children: ReactNode }) {\n  return <UIThemeProvider defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>{children}</UIThemeProvider>;\n}\n`,
+      old = `import { UIThemeProvider } from 'uitheme-web/react';\nimport type { ReactNode } from 'react';\n\nexport function ThemeProvider({ children }: { children: ReactNode }) {\n  return <UIThemeProvider defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}${extra}>{children}</UIThemeProvider>;\n}\n`,
       rootPath = join(cwd, 'src/routes/__root.tsx'),
       wrapperPath = join(cwd, 'src/components/theme-provider.tsx');
 
@@ -262,35 +265,33 @@ describe('CLI commands in existing applications', () => {
     await mkdir(join(cwd, 'src/components'), { recursive: true });
     await writeFile(wrapperPath, old);
     await writeFile(rootPath, wired);
-    const kept = io();
+    const out = io();
 
-    expect(
-      await runCli(['init', '--cwd', cwd, '--yes'], {
-        ...kept,
-        runInstall: async () => {},
-      })
-    ).toBe(2);
-    expect(await readFile(wrapperPath, 'utf8')).toBe(old);
-    expect(await readFile(rootPath, 'utf8')).toBe(wired);
-    expect(kept.output()).toContain('ThemeScript');
+    const code = await runCli(['init', '--cwd', cwd, '--yes'], {
+      ...out,
+      runInstall: async () => {},
+    });
 
-    expect(
-      await runCli(['init', '--cwd', cwd, '--yes', '--overwrite'], {
-        ...io(),
-        runInstall: async () => {},
-      })
-    ).toBe(0);
-    expect(await readFile(wrapperPath, 'utf8')).toContain(
-      'TanStackUIThemeProvider'
-    );
+    const root = await readFile(rootPath, 'utf8');
 
-    const upgraded = await readFile(rootPath, 'utf8');
-
-    expect(upgraded).toContain(
-      "import { ThemeProvider, ThemeScript } from '../components/theme-provider';"
-    );
-    expect(upgraded).toContain('<head><ThemeScript /><HeadContent /></head>');
-    expect(upgraded.match(/<ThemeProvider>/g)).toHaveLength(1);
+    if (extra) {
+      expect(code).toBe(2);
+      expect(await readFile(wrapperPath, 'utf8')).toBe(old);
+      expect(out.output()).toContain('does not export ThemeScript');
+      expect(root).not.toContain('ThemeScript');
+    } else {
+      expect(code).toBe(0);
+      expect(await readFile(wrapperPath, 'utf8')).toContain(
+        'TanStackUIThemeProvider'
+      );
+      expect(root).toContain(
+        "import { ThemeProvider, ThemeScript } from '../components/theme-provider';"
+      );
+      expect(root).toContain(
+        '<html suppressHydrationWarning><head><ThemeScript /><HeadContent /></head>'
+      );
+      expect(root.match(/<ThemeProvider>/g)).toHaveLength(1);
+    }
   });
   it('keeps UIThemeProvider for Vite React', async () => {
     const cwd = await fixture();

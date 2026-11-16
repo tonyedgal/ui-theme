@@ -91,6 +91,10 @@ export const messages = {
     `Created ${file} with the UI-Theme provider. init did not mount it. Replace your theme provider with it. See ${docs('custom-provider')}`,
   tanstackScript: () =>
     `Add TanStackStartThemeScript to the document head with the same storageKey, defaultTheme and themes as the provider, so the theme does not flash before hydration. See ${docs('manual-setup')}`,
+  upgradeRefused: (file: string, from: string, to: string) =>
+    `${file} uses ${from}, which this framework does not support. init cannot switch it to ${to} because of its props. Replace it yourself. See ${docs('upgrade')}`,
+  headScript: (file: string, script: string) =>
+    `Add ${script} to the document head in ${file} with the same options as the provider, so the theme does not flash before hydration. See ${docs('upgrade')}`,
   plan: (label: string, choice: ExistingChoice) =>
     `existing theme setup: ${label} -> ${choice}`,
   removalPlan: (command: string) => `remove old package (${command})`,

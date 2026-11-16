@@ -5,6 +5,7 @@ export interface ReactTarget {
   provider: string;
   hook: string;
   module: string;
+  accepts: string[];
   directive: boolean;
   stems: string[];
   document: boolean;
@@ -24,6 +25,7 @@ const targets: Record<Framework, ThemeTarget> = {
     provider: 'NextUIThemeProvider',
     hook: 'useNextUITheme',
     module: 'uitheme-web/next',
+    accepts: ['NextUIThemeProvider'],
     directive: true,
     stems: ['src/app/layout', 'app/layout'],
     document: true,
@@ -33,6 +35,7 @@ const targets: Record<Framework, ThemeTarget> = {
     provider: 'TanStackUIThemeProvider',
     hook: 'useTanStackUITheme',
     module: 'uitheme-web/react',
+    accepts: ['TanStackUIThemeProvider'],
     directive: false,
     stems: ['src/routes/__root', 'app/routes/__root'],
     document: true,
@@ -44,6 +47,7 @@ const targets: Record<Framework, ThemeTarget> = {
     provider: 'UIThemeProvider',
     hook: 'useUITheme',
     module: 'uitheme-web/react',
+    accepts: ['UIThemeProvider', 'ViteUIThemeProvider'],
     directive: false,
     stems: ['src/main', 'src/index', 'main'],
     document: false,
@@ -60,4 +64,5 @@ export const reactProviders = [
   'UIThemeProvider',
   'NextUIThemeProvider',
   'TanStackUIThemeProvider',
+  'ViteUIThemeProvider',
 ];
