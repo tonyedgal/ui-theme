@@ -1,8 +1,8 @@
-import { dirname, join, relative } from 'node:path';
+import { basename, dirname, join, relative } from 'node:path';
 import { applyEdits, type Edit } from '../migrate/rewrite.ts';
 import { displayPath, isInside } from '../paths.ts';
 import { planSharedUtils } from './shared-utils.ts';
-import { detectThemeSetup } from '../theme/detect.ts';
+import { detectThemeSetup, sourcePaths } from '../theme/detect.ts';
 import {
   choicesFor,
   convert,
@@ -200,6 +200,36 @@ function legacyWrappers(profile: ProjectProfile): string[] {
   return [
     `import { UIThemeProvider } from 'uitheme-web/react';\n${profile.language === 'ts' ? "import type { ReactNode } from 'react';\n" : ''}\nexport function ${wrapperName}({ children }${profile.language === 'ts' ? ': { children: ReactNode }' : ''}) {\n  return <UIThemeProvider defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>{children}</UIThemeProvider>;\n}\n`,
   ];
+}
+
+async function mountedElsewhere(
+  target: ReactTarget,
+  wrapperPath: string,
+  entryPath: string
+): Promise<boolean> {
+  const wrapper = await readOptional(wrapperPath);
+
+  if (
+    !wrapper ||
+    !target.accepts.some((name) =>
+      new RegExp(`\\b${name}\\b[^;]*from\\s*['"]uitheme-web/`).test(wrapper)
+    )
+  )
+    return false;
+  const stem = basename(wrapperPath).replace(/\.[jt]sx?$/, '');
+
+  for (const path of await sourcePaths(dirname(dirname(wrapperPath)))) {
+    if (path === wrapperPath || path === entryPath) continue;
+    const content = await readOptional(path);
+
+    if (
+      content?.includes(`<${wrapperName}`) &&
+      new RegExp(`from\\s*['"][^'"]*${stem}['"]`).test(content)
+    )
+      return true;
+  }
+
+  return false;
 }
 
 async function upgradeDirect(
@@ -551,6 +581,9 @@ async function reactProvider(
     return;
   }
 
+  if (!setupUsed && (await mountedElsewhere(target, wrapperPath, entry.path)))
+    return;
+
   const fresh = await planFile(profile, wrapperPath, wrapper),
     planned =
       fresh.before !== undefined &&
@@ -899,6 +932,7 @@ export async function planInit(
 
   if (
     converted &&
+    setups[0].kind === 'next-themes' &&
     targetFor(profile.framework).kind === 'react' &&
     reactTarget(profile).headScript
   )
