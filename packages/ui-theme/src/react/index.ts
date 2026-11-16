@@ -66,7 +66,7 @@ export {
   type ViteUIThemeContextType,
 } from './components/ViteUIThemeProvider';
 
-// Backward compatibility - alias UIThemeProvider to NextUIThemeProvider
+// React providers - client-rendered React
 export {
   UIThemeProvider,
   useUITheme,
