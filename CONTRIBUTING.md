@@ -70,7 +70,8 @@ When you add or change a control:
 
 1. Make the change for each base.
 2. Update its page in `apps/ui-theme-web/content/components`.
-3. Run `pnpm --filter @ui-theme/registry test`.
+3. Run `pnpm build:packages`. The registry tests need the built packages.
+4. Run `pnpm --filter @ui-theme/registry test`.
 
 Do not change `packages/ui-theme-registry/releases`. It holds frozen releases.
 
@@ -92,17 +93,26 @@ pull request.
 
 ### Install from the local registry with the CLI
 
-1. In your app folder, point the CLI at the local registry:
+`pnpm uitheme` runs the CLI from this repository. `npx uitheme-cli` runs the
+published version, so it does not include your changes.
+
+1. Build the packages. Do this again after you change the CLI:
 
    ```sh
-   export UITHEME_REGISTRY_URL=http://127.0.0.1:4000/r
+   pnpm build:packages
    ```
 
-2. Set up the app and add a control:
+2. In the repository root, set up your app. Use `--cwd` for the path to your
+   app, because pnpm runs the script from the repository root:
 
    ```sh
-   npx uitheme-cli init
-   npx uitheme-cli add theme-toggle
+   pnpm uitheme init --cwd <path-to-your-app> --registry http://127.0.0.1:4000/r
+   ```
+
+3. Add a control:
+
+   ```sh
+   pnpm uitheme add theme-toggle --cwd <path-to-your-app> --registry http://127.0.0.1:4000/r
    ```
 
 ### Install from the local registry with shadcn
