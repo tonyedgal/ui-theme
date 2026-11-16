@@ -14,6 +14,10 @@ const guides = tree.children.find(
   (node) => node.type === 'folder' && node.name === 'Guides'
 );
 
+const migration = tree.children.find(
+  (node) => node.type === 'folder' && node.name === 'Migration'
+);
+
 export const docsTree: Root = {
   ...tree,
   children: [
@@ -21,7 +25,7 @@ export const docsTree: Root = {
       type: 'folder',
       name: 'Get started',
       children: tree.children.filter(
-        (node) => node !== catalog && node !== guides
+        (node) => node !== catalog && node !== guides && node !== migration
       ),
     },
     ...(guides ? [guides] : []),
@@ -51,5 +55,17 @@ export const docsTree: Root = {
         })),
       ],
     },
+    ...(migration?.type === 'folder'
+      ? [
+          {
+            ...migration,
+            index: undefined,
+            children: [
+              ...(migration.index ? [migration.index] : []),
+              ...migration.children,
+            ],
+          },
+        ]
+      : []),
   ],
 };

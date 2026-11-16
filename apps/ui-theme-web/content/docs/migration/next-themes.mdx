@@ -1,15 +1,17 @@
 ---
-title: Replace next-themes
+title: Migrate from next-themes
 description: Move an app from next-themes to UI-Theme with the CLI, or by hand.
 ---
 
-## Who this guide is for
+## Who this page is for
 
-Use this guide if your app imports `next-themes` and you want UI-Theme instead.
-It applies to Next.js, TanStack Start, and Vite React apps.
+Use this page if your app imports `next-themes` and you want to move to UI-Theme.
+The migration works for Next.js, TanStack Start, and Vite React apps.
 The `init` command does not look for `next-themes` in Vue or Nuxt apps.
 
 The [CLI](/docs/cli#init) links to this page when `init` finds `next-themes`.
+Run `uitheme-cli init` to migrate. Follow the [manual setup](#manual-setup) when
+you prefer to migrate by hand, or when `init` cannot convert your code.
 
 ## What init does
 
@@ -179,7 +181,7 @@ not list the package, `init` does not remove it and tells you so.
 
 The rewrite is all or nothing. If one file has a form that `init` cannot convert,
 `init` changes no file. It prints the file and line, the form, and a link to
-this guide. It then asks a different question:
+this page. It then asks a different question:
 
 ```text
 Create the UI-Theme provider as a separate file? [c/N]
