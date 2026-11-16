@@ -151,7 +151,6 @@ function wrapperSource(profile: ProjectProfile, name: string): string {
   return `${profile.framework === 'next' ? "'use client';\n\n" : ''}import { ${provider} } from 'uitheme-web/${profile.framework === 'next' ? 'next' : 'react'}';\n${profile.language === 'ts' ? "import type { ReactNode } from 'react';\n" : ''}\nexport function ${name}({ children }${profile.language === 'ts' ? ': { children: ReactNode }' : ''}) {\n  return <${provider} defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>{children}</${provider}>;\n}\n`;
 }
 
-// a new provider file next to the existing one, under a name that is free
 async function separateProvider(profile: ProjectProfile): Promise<PlannedFile> {
   const directory = isInside(profile.cwd, profile.componentsDir)
       ? dirname(profile.componentsDir)

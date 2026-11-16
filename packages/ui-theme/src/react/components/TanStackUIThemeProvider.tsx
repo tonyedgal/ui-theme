@@ -112,7 +112,6 @@ export type TanStackUIThemeProviderProps = ThemeAnimationOptions & {
   onServerError?: (error: Error) => void;
   /** CSP nonce for the `<style>` elements injected for transitions */
   nonce?: string;
-  /** Freeze CSS transitions while `setTheme` and `setColorTheme` apply a change */
   disableTransitionOnChange?: boolean;
 };
 

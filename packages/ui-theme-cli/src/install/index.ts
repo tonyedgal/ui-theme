@@ -55,7 +55,6 @@ export interface InstallPlan {
   dependencyInstalls?: { profile: ProjectProfile; dependencies: string[] }[];
   manualSteps: string[];
   revision?: string;
-  /** next-themes was replaced in `files` source files; `remove` asks for the uninstall. */
   nextThemes?: { mode: NextThemesMode; files: number; remove: boolean };
 }
 
@@ -67,9 +66,7 @@ export interface PlanOptions {
   resolveConflict?: ConflictResolver;
   /** The uitheme-web dependency to install, from `resolveWebDependency`. */
   webDependency?: string;
-  /** The chosen way to treat next-themes. Without it, `chooseNextThemes` asks. */
   nextThemesMode?: NextThemesMode;
-  /** Ask which mode to use. `refusal` is set when replacing is not possible. */
   chooseNextThemes?: (refusal?: string) => Promise<NextThemesMode | undefined>;
 }
 
