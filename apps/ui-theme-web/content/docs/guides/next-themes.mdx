@@ -121,7 +121,7 @@ A file that has `import { useTheme } from 'next-themes'` gets this line:
 import { useNextUITheme as useTheme } from 'uitheme-web/next';
 ```
 
-### Provider props
+### Prop mapping
 
 `init` maps these props of the `next-themes` provider.
 
@@ -143,7 +143,7 @@ With `enableSystem={false}`, `init` also adds `themes={['light', 'dark']}` and
 `init` stops on any other prop, on a prop spread, and on a computed value such as
 `enableSystem={flag}`.
 
-### useTheme
+### Hook calls
 
 `init` checks each call of `useTheme`. UI-Theme returns `theme`, `setTheme`,
 `resolvedTheme`, `systemTheme`, and `themes`, plus other members that `next-themes`
@@ -205,7 +205,7 @@ Press `c` to create the separate provider file. Press Enter, or `n`, to keep
 
 ### Provider props
 
-- A prop that the table above does not list.
+- A prop that the prop mapping does not list.
 - A computed prop value, or a props spread.
 - `attribute` with a value other than `class` or `data-theme`.
 - A missing `attribute` or `attribute="data-theme"` outside Next.js.
@@ -216,7 +216,7 @@ Press `c` to create the separate provider file. Press Enter, or `n`, to keep
 
 - An import other than `ThemeProvider`, `useTheme`, or `ThemeProviderProps`.
 - A use of `next-themes` outside a plain import: `require`, a dynamic import, a re-export, a mock, or a config file.
-- The `useTheme` forms in the list above.
+- The forms in the hook call list above.
 
 ## Manual setup
 
@@ -238,7 +238,7 @@ Use these steps after `keep` or `create`, or when `init` stops.
    import { NextUIThemeProvider, useNextUITheme } from 'uitheme-web/next';
    ```
 
-3. Change the provider props. Use the [table above](#provider-props). In Next.js, a `class` setup needs no `attribute` prop. A `data-theme` setup needs `attribute="data-theme"`.
+3. Change the provider props. Use the [prop mapping](#prop-mapping). In Next.js, a `class` setup needs no `attribute` prop. A `data-theme` setup needs `attribute="data-theme"`.
 
    ```tsx
    <NextUIThemeProvider defaultTheme="system">{children}</NextUIThemeProvider>
