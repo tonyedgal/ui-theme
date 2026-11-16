@@ -30,6 +30,21 @@ export function App() {
 }
 ```
 
+## Provider options
+
+`UIThemeProvider` and `ViteUIThemeProvider` accept these options.
+
+| Prop                        | Default | Behavior                                                                                                                                                                                                                                                                             |
+| --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `disableTransitionOnChange` | `false` | When `true`, CSS transitions are switched off for a theme change and restored right after it. `UIThemeProvider` applies this to `setTheme` and `setColorTheme`. `ViteUIThemeProvider` applies it to `setTheme`, `switchTheme`, and the toggle functions, but not to `setColorTheme`. |
+| `nonce`                     | none    | Sets the `nonce` on every `<style>` element that the library injects. Use it with a `style-src 'nonce-…'` Content Security Policy.                                                                                                                                                   |
+
+```tsx
+<UIThemeProvider nonce={nonce} disableTransitionOnChange>
+  <YourApp />
+</UIThemeProvider>
+```
+
 ## Change the theme
 
 Call the hook inside the provider. Pass the clicked element to anchor an animated transition.

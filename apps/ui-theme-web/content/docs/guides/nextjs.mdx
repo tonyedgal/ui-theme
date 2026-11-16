@@ -52,7 +52,26 @@ Keep theme hooks and interactive controls in Client Components. Use `uitheme-web
 
 Use the [React hook example](/docs/guides/react#change-the-theme), or install a [Theme Toggle](/docs/components/base-ui/theme-toggle). Set up [Tailwind and palette styles](/docs/installation#tailwind-and-palettes) before installing styled controls.
 
-Check the first page load, saved preferences after reload, and system appearance changes. If your site uses a Content Security Policy, configure its nonce through the provider's supported options.
+Check the first page load, saved preferences after reload, and system appearance changes.
+
+## Provider options
+
+`NextUIThemeProvider` accepts these options for transitions and security.
+
+| Prop                        | Default | Behavior                                                                                                                                  |
+| --------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `disableTransitionOnChange` | `false` | When `true`, `setTheme` and `setColorTheme` switch off CSS transitions for the change. The provider restores them right after the change. |
+| `nonce`                     | none    | Sets the `nonce` on the inline bootstrap script. Also sets it on every `<style>` element that the library injects for transitions.        |
+
+`disableTransitionOnChange` does not apply to `switchTheme`, which runs an animated transition.
+
+Use `nonce` with a `style-src 'nonce-…'` Content Security Policy. Pass the same nonce that your server sends in the policy header.
+
+```tsx
+<NextUIThemeProvider nonce={nonce} disableTransitionOnChange>
+  {children}
+</NextUIThemeProvider>
+```
 
 ## Example
 

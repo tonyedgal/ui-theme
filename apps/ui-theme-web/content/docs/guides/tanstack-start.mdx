@@ -36,6 +36,23 @@ import { TanStackUIThemeProvider } from 'uitheme-web/react';
 
 Use the same theme options and storage keys for the script and provider. Add your appearance and palette CSS, then use the [React controls](/docs/guides/react#add-styles-and-controls).
 
+## Provider options
+
+`TanStackUIThemeProvider` accepts these options.
+
+| Prop                        | Default | Behavior                                                                                                                                  |
+| --------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `disableTransitionOnChange` | `false` | When `true`, `setTheme` and `setColorTheme` switch off CSS transitions for the change. The provider restores them right after the change. |
+| `nonce`                     | none    | Sets the `nonce` on every `<style>` element that the library injects. Use it with a `style-src 'nonce-…'` Content Security Policy.        |
+
+`TanStackStartThemeScript` also accepts `nonce`. It sets the `nonce` on the inline script. Pass the same value to the script and to the provider.
+
+```tsx
+<TanStackUIThemeProvider nonce={nonce} disableTransitionOnChange>
+  <Outlet />
+</TanStackUIThemeProvider>
+```
+
 ## Render from a saved cookie
 
 Choose cookie-based rendering when the server must know the saved preference. The helpers in `uitheme-web/tanstack` build the initial theme data, HTML attributes, and bootstrap script.
