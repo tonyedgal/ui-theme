@@ -19,7 +19,7 @@ Put the theme script in your root document's head. Keep your existing `HeadConte
 import { TanStackStartThemeScript } from 'uitheme-web/react';
 
 <head>
-  <TanStackStartThemeScript defaultTheme="system" />
+  <TanStackStartThemeScript defaultTheme="system" systemThemeMode="js" />
   <HeadContent />
 </head>;
 ```
@@ -29,12 +29,23 @@ Add `suppressHydrationWarning` to the root `html` element. Wrap your route conte
 ```tsx
 import { TanStackUIThemeProvider } from 'uitheme-web/react';
 
-<TanStackUIThemeProvider defaultTheme="system">
+<TanStackUIThemeProvider defaultTheme="system" systemThemeMode="js">
   <Outlet />
 </TanStackUIThemeProvider>;
 ```
 
-Use the same theme options and storage keys for the script and provider. Add your appearance and palette CSS, then use the [React controls](/docs/guides/react#add-styles-and-controls).
+Use the same theme options and storage keys for the script and provider.
+
+### System theme mode
+
+Pass the same `systemThemeMode` to the script and the provider. The two have different defaults: the script uses `"js"` and the provider uses `"css"`.
+
+| Value   | Classes on `<html>` for the `system` theme                                       | CSS that you need                                                                                                                                                         |
+| ------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"js"`  | `dark` when the system appearance is dark. No class when it is light.            | Dark tokens on `.dark` only.                                                                                                                                              |
+| `"css"` | `system`. The `dark` class is not set, and the `color-scheme` style stays empty. | Dark tokens on `.dark`, and the same tokens on `.system` inside `@media (prefers-color-scheme: dark)`. Your `dark` variant must also match `.system` in that media query. |
+
+For a saved `light` or `dark` theme, both values set or remove the `dark` class. Add your appearance and palette CSS, then use the [React controls](/docs/guides/react#add-styles-and-controls).
 
 ## Provider options
 
