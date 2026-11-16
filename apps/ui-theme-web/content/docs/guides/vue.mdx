@@ -9,6 +9,17 @@ description: Add shared theme state to a Vue 3 application.
 npm install uitheme-web@latest
 ```
 
+## Import formats
+
+`uitheme-web/vue` and `uitheme-web/vue/bootstrap` ship ES module and CommonJS entries, each with matching types. Use `import` in an ES module project. Use `require` in a CommonJS file:
+
+```js
+const { createUITheme, useUITheme } = require('uitheme-web/vue');
+const { getThemeScript } = require('uitheme-web/vue/bootstrap');
+```
+
+`uitheme-web/nuxt` is ES module only, because Nuxt 4 is ES module only.
+
 ## Register the plugin
 
 ```ts title="src/main.ts"

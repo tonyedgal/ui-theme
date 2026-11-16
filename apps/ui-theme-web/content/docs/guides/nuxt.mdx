@@ -23,6 +23,8 @@ export default defineNuxtConfig({
 });
 ```
 
+`uitheme-web/nuxt` is ES module only, because Nuxt 4 is ES module only. Import `uitheme-web/vue` from a component as usual. The Vue entries also have a [CommonJS form](/docs/guides/vue#import-formats).
+
 The module supplies the theme integration. Keep palette styles in your application CSS. Do not add a second app-wide plugin or provider around the module's setup.
 
 ## Use theme state
