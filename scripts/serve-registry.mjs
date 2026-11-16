@@ -10,7 +10,7 @@ import {
 } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { buildRegistry } from '../packages/ui-theme-registry/src/build.ts';
@@ -58,7 +58,7 @@ const server = createServer((request, response) => {
   const path = resolve(outDir, `.${pathname.replace(/^\/r/, '')}`);
 
   try {
-    if (!pathname.startsWith('/r/') || !path.startsWith(`${outDir}/`))
+    if (!pathname.startsWith('/r/') || !path.startsWith(`${outDir}${sep}`))
       throw new Error('Outside the registry');
 
     response.setHeader('content-type', 'application/json');
@@ -84,8 +84,8 @@ const watcher = watch(source, { recursive: true }, () => {
 console.log(`
 Registry: ${origin}
 
-CLI, in your app folder:
-  UITHEME_REGISTRY_URL=${origin} node ${join(root, 'packages/ui-theme-cli/dist/index.js')} add theme-toggle
+CLI, from the repository root:
+  pnpm uitheme add theme-toggle --cwd <path-to-your-app> --registry ${origin}
 
 shadcn, in components.json:
   "registries": { "@uitheme": "${origin}/{style}/{name}.json" }
