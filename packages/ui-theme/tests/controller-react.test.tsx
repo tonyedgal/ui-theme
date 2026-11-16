@@ -329,6 +329,7 @@ test.each([
   ['UIThemeProvider', UIThemeProvider],
   ['NextUIThemeProvider', NextUIThemeProvider],
   ['TanStackUIThemeProvider', TanStackUIThemeProvider],
+  ['ViteUIThemeProvider', ViteUIThemeProvider],
 ] as const)(
   '%s freezes transitions for setTheme and setColorTheme only with disableTransitionOnChange',
   async (_name, Provider) => {
