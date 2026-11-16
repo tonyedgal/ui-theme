@@ -20,7 +20,7 @@ import {
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import {
@@ -189,7 +189,7 @@ try {
         `.${pathname.replace(/^\/r/, '')}`
       );
 
-      assert.ok(path.startsWith(`${registryDirectory}/`));
+      assert.ok(path.startsWith(`${registryDirectory}${sep}`));
       response.setHeader('content-type', 'application/json');
       response.end(readFileSync(path));
     } catch {
@@ -257,15 +257,18 @@ try {
         `${label}: shadcn did not read ${name}`
       );
 
+    // shadcn prints paths with backslashes on Windows
+    const output = result.output.replaceAll('\\', '/');
+
     for (const item of items)
       for (const file of item.files)
         assert.match(
-          result.output,
+          output,
           new RegExp(`src/components/ui/${file.path.replaceAll('.', '\\.')}`),
           `${label}: missing ${file.path}`
         );
 
-    assert.match(result.output, /src\/lib\/utils\.ts/, `${label}: no utils`);
+    assert.match(output, /src\/lib\/utils\.ts/, `${label}: no utils`);
     assert.match(
       result.output,
       /uitheme-web@\^2\.0\.0/,
