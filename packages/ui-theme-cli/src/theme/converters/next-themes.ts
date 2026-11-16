@@ -1,16 +1,17 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
-import { displayPath, samePath } from '../paths.ts';
-import { parseModule, text, walk, type t } from '../parse.ts';
-import { applyEdits, type Edit } from '../migrate/rewrite.ts';
-import { unwrapExpression } from '../tailwind/index.ts';
-import type { ProjectProfile } from '../types.ts';
+import { displayPath, samePath } from '../../paths.ts';
+import { parseModule, text, walk, type t } from '../../parse.ts';
+import { applyEdits, type Edit } from '../../migrate/rewrite.ts';
+import { unwrapExpression } from '../../tailwind/index.ts';
+import type { ProjectProfile } from '../../types.ts';
+import { targetFor, type ReactTarget } from '../targets.ts';
 import {
   NextThemesRefusal,
   docsUrl,
   messages,
   type DocsAnchor,
-} from './messages.ts';
+} from '../../install/messages.ts';
 
 export interface NextThemesPlan {
   files: { path: string; content: string }[];
@@ -83,6 +84,15 @@ class Converter {
 
   private get next() {
     return this.profile.framework === 'next';
+  }
+
+  private get target(): ReactTarget {
+    const target = targetFor(this.profile.framework);
+
+    if (target.kind !== 'react')
+      throw new Error(`${this.profile.framework} has no React provider`);
+
+    return target;
   }
 
   private refuse(
@@ -227,18 +237,10 @@ class Converter {
         );
     });
 
-    const tanstack = this.profile.framework === 'tanstack',
-      module = this.next ? 'uitheme-web/next' : 'uitheme-web/react',
-      providerName = this.next
-        ? 'NextUIThemeProvider'
-        : tanstack
-          ? 'TanStackUIThemeProvider'
-          : 'UIThemeProvider',
-      hookName = this.next
-        ? 'useNextUITheme'
-        : tanstack
-          ? 'useTanStackUITheme'
-          : 'useUITheme',
+    const target = this.target,
+      module = target.module,
+      providerName = target.provider,
+      hookName = target.hook,
       propsName = `${providerName}Props`;
 
     for (const statement of imports) {
@@ -589,8 +591,8 @@ class Converter {
       else refuse(element, 'the default data-theme attribute');
     }
 
-    if (this.profile.framework === 'tanstack')
-      added.push('systemThemeMode="js"');
+    if (this.target.systemThemeMode)
+      added.push(`systemThemeMode="${this.target.systemThemeMode}"`);
 
     if (!system) {
       if (!named.has('themes')) added.push(`themes={['light', 'dark']}`);
