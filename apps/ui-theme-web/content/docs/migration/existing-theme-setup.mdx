@@ -1,0 +1,339 @@
+---
+title: Existing theme setup
+description: What init does when your app already has a theme provider, and how to finish the setup by hand.
+---
+
+## What init checks first
+
+`uitheme-cli init` first detects the framework of the app. Then it looks for a
+theme setup that the app already has. It does this before it adds the UI-Theme
+provider, so it never puts a second provider next to the first one.
+
+`init` sorts the app into one of these classes:
+
+| Class                                  | What `init` finds                                                                       | What `init` does                                                 | Exit code  |
+| -------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ---------- |
+| None                                   | No theme setup.                                                                         | Adds the UI-Theme provider.                                      | `0`        |
+| UI-Theme, correct                      | The right UI-Theme provider for the framework.                                          | Changes nothing.                                                 | `0`        |
+| [UI-Theme, wrong or partial](#upgrade) | A UI-Theme provider that does not fit the framework, or a setup from an earlier `init`. | Upgrades the setup in place.                                     | `0` or `2` |
+| [UI-Theme 1](#v1)                      | `@ui-theme/web` or `uitheme-vue`.                                                       | Asks you to run `uitheme-cli migrate` first.                     | `2`        |
+| [next-themes](#next-themes)            | `next-themes` in a Next.js, TanStack Start, or Vite React app.                          | Converts the provider and the hooks, then removes `next-themes`. | `0` or `2` |
+| [shadcn provider](#shadcn-provider)    | The theme provider from the shadcn dark mode guide for Vite or TanStack Start.          | Rewrites the provider file on top of UI-Theme.                   | `0` or `2` |
+| [Other library](#other-library)        | Another theme library, such as `@nuxtjs/color-mode`.                                    | Changes no theme file. Prints the next steps.                    | `2`        |
+| [Custom provider](#custom-provider)    | Your own theme provider or theme script.                                                | Changes no theme file. Prints each signal that it found.         | `2`        |
+| More than one class                    | Two or more of the classes above.                                                       | Converts nothing. Prints the classes.                            | `2`        |
+
+Exit code `2` means that a step remains for you. In every class, `init` still
+writes the theme CSS, `uitheme.json`, and the `cn` utility, and installs
+`uitheme-web`.
+
+## Choose what init does
+
+When `init` finds a theme setup, it names the setup and the file. It lists each
+signal with its file and line. Then it asks one question and shows only the
+choices that apply:
+
+```text
+Found next-themes in components/mode-toggle.tsx.
+  components/mode-toggle.tsx:3 imports next-themes
+  components/theme-provider.tsx:4 imports next-themes
+  c  Convert: rewrite it to UI-Theme and remove what it replaces
+  m  Manual: leave it unchanged and set up the provider yourself
+What should init do with it? [C/m]
+```
+
+| Choice      | Result                                                                               | Available for                  |
+| ----------- | ------------------------------------------------------------------------------------ | ------------------------------ |
+| `convert`   | Rewrites the setup to UI-Theme and removes what it replaces.                         | next-themes, shadcn provider   |
+| `manual`    | Leaves the setup alone. You finish the setup yourself.                               | Every class                    |
+| `alongside` | Writes the UI-Theme provider to a separate file. `init` does not add it to your app. | Custom provider in a React app |
+
+The first choice is the default. Press Enter to accept it.
+
+`init` does not ask in these cases:
+
+- You pass `--yes`.
+- You pass `--dry-run`.
+- The run has no terminal, for example in CI.
+
+Then `init` converts when a converter applies. In all other cases, it uses
+`manual`. Use `--existing` to choose without a question:
+
+```sh
+npx uitheme-cli init --existing convert
+npx uitheme-cli init --existing manual
+npx uitheme-cli init --existing alongside
+```
+
+If the choice does not apply to the class, `init` says so and uses `manual`.
+`--overwrite` does not choose a conversion. It only replaces control files that
+differ from the uitheme version.
+
+Preview the result before you apply it:
+
+```sh
+npx uitheme-cli init --dry-run
+```
+
+The plan shows the line `existing theme setup: <class> -> <choice>`, the signals,
+and the files to change. When `init` removes a package, the plan shows the command.
+
+A conversion is all or nothing. If `init` cannot convert one part, it changes no
+theme file. It prints the file, the line, and the form that stopped it. It then
+continues with `manual` and exits with code `2`.
+
+## next-themes
+
+`init` looks for `next-themes` only in React apps: Next.js, TanStack Start, and
+Vite React. It checks `package.json` and the source files.
+
+With `convert`, `init` does these steps:
+
+1. It changes the imports from `next-themes`. See [the mapping](#imports).
+2. It changes the props of your `ThemeProvider`.
+3. It checks every use of `useTheme`.
+4. It removes `next-themes` with the package manager of the app.
+
+`init` removes the package only when `package.json` lists it. If the package is
+listed but no source file imports it, `init` only removes the package. If the
+removal fails, `init` prints the command to run and exits with code `2`.
+
+In TanStack Start, `init` also asks you to add `TanStackStartThemeScript` to the
+document head. Give it the same `storageKey`, `defaultTheme`, and `themes` as the
+provider. See the [TanStack Start guide](/docs/guides/tanstack-start).
+
+### Imports
+
+`init` replaces the import from `next-themes`. It keeps your local names, so the
+rest of the file does not change.
+
+| `next-themes`        | Next.js                    | TanStack Start                 | Vite React             |
+| -------------------- | -------------------------- | ------------------------------ | ---------------------- |
+| `ThemeProvider`      | `NextUIThemeProvider`      | `TanStackUIThemeProvider`      | `UIThemeProvider`      |
+| `useTheme`           | `useNextUITheme`           | `useTanStackUITheme`           | `useUITheme`           |
+| `ThemeProviderProps` | `NextUIThemeProviderProps` | `TanStackUIThemeProviderProps` | `UIThemeProviderProps` |
+| Import path          | `uitheme-web/next`         | `uitheme-web/react`            | `uitheme-web/react`    |
+
+A file that has `import { useTheme } from 'next-themes'` gets this line in Next.js:
+
+```tsx
+import { useNextUITheme as useTheme } from 'uitheme-web/next';
+```
+
+### Prop mapping
+
+| Prop                        | Result                                                                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `attribute="class"`         | Removed. UI-Theme uses `class` by default.                                                                                           |
+| `attribute="data-theme"`    | Next.js only. Kept. In other frameworks, `init` stops.                                                                               |
+| No `attribute`              | Next.js: `init` adds `attribute="data-theme"`, because `next-themes` uses that attribute by default. Other frameworks: `init` stops. |
+| `defaultTheme`              | Kept. The value must be `light`, `dark`, or `system`.                                                                                |
+| `enableSystem`              | Removed. See `themes`.                                                                                                               |
+| `enableColorScheme`         | Removed. `enableColorScheme={false}` stops `init`.                                                                                   |
+| `themes`                    | Rewritten. It may list only `light` and `dark`. `init` adds `system` unless you set `enableSystem={false}`.                          |
+| `disableTransitionOnChange` | Kept. `disableTransitionOnChange={false}` is removed.                                                                                |
+| `storageKey`, `nonce`       | Kept.                                                                                                                                |
+
+With `enableSystem={false}`, `init` also adds `themes={['light', 'dark']}` and
+`defaultTheme="light"` when your provider does not set them. In TanStack Start,
+`init` adds `systemThemeMode="js"`.
+
+`init` stops on any other prop, on a prop spread, and on a computed value such as
+`enableSystem={flag}`.
+
+### Hook calls
+
+UI-Theme returns `theme`, `setTheme`, `resolvedTheme`, `systemTheme`, and `themes`,
+plus members that `next-themes` does not have. `init` accepts calls that use only
+these five members.
+
+### Provider wrappers
+
+Many apps wrap the provider in their own component. `init` supports one wrapper when
+all of these are true:
+
+- The component is a named export.
+- It returns the provider and nothing else.
+- Its only prop on the provider is `{...props}`, spread from its own rest parameter.
+
+`init` then maps the props at the one place where the app renders the wrapper.
+
+### When init stops
+
+`init` stops for the cases below. Each message links to the section named here.
+
+#### Provider shape [#provider-shape]
+
+- A bare import, such as `import 'next-themes'`.
+- A default or namespace import.
+- No `ThemeProvider` from `next-themes` in the app. For example, the app imports only `useTheme`.
+- A second `ThemeProvider`, or a second use of the wrapper.
+- A `ThemeProvider` that is conditional, or that appears outside JSX.
+- A wrapper with extra logic, a props spread other than the rest parameter, or an unnamed export.
+- A file with a syntax error.
+- A file that still contains the text `next-themes` after the rewrite, for example in a comment.
+
+#### Provider props [#provider-props]
+
+- A prop that the prop mapping does not list.
+- A computed prop value, or a props spread.
+- `attribute` with a value other than `class` or `data-theme`.
+- A missing `attribute` or `attribute="data-theme"` outside Next.js.
+- A `defaultTheme` that is not `light`, `dark`, or `system`.
+- `themes` with a value other than `light` and `dark`.
+
+#### useTheme [#usetheme]
+
+- An import other than `ThemeProvider`, `useTheme`, or `ThemeProviderProps`.
+- A use of `next-themes` outside a plain import: `require`, a dynamic import, a re-export, a mock, or a config file.
+- A member that UI-Theme does not return, such as `forcedTheme`.
+- A function passed to `setTheme`, or a theme other than `light`, `dark`, or `system`.
+- The whole result used as an object, `useTheme` used as a value, or a call without an assignment.
+
+### Differences from next-themes
+
+- `useTheme` outside a provider throws an error. In `next-themes` version 0.4.6, the hook returns an empty default object in the same case.
+- A theme is `light`, `dark`, or `system`. For more looks, use [color themes](/docs/installation#tailwind-and-palettes) with `colorThemes` and `setColorTheme`.
+- UI-Theme has no `forcedTheme` and no `value` prop. `setTheme` takes a theme, not a function.
+- UI-Theme animates a theme change with `switchTheme`. `setTheme` changes the theme at once.
+- The Next.js provider uses the `class` attribute by default. `next-themes` uses `data-theme`.
+- UI-Theme sets the `color-scheme` style on the `html` element itself.
+
+## shadcn provider
+
+The shadcn dark mode guides for Vite and TanStack Start tell you to write
+`components/theme-provider.tsx` by hand. `init` finds this file by its content,
+not by its name. The TanStack Start version uses `ScriptOnce`.
+
+With `convert`, `init` rewrites the file on top of UI-Theme:
+
+- `ThemeProvider` keeps its `defaultTheme` and `storageKey` props and their defaults.
+  The saved preference stays where it was, for example under `vite-ui-theme`.
+- `useTheme` becomes `useUITheme`. It returns `theme` and `setTheme` with the same
+  meaning, so the files that call it do not change.
+- In Vite, the file wraps `UIThemeProvider`.
+- In TanStack Start, the file wraps `TanStackUIThemeProvider` and renders
+  `TanStackStartThemeScript` in place of `ScriptOnce`.
+
+`init` stops when the file exports more than `ThemeProvider` and `useTheme`, or when
+the defaults are not plain strings. Then change the file by hand: follow the
+[manual setup](#manual-setup) and keep your storage key.
+
+## Upgrade
+
+`init` upgrades a UI-Theme setup that does not fit the framework:
+
+- A `UIThemeProvider` or `ViteUIThemeProvider` in a Next.js or TanStack Start app
+  becomes the provider for that framework. Your local name stays the same.
+- A `theme-provider` file from an earlier `init` that you did not edit gets the
+  current version.
+- In TanStack Start, `init` adds the theme script to the document head.
+- In Next.js and TanStack Start, `init` adds `suppressHydrationWarning` to the
+  `html` element.
+
+Vite React accepts `UIThemeProvider` and `ViteUIThemeProvider`.
+
+`init` asks you to finish the upgrade in these cases:
+
+- You edited the `theme-provider` file. `init` keeps your file.
+- The provider has a props spread, or `attribute` in TanStack Start.
+- A TanStack Start provider has no theme script. Add `TanStackStartThemeScript` with
+  the same options as the provider.
+
+## UI-Theme 1 [#v1]
+
+`init` finds UI-Theme 1 when `package.json` lists `@ui-theme/web` or `uitheme-vue`,
+or when a file imports them. Run the migration first, then run `init` again:
+
+```sh
+npx uitheme-cli migrate --dry-run
+npx uitheme-cli migrate
+npx uitheme-cli init
+```
+
+See [Migrate to v2](/docs/migration).
+
+## Other library
+
+`init` does not run UI-Theme next to another theme library. Both would set the
+`dark` class on the `html` element. `init` knows these libraries:
+
+| Library                                         | Frameworks |
+| ----------------------------------------------- | ---------- |
+| `@nuxtjs/color-mode`                            | Nuxt       |
+| `useColorMode` or `useDark` from `@vueuse/core` | Vue, Nuxt  |
+| `remix-themes`                                  | React      |
+| `use-dark-mode`                                 | React      |
+| `theme-change`                                  | Any        |
+| `mode-watcher`                                  | Any        |
+
+Remove the library, then run `init` again. You can also replace it by hand. See
+the [manual setup](#manual-setup).
+
+## Custom provider
+
+`init` reports a custom provider when a file has a theme name and a theme behavior.
+
+- A name: `ThemeProvider`, `ThemeContext`, `ColorModeProvider`, `DarkModeProvider`,
+  or a file named `theme-provider` or `theme-context`. An inline script in
+  `index.html` also counts.
+- A behavior: it sets the `dark` or `light` class on the document, sets a `data-theme`
+  attribute, stores a theme in `localStorage`, or reads `prefers-color-scheme`.
+
+A `ThemeProvider` from a design system is not a theme setup. `init` ignores files
+that import MUI, Chakra UI, Mantine, styled-components, Emotion, and similar
+libraries. Those providers pass design tokens, not the page appearance.
+
+`init` does not rewrite a custom provider. With `alongside`, it writes the
+UI-Theme provider to `components/ui-theme-provider.tsx` as `AppUIThemeProvider`.
+Swap your provider for it, then remove your own code.
+
+Common patterns and what to change:
+
+| Your code                                     | What to change                                                                                                                                                                            |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Context with a theme value and `localStorage` | Render the UI-Theme provider. Set `storageKey` to your key. Replace your hook with `useUITheme`.                                                                                          |
+| A boolean dark mode                           | Use `resolvedTheme === 'dark'` to read it. Use `setTheme('dark')` and `setTheme('light')` to change it. A boolean stored as `true` is not a theme value, so the saved choice resets once. |
+| A `data-theme` attribute                      | In Next.js, set `attribute="data-theme"`. In other frameworks, change your CSS to use the `dark` class.                                                                                   |
+| A store with persistence, such as Zustand     | Remove the theme from the store. Read and change it with `useUITheme`.                                                                                                                    |
+| A cookie read on the server                   | In TanStack Start, use the cookie helpers in `uitheme-web/tanstack`. See the [TanStack Start guide](/docs/guides/tanstack-start#render-from-a-saved-cookie).                              |
+| CSS only, with `prefers-color-scheme`         | Keep the media query or move it to the `dark` class. Set `defaultTheme="system"`.                                                                                                         |
+| An inline script that sets the class          | Remove it. The UI-Theme provider or theme script applies the class before the first paint.                                                                                                |
+| Many palettes                                 | Keep light and dark as the theme. Move each palette to a color theme with `colorThemes`.                                                                                                  |
+
+## Manual setup
+
+Use these steps after `manual` or `alongside`, or when `init` stops.
+
+1. Install the runtime:
+
+   ```sh
+   npm install uitheme-web@latest
+   ```
+
+2. Import the provider for your framework:
+
+   | Framework      | Provider                  | Hook                 | Import path         |
+   | -------------- | ------------------------- | -------------------- | ------------------- |
+   | Next.js        | `NextUIThemeProvider`     | `useNextUITheme`     | `uitheme-web/next`  |
+   | TanStack Start | `TanStackUIThemeProvider` | `useTanStackUITheme` | `uitheme-web/react` |
+   | Vite React     | `UIThemeProvider`         | `useUITheme`         | `uitheme-web/react` |
+
+   `useUITheme` works under every React provider. The installed controls use it.
+
+3. Render the provider in place of your old provider. Use the [prop mapping](#prop-mapping)
+   for `next-themes` props.
+
+4. In TanStack Start, add `TanStackStartThemeScript` to the document head. Use the
+   same options as the provider.
+
+5. In Next.js and TanStack Start, add `suppressHydrationWarning` to the `html` element.
+
+6. Replace each call of your old hook with the hook for your framework.
+
+7. Test the first page load, a reload with a saved theme, and a change of the
+   system appearance.
+
+8. Remove the old package or code.
+
+Use only one theme provider to control the appearance of the page at a time.
