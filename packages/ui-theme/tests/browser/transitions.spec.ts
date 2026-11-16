@@ -754,9 +754,13 @@ for (const animation of [
     expect(Math.abs((dark.left + dark.right) / 2 - center.x)).toBeLessThan(8);
 
     // A triangle's bounding box is not centred on its incircle vertically.
+    // Page content in the new theme can cover the apex, so the measured top
+    // is unreliable. Use the base instead: an equilateral triangle is
+    // width * sqrt(3) / 2 tall, and its incircle centre is one third of the
+    // height above the base.
     const middleY =
       animation === 'triangle'
-        ? dark.bottom - (dark.bottom - dark.top) / 3
+        ? dark.bottom - ((dark.right - dark.left) * Math.sqrt(3)) / 6
         : (dark.top + dark.bottom) / 2;
 
     expect(Math.abs(middleY - center.y)).toBeLessThan(8);
