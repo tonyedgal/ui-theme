@@ -1,5 +1,15 @@
 # uitheme-web
 
+## 2.2.0
+
+### Minor Changes
+
+- 14c1527: `UIThemeProvider`, `NextUIThemeProvider` and `TanStackUIThemeProvider` accept `disableTransitionOnChange`, as `ViteUIThemeProvider` already does. When it is true, `setTheme` and `setColorTheme` switch off CSS transitions for the change and restore them right after. The default is false.
+
+### Patch Changes
+
+- 47e1079: `ViteUIThemeProvider` with `disableTransitionOnChange` now also switches off CSS transitions when `setColorTheme` runs, as the other React providers do.
+
 ## 2.1.0
 
 ### Minor Changes
