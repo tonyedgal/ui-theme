@@ -24,9 +24,23 @@ export const docsTree: Root = {
     {
       type: 'folder',
       name: 'Get started',
-      children: tree.children.filter(
-        (node) => node !== catalog && node !== guides && node !== migration
-      ),
+      children: [
+        ...tree.children.filter(
+          (node) => node !== catalog && node !== guides && node !== migration
+        ),
+        ...(migration?.type === 'folder'
+          ? [
+              {
+                ...migration,
+                index: undefined,
+                children: [
+                  ...(migration.index ? [migration.index] : []),
+                  ...migration.children,
+                ],
+              },
+            ]
+          : []),
+      ],
     },
     ...(guides ? [guides] : []),
     {
@@ -55,17 +69,5 @@ export const docsTree: Root = {
         })),
       ],
     },
-    ...(migration?.type === 'folder'
-      ? [
-          {
-            ...migration,
-            index: undefined,
-            children: [
-              ...(migration.index ? [migration.index] : []),
-              ...migration.children,
-            ],
-          },
-        ]
-      : []),
   ],
 };
