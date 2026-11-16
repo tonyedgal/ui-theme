@@ -202,10 +202,9 @@ function legacyWrappers(profile: ProjectProfile): string[] {
   ];
 }
 
-async function mountedElsewhere(
+async function wrapperMounted(
   target: ReactTarget,
-  wrapperPath: string,
-  entryPath: string
+  wrapperPath: string
 ): Promise<boolean> {
   const wrapper = await readOptional(wrapperPath);
 
@@ -219,7 +218,7 @@ async function mountedElsewhere(
   const stem = basename(wrapperPath).replace(/\.[jt]sx?$/, '');
 
   for (const path of await sourcePaths(dirname(dirname(wrapperPath)))) {
-    if (path === wrapperPath || path === entryPath) continue;
+    if (path === wrapperPath) continue;
     const content = await readOptional(path);
 
     if (
@@ -581,8 +580,21 @@ async function reactProvider(
     return;
   }
 
-  if (!setupUsed && (await mountedElsewhere(target, wrapperPath, entry.path)))
+  if (
+    !(setupUsed && setupImported) &&
+    (await wrapperMounted(target, wrapperPath))
+  ) {
+    if (htmlEdits.length)
+      files.push(
+        await planFile(
+          profile,
+          entry.path,
+          applyEdits(entry.content, htmlEdits)
+        )
+      );
+
     return;
+  }
 
   const fresh = await planFile(profile, wrapperPath, wrapper),
     planned =
