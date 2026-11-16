@@ -227,9 +227,18 @@ class Converter {
         );
     });
 
-    const module = this.next ? 'uitheme-web/next' : 'uitheme-web/react',
-      providerName = this.next ? 'NextUIThemeProvider' : 'UIThemeProvider',
-      hookName = this.next ? 'useNextUITheme' : 'useUITheme',
+    const tanstack = this.profile.framework === 'tanstack',
+      module = this.next ? 'uitheme-web/next' : 'uitheme-web/react',
+      providerName = this.next
+        ? 'NextUIThemeProvider'
+        : tanstack
+          ? 'TanStackUIThemeProvider'
+          : 'UIThemeProvider',
+      hookName = this.next
+        ? 'useNextUITheme'
+        : tanstack
+          ? 'useTanStackUITheme'
+          : 'useUITheme',
       propsName = `${providerName}Props`;
 
     for (const statement of imports) {
@@ -579,6 +588,9 @@ class Converter {
       if (this.next) added.push('attribute="data-theme"');
       else refuse(element, 'the default data-theme attribute');
     }
+
+    if (this.profile.framework === 'tanstack')
+      added.push('systemThemeMode="js"');
 
     if (!system) {
       if (!named.has('themes')) added.push(`themes={['light', 'dark']}`);

@@ -24,6 +24,8 @@ export const messages = {
     `Stopped. No file changed. The app imports next-themes but no ThemeProvider from it, so init cannot convert it. See ${docsUrl}#provider-shape`,
   removalFailed: (files: number, command: string) =>
     `Replaced next-themes in ${files} files. The package is still installed. Run: ${command}`,
+  tanstackScript: () =>
+    `Add TanStackStartThemeScript to the document head with the same storageKey, defaultTheme and themes as the provider, so the theme does not flash before hydration. See ${docsUrl}#manual-setup`,
   manual: () => `Add the provider yourself. See ${docsUrl}#manual-setup`,
   prompt: 'Replace next-themes with UI-Theme? [Y/n/c]',
   promptRefused: 'Create the UI-Theme provider as a separate file? [c/N]',
