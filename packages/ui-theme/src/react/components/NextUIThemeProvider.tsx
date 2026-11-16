@@ -75,7 +75,6 @@ export type NextUIThemeProviderProps = ThemeAnimationOptions & {
   nonce?: string;
   /** Skip animation during initial hydration */
   disableAnimationOnInit?: boolean;
-  /** Freeze CSS transitions while `setTheme` and `setColorTheme` apply a change */
   disableTransitionOnChange?: boolean;
   /** Disable flash prevention script (for SPAs without SSR) */
   disablePreHydrationScript?: boolean;

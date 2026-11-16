@@ -14,7 +14,6 @@ import {
 
 export interface NextThemesPlan {
   files: { path: string; content: string }[];
-  /** The package is declared in the app, so init removes it after the write. */
   remove: boolean;
 }
 

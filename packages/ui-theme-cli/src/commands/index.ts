@@ -41,7 +41,6 @@ export interface CliIO {
   registry?: ReturnType<typeof createRegistryClient>;
   runInstall?: InstallRunner;
   runRemoval?: InstallRunner;
-  /** Ask one question with single-key answers. Resolve undefined when nobody can answer. */
   choose?: (
     lines: string[],
     prompt: string,
