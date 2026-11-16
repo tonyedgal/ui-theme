@@ -31,7 +31,8 @@
     "test:release:registry": "node scripts/check-registry-release-consumers.mjs && pnpm test:registry:shadcn && pnpm test:registry:minimum",
     "test:registry:shadcn": "node scripts/check-registry-shadcn.mjs",
     "test:registry:minimum": "node scripts/check-registry-minimum-dependencies.mjs",
-    "registry:dev": "node scripts/serve-registry.mjs"
+    "registry:dev": "node scripts/serve-registry.mjs",
+    "uitheme": "node packages/ui-theme-cli/dist/index.js"
   },
   "repository": {
     "type": "git",
