@@ -103,7 +103,7 @@ export default function Layout({ children }) {
     });
 
     expect(entry('app/layout.jsx')).toBe(
-      `'use client';\nimport { ThemeProvider } from '../src/components/theme-provider';\n\n// layout\nexport default function Layout({ children }) {\n  return (<html><body className="a"><ThemeProvider>{children}</ThemeProvider></body></html>);\n}\n`
+      `'use client';\nimport { ThemeProvider } from '../src/components/theme-provider';\n\n// layout\nexport default function Layout({ children }) {\n  return (<html suppressHydrationWarning><body className="a"><ThemeProvider>{children}</ThemeProvider></body></html>);\n}\n`
     );
   });
 
