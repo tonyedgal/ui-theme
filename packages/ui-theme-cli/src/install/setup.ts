@@ -57,8 +57,16 @@ function sourceFile(cwd: string, path: string, content: string): t.Program {
   }
 }
 
-// The app-owned wrapper that the CLI generates around UIThemeProvider.
-const wrapperName = 'ThemeProvider';
+const wrapperName = 'ThemeProvider',
+  scriptName = 'ThemeScript';
+
+function providerName(profile: ProjectProfile): string {
+  return profile.framework === 'next'
+    ? 'NextUIThemeProvider'
+    : profile.framework === 'tanstack'
+      ? 'TanStackUIThemeProvider'
+      : 'UIThemeProvider';
+}
 
 // Wrap the children of a JSX element and indent them one more level.
 // `\n    <App />\n  ` becomes `\n    <Name>\n      <App />\n    </Name>\n  `.
@@ -145,10 +153,12 @@ function isReactRoot(receiver: t.Expression, file: t.Program): boolean {
 }
 
 function wrapperSource(profile: ProjectProfile, name: string): string {
-  const provider =
-    profile.framework === 'next' ? 'NextUIThemeProvider' : 'UIThemeProvider';
+  const provider = providerName(profile),
+    tanstack = profile.framework === 'tanstack',
+    options = `defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}`;
 
-  return `${profile.framework === 'next' ? "'use client';\n\n" : ''}import { ${provider} } from 'uitheme-web/${profile.framework === 'next' ? 'next' : 'react'}';\n${profile.language === 'ts' ? "import type { ReactNode } from 'react';\n" : ''}\nexport function ${name}({ children }${profile.language === 'ts' ? ': { children: ReactNode }' : ''}) {\n  return <${provider} defaultTheme="system" defaultColorTheme="default" colorThemes={['default']}>{children}</${provider}>;\n}\n`;
+  // the provider defaults to systemThemeMode="css", which the generated .dark css does not support
+  return `${profile.framework === 'next' ? "'use client';\n\n" : ''}import { ${tanstack ? 'TanStackStartThemeScript, ' : ''}${provider} } from 'uitheme-web/${profile.framework === 'next' ? 'next' : 'react'}';\n${profile.language === 'ts' ? "import type { ReactNode } from 'react';\n" : ''}${tanstack ? `\nexport function ${scriptName}() {\n  return <TanStackStartThemeScript ${options} />;\n}\n` : ''}\nexport function ${name}({ children }${profile.language === 'ts' ? ': { children: ReactNode }' : ''}) {\n  return <${provider} ${options}${tanstack ? ' systemThemeMode="js"' : ''}>{children}</${provider}>;\n}\n`;
 }
 
 async function separateProvider(profile: ProjectProfile): Promise<PlannedFile> {
@@ -195,7 +205,7 @@ async function reactProvider(
 
   if (!entry) {
     manual.push(
-      'Add a UIThemeProvider around the application root. No recognized application entry file was found.'
+      `Add a ${providerName(profile)} around the application root. No recognized application entry file was found.`
     );
 
     return;
@@ -203,8 +213,12 @@ async function reactProvider(
 
   const file = sourceFile(profile.cwd, entry.path, entry.content);
   const source = entry.content;
-  const edits: { start: number; end: number; text: string }[] = [];
-  let rootNode: t.Node | undefined;
+
+  const edits: { start: number; end: number; text: string }[] = [],
+    scriptEdits: typeof edits = [];
+
+  let rootNode: t.Node | undefined,
+    scriptUsed = false;
 
   if (profile.framework === 'next' || profile.framework === 'tanstack') {
     const bodies: (t.JSXElement & { closingElement: t.JSXClosingElement })[] =
@@ -220,7 +234,7 @@ async function reactProvider(
 
     if (bodies.length !== 1) {
       manual.push(
-        `Wrap the application content in ${displayPath(profile.cwd, entry.path)} with UIThemeProvider. The document body is not a single JSX element.`
+        `Wrap the application content in ${displayPath(profile.cwd, entry.path)} with ${providerName(profile)}. The document body is not a single JSX element.`
       );
 
       return;
@@ -238,6 +252,57 @@ async function reactProvider(
       end: body.closingElement.start!,
       text: `</${wrapperName}>`,
     });
+
+    if (profile.framework === 'tanstack') {
+      const heads: t.JSXElement[] = [],
+        htmls: t.JSXOpeningElement[] = [];
+
+      walk(file, (node) => {
+        if (node.type === 'JSXOpeningElement') {
+          if (text(source, node.name) === 'html') htmls.push(node);
+        } else if (
+          isJsxElement(node) &&
+          text(source, node.openingElement.name) === 'head'
+        )
+          heads.push(node);
+
+        if (
+          node.type === 'JSXOpeningElement' &&
+          text(source, node.name) === scriptName
+        )
+          scriptUsed = true;
+      });
+
+      if (heads.length !== 1) {
+        manual.push(
+          `Add TanStackStartThemeScript to the document head in ${displayPath(profile.cwd, entry.path)}. The document head is not a single JSX element.`
+        );
+
+        return;
+      }
+
+      scriptEdits.push({
+        start: heads[0].openingElement.end!,
+        end: heads[0].openingElement.end!,
+        text: `<${scriptName} />`,
+      });
+
+      const html = htmls.length === 1 ? htmls[0] : undefined;
+
+      if (
+        html &&
+        !html.attributes.some(
+          (attribute) =>
+            attribute.type === 'JSXAttribute' &&
+            attribute.name.name === 'suppressHydrationWarning'
+        )
+      )
+        scriptEdits.push({
+          start: html.name.end!,
+          end: html.name.end!,
+          text: ' suppressHydrationWarning',
+        });
+    }
   } else {
     const renders: t.Node[] = [];
     walk(file, (node) => {
@@ -255,7 +320,7 @@ async function reactProvider(
 
     if (renders.length !== 1) {
       manual.push(
-        `Wrap the React root in ${displayPath(profile.cwd, entry.path)} with UIThemeProvider. The entry uses a custom render function.`
+        `Wrap the React root in ${displayPath(profile.cwd, entry.path)} with ${providerName(profile)}. The entry uses a custom render function.`
       );
 
       return;
@@ -298,7 +363,7 @@ async function reactProvider(
 
   const wrapper = wrapperSource(profile, wrapperName);
   const directProviders = new Set<string>();
-  let setupImported = false;
+  let setupImported: t.ImportDeclaration | undefined;
   let setupConflict = false;
 
   for (const statement of file.body) {
@@ -311,7 +376,11 @@ async function reactProvider(
 
       if (
         (module === 'uitheme-web/react' || module === 'uitheme-web/next') &&
-        ['UIThemeProvider', 'NextUIThemeProvider'].includes(exported)
+        [
+          'UIThemeProvider',
+          'NextUIThemeProvider',
+          'TanStackUIThemeProvider',
+        ].includes(exported)
       )
         directProviders.add(element.local.name);
 
@@ -320,7 +389,7 @@ async function reactProvider(
           exported === wrapperName &&
           module === relativeImport(entry.path, wrapperPath)
         )
-          setupImported = true;
+          setupImported = statement;
         else setupConflict = true;
       }
     }
@@ -352,6 +421,30 @@ async function reactProvider(
   if (setupUsed && setupImported) {
     files.push(planned);
 
+    if (!scriptEdits.length || scriptUsed) return;
+
+    if (planned.kept) {
+      manual.push(
+        `Kept your ${displayPath(profile.cwd, wrapperPath)}. It does not export ${scriptName}, so the theme can flash before hydration. Run init with --overwrite, or add TanStackStartThemeScript to the document head yourself.`
+      );
+
+      return;
+    }
+
+    let content = entry.content;
+
+    for (const edit of [
+      ...scriptEdits,
+      {
+        start: setupImported.start!,
+        end: setupImported.end!,
+        text: `import { ${wrapperName}, ${scriptName} } from '${relativeImport(entry.path, wrapperPath)}';`,
+      },
+    ].sort((a, b) => b.start - a.start))
+      content =
+        content.slice(0, edit.start) + edit.text + content.slice(edit.end);
+    files.push(await planFile(profile, entry.path, content));
+
     return;
   }
 
@@ -373,7 +466,7 @@ async function reactProvider(
     )
   ) {
     manual.push(
-      `Choose an unused provider binding in ${displayPath(profile.cwd, entry.path)}. ${wrapperName} already belongs to existing source. Rename that binding, or wrap the root with UIThemeProvider yourself.`
+      `Choose an unused provider binding in ${displayPath(profile.cwd, entry.path)}. ${wrapperName} already belongs to existing source. Rename that binding, or wrap the root with ${providerName(profile)} yourself.`
     );
 
     return;
@@ -381,10 +474,12 @@ async function reactProvider(
 
   let content = entry.content;
 
-  for (const edit of edits.sort((a, b) => b.start - a.start))
+  for (const edit of [...edits, ...scriptEdits].sort(
+    (a, b) => b.start - a.start
+  ))
     content =
       content.slice(0, edit.start) + edit.text + content.slice(edit.end);
-  const imported = `import { ${wrapperName} } from '${relativeImport(entry.path, wrapperPath)}';\n`;
+  const imported = `import { ${wrapperName}${scriptEdits.length ? `, ${scriptName}` : ''} } from '${relativeImport(entry.path, wrapperPath)}';\n`;
   let insertAt = 0;
 
   for (const directive of file.directives) insertAt = directive.end!;
@@ -662,6 +757,9 @@ export async function planInit(
     mode !== 'create'
   )
     manualSteps.push(messages.manual());
+
+  if (converted && profile.framework === 'tanstack')
+    manualSteps.push(messages.tanstackScript());
 
   files.push(
     await planFile(
