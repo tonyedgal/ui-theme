@@ -10,7 +10,8 @@ import { displayPath, isInside, samePath } from '../paths.ts';
 import type { PathApi } from '../paths.ts';
 import { assertSafePath } from '../registry.ts';
 import type { ProjectProfile, RegistryGraph, SavedConfig } from '../types.ts';
-import { messages, type NextThemesMode } from './messages.ts';
+import { messages, type ExistingChoice, type SetupKind } from './messages.ts';
+import type { Evidence, ThemeSetup } from '../theme/detect.ts';
 
 export interface PlannedFile {
   path: string;
@@ -55,7 +56,14 @@ export interface InstallPlan {
   dependencyInstalls?: { profile: ProjectProfile; dependencies: string[] }[];
   manualSteps: string[];
   revision?: string;
-  nextThemes?: { mode: NextThemesMode; files: number; remove: boolean };
+  existing?: {
+    label: string;
+    kinds: SetupKind[];
+    choice: ExistingChoice;
+    files: number;
+    remove: string[];
+    evidence: Evidence[];
+  };
 }
 
 export interface PlanOptions {
@@ -66,8 +74,11 @@ export interface PlanOptions {
   resolveConflict?: ConflictResolver;
   /** The uitheme-web dependency to install, from `resolveWebDependency`. */
   webDependency?: string;
-  nextThemesMode?: NextThemesMode;
-  chooseNextThemes?: (refusal?: string) => Promise<NextThemesMode | undefined>;
+  existing?: ExistingChoice;
+  chooseExisting?: (
+    setups: ThemeSetup[],
+    choices: ExistingChoice[]
+  ) => Promise<ExistingChoice | undefined>;
 }
 
 const defaultWebDependency = 'uitheme-web@latest';
@@ -829,9 +840,20 @@ export function describePlan(plan: InstallPlan): string {
           `dependency ${dependency} (in ${relative(plan.profile.cwd, install.profile.cwd).replaceAll('\\', '/')})`
       )
     ),
-    ...(plan.nextThemes ? [messages.modePlan(plan.nextThemes.mode)] : []),
-    ...(plan.nextThemes?.remove
-      ? [messages.removalPlan(removalCommand(plan.profile, ['next-themes']))]
+    ...(plan.existing
+      ? [
+          messages.plan(plan.existing.label, plan.existing.choice),
+          ...plan.existing.evidence.map((item) =>
+            messages.evidence(item.file, item.line, item.note)
+          ),
+        ]
+      : []),
+    ...(plan.existing?.remove.length
+      ? [
+          messages.removalPlan(
+            removalCommand(plan.profile, plan.existing.remove)
+          ),
+        ]
       : []),
     ...plan.manualSteps.map((step) => `manual-required: ${step}`),
   ].join('\n');

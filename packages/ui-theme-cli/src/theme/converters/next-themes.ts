@@ -1,4 +1,4 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import { displayPath, samePath } from '../../paths.ts';
 import { parseModule, text, walk, type t } from '../../parse.ts';
@@ -7,29 +7,16 @@ import { unwrapExpression } from '../../tailwind/index.ts';
 import type { ProjectProfile } from '../../types.ts';
 import { targetFor, type ReactTarget } from '../targets.ts';
 import {
-  NextThemesRefusal,
-  docsUrl,
+  ConversionRefusal,
   messages,
   type DocsAnchor,
 } from '../../install/messages.ts';
+import { sourcePaths } from '../detect.ts';
 
 export interface NextThemesPlan {
   files: { path: string; content: string }[];
   remove: boolean;
 }
-
-const skipped = new Set([
-  'node_modules',
-  '.next',
-  '.git',
-  '.turbo',
-  '.vercel',
-  '.output',
-  'dist',
-  'build',
-  'out',
-  'coverage',
-]);
 
 const sourcePattern = /\.(?:[cm]?[jt]s|[jt]sx)$/;
 
@@ -42,21 +29,6 @@ const hookMembers = [
   'systemTheme',
   'themes',
 ];
-
-async function sources(root: string, directory = root): Promise<string[]> {
-  const found: string[] = [];
-
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (entry.isSymbolicLink()) continue;
-    const path = join(directory, entry.name);
-
-    if (entry.isDirectory()) {
-      if (!skipped.has(entry.name)) found.push(...(await sources(root, path)));
-    } else if (sourcePattern.test(entry.name)) found.push(path);
-  }
-
-  return found;
-}
 
 interface Unit {
   path: string;
@@ -101,7 +73,7 @@ class Converter {
     form: string,
     anchor: DocsAnchor
   ): never {
-    throw new NextThemesRefusal(
+    throw new ConversionRefusal(
       messages.refusal(
         `${displayPath(this.profile.cwd, unit.path)}:${node.loc?.start.line ?? 1}`,
         form,
@@ -120,8 +92,8 @@ class Converter {
     try {
       program = parseModule(path, source);
     } catch {
-      throw new NextThemesRefusal(
-        `Stopped. No file changed. ${displayPath(this.profile.cwd, path)} has a syntax error, so init cannot read it. Fix the error and run init again. See ${docsUrl}#provider-shape`
+      throw new ConversionRefusal(
+        messages.syntax(displayPath(this.profile.cwd, path))
       );
     }
 
@@ -143,7 +115,7 @@ class Converter {
     if (!found.length) return;
 
     if (!this.direct.length && !this.wrappers.length)
-      throw new NextThemesRefusal(messages.noProvider());
+      throw new ConversionRefusal(messages.noProvider());
 
     if (this.direct.length + this.wrappers.length > 1) {
       const second = this.direct[1] ?? this.wrappers[1] ?? this.wrappers[0];
@@ -169,8 +141,8 @@ class Converter {
     // a leftover mention would break the app once the package is gone
     for (const file of files)
       if (file.content.includes('next-themes'))
-        throw new NextThemesRefusal(
-          `Stopped. No file changed. ${displayPath(this.profile.cwd, file.path)} still mentions next-themes after the rewrite. See ${docsUrl}#provider-shape`
+        throw new ConversionRefusal(
+          messages.leftover(displayPath(this.profile.cwd, file.path))
         );
 
     return { files, remove: false };
@@ -750,7 +722,10 @@ export async function planNextThemes(
     'optionalDependencies',
   ].some((field) => manifest[field] && 'next-themes' in manifest[field]!);
 
-  const plan = await new Converter(profile, await sources(profile.cwd)).run();
+  const plan = await new Converter(
+    profile,
+    await sourcePaths(profile.cwd, sourcePattern)
+  ).run();
 
   if (!plan) return declared ? { files: [], remove: true } : undefined;
 

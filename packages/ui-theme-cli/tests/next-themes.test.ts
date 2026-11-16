@@ -373,7 +373,7 @@ describe('next-themes conversion', () => {
     const cwd = await app(row.files, row.options);
     const result = await init(cwd);
 
-    expect(result.output).toContain('Replaced next-themes with UI-Theme');
+    expect(result.output).toContain('Converted next-themes to UI-Theme');
     expect(result.code).toBe(0);
     expect(result.removals).toEqual([{ cwd, packages: ['next-themes'] }]);
 
@@ -387,7 +387,7 @@ describe('next-themes conversion', () => {
 
     expect(result.output).not.toContain('manual-required');
     const again = await init(cwd);
-    expect(again.output).not.toContain('Replaced next-themes');
+    expect(again.output).not.toContain('Converted next-themes');
   });
 });
 
@@ -601,25 +601,26 @@ describe('next-themes on TanStack Start', () => {
     expect(result.output).toContain('Add TanStackStartThemeScript');
     expect(result.output).not.toContain('Add the provider yourself');
   });
-  it('creates a separate TanStack provider file', async () => {
+  it('leaves the TanStack root alone with --existing manual', async () => {
     const cwd = await app(
       { 'src/routes/__root.tsx': tanstackRoot },
       { framework: 'tanstack' }
     );
 
-    await init(cwd, ['--yes', '--next-themes', 'create']);
-    const created = await read(cwd, 'components/ui-theme-provider.tsx');
+    const result = await init(cwd, ['--yes', '--existing', 'manual']);
 
-    expect(created).toContain('TanStackUIThemeProvider');
-    expect(created).toContain('export function AppUIThemeProvider');
+    expect(result.code).toBe(2);
+    expect(await read(cwd, 'src/routes/__root.tsx')).toBe(tanstackRoot);
   });
-  it('keeps next-themes on request', async () => {
+  it('keeps next-themes when the user answers m', async () => {
     const cwd = await app(
       { 'src/routes/__root.tsx': tanstackRoot },
       { framework: 'tanstack' }
     );
 
-    await init(cwd, ['--yes', '--next-themes', 'keep']);
+    const asked = answer('m');
+
+    await init(cwd, [], { choose: asked.choose });
     expect(await read(cwd, 'src/routes/__root.tsx')).toBe(tanstackRoot);
   });
 });
@@ -627,15 +628,18 @@ describe('next-themes on TanStack Start', () => {
 describe('next-themes refusals', () => {
   it.each(refuses)('refuses and changes nothing: $name', async (row) => {
     const cwd = await app(row.files, row.options);
-    const before = await snapshot(cwd);
+    const before = await files(cwd, Object.keys(row.files));
     const result = await init(cwd);
 
-    expect(result.code).toBe(1);
-    expect(result.output).toContain('Stopped. No file changed.');
+    expect(result.code).toBe(2);
+    expect(result.output).toContain(
+      'init did not convert the theme setup and changed no theme file.'
+    );
     expect(result.output).toContain(docsUrl);
     expect(result.output).not.toContain('```');
     expect(result.removals).toEqual([]);
-    expect(await snapshot(cwd)).toBe(before);
+    expect(await files(cwd, Object.keys(row.files))).toEqual(before);
+    expect(await read(cwd, 'uitheme.json')).toContain('schemaVersion');
   });
   it('links each refusal to the anchor of its page section', async () => {
     for (const row of refuses.slice(0, 1).concat(refuses.slice(-4, -3))) {
@@ -657,7 +661,7 @@ describe('next-themes removal', () => {
     const before = await snapshot(cwd);
     const preview = await init(cwd, ['--dry-run']);
 
-    expect(preview.output).toContain(`remove next-themes (${command})`);
+    expect(preview.output).toContain(`remove old package (${command})`);
     expect(preview.output).toContain('components/theme-provider.tsx');
     expect(await snapshot(cwd)).toBe(before);
 
@@ -678,7 +682,7 @@ describe('next-themes removal', () => {
 
     expect(result.code).toBe(2);
     expect(result.output).toContain(
-      'The package is still installed. Run: pnpm remove next-themes'
+      'The old package is still installed. Run: pnpm remove next-themes'
     );
     expect(result.output).not.toContain('Setup complete');
     expect(await read(cwd, 'components/mode-toggle.tsx')).toContain(
@@ -710,7 +714,8 @@ describe('next-themes removal', () => {
     const result = await init(cwd);
 
     expect(result.removals).toEqual([]);
-    expect(result.output).toContain('did not remove it');
+    expect(result.output).toContain('Converted next-themes to UI-Theme');
+    expect(result.output).not.toContain('Removed next-themes');
     expect(result.code).toBe(0);
   });
   it('leaves an app without next-themes alone', async () => {
@@ -824,31 +829,31 @@ const answer = (key: string | undefined) => {
 };
 
 describe('next-themes modes', () => {
-  it.each([
-    ['y', 'replace'],
-    ['enter', 'replace'],
-    [undefined, 'replace'],
-  ])('answer %s runs the %s mode', async (key) => {
-    const cwd = await app(shadcn);
-    const asked = answer(key);
-    const result = await init(cwd, [], { choose: asked.choose });
+  it.each([['c'], ['enter'], [undefined]])(
+    'answer %s converts',
+    async (key) => {
+      const cwd = await app(shadcn);
+      const asked = answer(key);
+      const result = await init(cwd, [], { choose: asked.choose });
 
-    expect(result.code).toBe(0);
-    expect(result.removals).toHaveLength(1);
-    expect(await read(cwd, 'components/theme-provider.tsx')).toContain(
-      'uitheme-web/next'
-    );
-    expect(asked.calls[0].prompt).toBe(
-      'Replace next-themes with UI-Theme? [Y/n/c]'
-    );
-    expect(asked.calls[0].keys).toEqual(['y', 'n', 'c']);
-    expect(asked.calls[0].lines).toHaveLength(3);
-  });
+      expect(result.code).toBe(0);
+      expect(result.removals).toHaveLength(1);
+      expect(await read(cwd, 'components/theme-provider.tsx')).toContain(
+        'uitheme-web/next'
+      );
+      expect(asked.calls[0].prompt).toBe('What should init do with it? [C/m]');
+      expect(asked.calls[0].keys).toEqual(['c', 'm']);
+      expect(asked.calls[0].lines[0]).toBe(
+        'Found next-themes in components/mode-toggle.tsx.'
+      );
+      expect(asked.calls[0].lines.at(-1)).toContain('m  Manual');
+    }
+  );
   it.each([
-    ['answer n', { key: 'n', args: noArgs }],
+    ['answer m', { key: 'm', args: noArgs }],
     [
-      '--next-themes keep',
-      { key: undefined, args: ['--yes', '--next-themes', 'keep'] },
+      '--existing manual',
+      { key: undefined, args: ['--yes', '--existing', 'manual'] },
     ],
   ])('keeps next-themes: %s', async (_name, { key, args }) => {
     const cwd = await app(shadcn);
@@ -866,167 +871,104 @@ describe('next-themes modes', () => {
     );
     await expect(read(cwd, 'uitheme.json')).resolves.toContain('schemaVersion');
   });
-  it.each([
-    ['answer c', { key: 'c', args: noArgs }],
-    [
-      '--next-themes create',
-      { key: undefined, args: ['--yes', '--next-themes', 'create'] },
-    ],
-  ])('creates one separate file: %s', async (_name, { key, args }) => {
+  it('does not offer alongside for next-themes', async () => {
     const cwd = await app(shadcn);
     const before = await files(cwd, providerFiles);
-    const names = await readdir(join(cwd, 'components'));
-    const asked = answer(key);
-    const result = await init(cwd, args, { choose: asked.choose });
+    const result = await init(cwd, ['--yes', '--existing', 'alongside']);
 
     expect(result.code).toBe(2);
-    expect(result.removals).toEqual([]);
+    expect(result.output).toContain(
+      '--existing alongside does not apply to next-themes.'
+    );
     expect(await files(cwd, providerFiles)).toEqual(before);
-
-    const created = (await readdir(join(cwd, 'components'))).filter(
-      (name) => !names.includes(name)
-    );
-
-    expect(created).toEqual(['ui-theme-provider.tsx']);
-    const content = await read(cwd, 'components/ui-theme-provider.tsx');
-
-    expect(content).toContain("'use client';");
-    expect(content).toContain(
-      "import { NextUIThemeProvider } from 'uitheme-web/next';"
-    );
-    expect(content).toContain(
-      'export function AppUIThemeProvider({ children }'
-    );
-    expect(result.output).toContain('Created components/ui-theme-provider.tsx');
-    expect(result.output).toContain(`#manual-setup`);
-  });
-  it('picks a free name when the provider file name is taken', async () => {
-    const cwd = await app({
-      ...shadcn,
-      'components/ui-theme-provider.tsx': 'export const Mine = 1;\n',
-    });
-
-    const result = await init(cwd, ['--yes', '--next-themes', 'create']);
-
-    expect(result.code).toBe(2);
-    expect(await read(cwd, 'components/ui-theme-provider.tsx')).toBe(
-      'export const Mine = 1;\n'
-    );
-    expect(await read(cwd, 'components/ui-theme-provider-2.tsx')).toContain(
-      'AppUIThemeProvider'
-    );
-
-    const again = await init(cwd, ['--yes', '--next-themes', 'create']);
-
-    expect(again.code).toBe(2);
     expect(await readdir(join(cwd, 'components'))).not.toContain(
-      'ui-theme-provider-3.tsx'
+      'ui-theme-provider.tsx'
     );
   });
-  it('without a way to ask, or with --yes, the default is replace', async () => {
+  it('without a way to ask, or with --yes, the default is convert', async () => {
     const cwd = await app(shadcn);
-    const result = await init(cwd, ['--yes'], { choose: answer('n').choose });
+    const result = await init(cwd, ['--yes'], { choose: answer('m').choose });
 
     expect(result.code).toBe(0);
     expect(result.removals).toHaveLength(1);
   });
   it('lets a flag override the default and the answer', async () => {
     const cwd = await app(shadcn);
-    const asked = answer('y');
+    const asked = answer('c');
 
-    const result = await init(cwd, ['--next-themes', 'keep'], {
+    const result = await init(cwd, ['--existing', 'manual'], {
       choose: asked.choose,
     });
 
     expect(asked.calls).toEqual([]);
     expect(result.code).toBe(2);
   });
-  it('rejects an unknown mode', async () => {
+  it('rejects an unknown choice', async () => {
     const cwd = await app(shadcn);
-    const result = await init(cwd, ['--next-themes', 'maybe']);
+    const result = await init(cwd, ['--existing', 'maybe']);
 
     expect(result.code).toBe(1);
     expect(result.output).toContain('Invalid value maybe');
   });
   it.each([
-    ['c', 2, true],
-    ['enter', 2, false],
-    [undefined, 1, false],
+    ['--yes', ['--yes'], undefined],
+    ['an answer', [], 'c'],
   ])(
-    'a refused form offers only c and N: answer %s',
-    async (key, code, created) => {
+    'a refused form falls back to manual steps with exit 2: %s',
+    async (_name, args, key) => {
       const cwd = await app({
         ...shadcn,
         'app/layout.tsx': layout('forcedTheme="dark"'),
       });
 
       const before = await files(cwd, providerFiles);
-      const asked = answer(key);
-      const result = await init(cwd, [], { choose: asked.choose });
+      const result = await init(cwd, args, { choose: answer(key).choose });
 
-      expect(asked.calls[0].prompt).toBe(
-        'Create the UI-Theme provider as a separate file? [c/N]'
+      expect(result.code).toBe(2);
+      expect(result.output).toContain(
+        'init did not convert the theme setup and changed no theme file.'
       );
-      expect(asked.calls[0].keys).toEqual(['c', 'n']);
-      expect(asked.calls[0].lines[0]).toContain('Stopped. No file changed.');
-      expect(result.code).toBe(code);
+      expect(result.output).toContain('#provider-props');
       expect(await files(cwd, providerFiles)).toEqual(before);
-      expect(
-        (await readdir(join(cwd, 'components'))).includes(
-          'ui-theme-provider.tsx'
-        )
-      ).toBe(created);
+      expect(result.removals).toEqual([]);
     }
   );
-  it('a refused form stops a run that cannot ask, and --next-themes create still works', async () => {
-    const cwd = await app({
-      ...shadcn,
-      'app/layout.tsx': layout('forcedTheme="dark"'),
-    });
-
-    const stopped = await init(cwd, ['--yes']);
-
-    expect(stopped.code).toBe(1);
-    expect(stopped.output).toContain('Stopped. No file changed.');
-    const created = await init(cwd, ['--yes', '--next-themes', 'create']);
-
-    expect(created.code).toBe(2);
-    expect(await readdir(join(cwd, 'components'))).toContain(
-      'ui-theme-provider.tsx'
-    );
-  });
   it.each([
-    ['replace', true],
-    ['keep', false],
-    ['create', false],
-  ])('--json shows the %s mode', async (mode, removes) => {
+    ['convert', true],
+    ['manual', false],
+  ])('--json shows the %s choice', async (choice, removes) => {
     const cwd = await app(shadcn);
     const before = await snapshot(cwd);
 
     const result = await init(cwd, [
       '--dry-run',
       '--json',
-      '--next-themes',
-      mode,
+      '--existing',
+      choice,
     ]);
 
     const json = JSON.parse(result.output);
 
-    expect(json.nextThemes.mode).toBe(mode);
+    expect(json.existing.choice).toBe(choice);
+    expect(json.existing.kinds).toEqual(['next-themes']);
     expect(Boolean(json.removals)).toBe(removes);
-    expect(json.nextThemes.files).toBe(mode === 'replace' ? 3 : 0);
-    expect(
-      json.files.some(
-        (file: { path: string }) =>
-          file.path === 'components/ui-theme-provider.tsx'
-      )
-    ).toBe(mode === 'create');
+    expect(json.existing.files).toBe(choice === 'convert' ? 3 : 0);
+    expect(json.existing.evidence[0]).toEqual({
+      file: 'components/mode-toggle.tsx',
+      line: 3,
+      note: 'imports next-themes',
+    });
     expect(await snapshot(cwd)).toBe(before);
   });
-  it('--dry-run names the default mode', async () => {
+  it('--dry-run prints the class, the evidence and the action', async () => {
     const cwd = await app(shadcn);
     const result = await init(cwd, ['--dry-run']);
 
-    expect(result.output).toContain('next-themes: replace');
+    expect(result.output).toContain(
+      'existing theme setup: next-themes -> convert'
+    );
+    expect(result.output).toContain(
+      '  components/theme-provider.tsx:4 imports next-themes'
+    );
   });
 });

@@ -18,8 +18,8 @@ import {
 } from '../install/index.ts';
 import {
   messages,
-  nextThemesModes,
-  type NextThemesMode,
+  existingChoices,
+  type ExistingChoice,
 } from '../install/messages.ts';
 import { cliVersion, installedWebVersion } from './version.ts';
 import type {
@@ -69,7 +69,7 @@ interface Flags {
   positions: number[];
   revision?: string;
   registry?: string;
-  nextThemes?: NextThemesMode;
+  existing?: ExistingChoice;
 }
 
 function choice<const Choices extends readonly string[]>(
@@ -111,7 +111,7 @@ function parseFlags(args: string[]): Flags {
     '--package-manager',
     '--revision',
     '--registry',
-    '--next-themes',
+    '--existing',
   ];
 
   for (let index = 0; index < args.length; index++) {
@@ -187,8 +187,8 @@ function parseFlags(args: string[]): Flags {
         case '--registry':
           flags.registry = value;
           break;
-        case '--next-themes':
-          flags.nextThemes = choice(value, nextThemesModes);
+        case '--existing':
+          flags.existing = choice(value, existingChoices);
           break;
       }
 
@@ -237,16 +237,12 @@ function printablePlan(plan: InstallPlan) {
       dependencies: install.dependencies,
     })),
     manualSteps: plan.manualSteps,
-    ...(plan.nextThemes && {
-      nextThemes: plan.nextThemes,
-    }),
-    ...(plan.nextThemes?.remove && {
-      removals: [
-        {
-          package: 'next-themes',
-          command: removalCommand(plan.profile, ['next-themes']),
-        },
-      ],
+    ...(plan.existing && { existing: plan.existing }),
+    ...(plan.existing?.remove.length && {
+      removals: plan.existing.remove.map((name) => ({
+        package: name,
+        command: removalCommand(plan.profile, [name]),
+      })),
     }),
   };
 }
@@ -394,7 +390,7 @@ async function detectWithPrompts(
   }
 }
 
-const help = `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <base-ui|radix|reka>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--registry <url>       Use another registry (env: UITHEME_REGISTRY_URL)\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without questions; keeps files that differ\n--overwrite            Replace files that differ from the registry\n--json                 Print structured output\n--next-themes <replace|keep|create>\n                       Choose what init does when the app uses next-themes\n\nEnvironment:\nUITHEME_REGISTRY_URL   Use another registry (--registry wins)\nUITHEME_WEB_VERSION    Install uitheme-web from a dist-tag, version, or .tgz path\n`;
+const help = `uitheme <info|init|list|add|diff|migrate> [components] [options]\n\n--cwd <app>             Select an existing application\n--base <base-ui|radix|reka>\n--framework <vite-react|vite-vue|next|tanstack|nuxt>\n--tailwind <3|4>        Match the installed Tailwind major\n--language <ts|js>\n--revision <revision>  Select an immutable registry revision\n--registry <url>       Use another registry (env: UITHEME_REGISTRY_URL)\n--css <file>\n--components-dir <dir>\n--dry-run, --preview   Print changes without writing files\n--yes                  Apply without questions; keeps files that differ\n--overwrite            Replace files that differ from the registry\n--json                 Print structured output\n--existing <convert|alongside|manual>\n                       Choose what init does with an existing theme setup\n\nEnvironment:\nUITHEME_REGISTRY_URL   Use another registry (--registry wins)\nUITHEME_WEB_VERSION    Install uitheme-web from a dist-tag, version, or .tgz path\n`;
 
 export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
   const stdout = io.stdout ?? console.log,
@@ -569,31 +565,34 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
         ...flags,
         webDependency,
         resolveConflict: conflictResolver(flags, io, stdout),
-        nextThemesMode: flags.nextThemes,
-        chooseNextThemes:
+        existing: flags.existing,
+        chooseExisting:
           flags.yes || flags.dryRun || !io.choose
             ? undefined
-            : async (refusal) => {
+            : async (setups, choices) => {
+                const keys = choices.map((item) => messages.choiceKeys[item]);
+
                 const answer = await io.choose!(
-                  refusal
-                    ? [refusal, messages.options.c, messages.options.refusedN]
-                    : [
-                        messages.options.y,
-                        messages.options.n,
-                        messages.options.c,
-                      ],
-                  refusal ? messages.promptRefused : messages.prompt,
-                  refusal ? ['c', 'n'] : ['y', 'n', 'c'],
-                  refusal ? 'n' : 'y'
+                  [
+                    ...setups.flatMap((setup) => [
+                      messages.found(
+                        messages.label(setup.kind, setup.library),
+                        setup.files[0] ?? 'package.json'
+                      ),
+                      ...setup.evidence.map((item) =>
+                        messages.evidence(item.file, item.line, item.note)
+                      ),
+                    ]),
+                    ...choices.map((item) => messages.options[item]),
+                  ],
+                  `${messages.prompt} [${keys.map((key, index) => (index ? key : key.toUpperCase())).join('/')}]`,
+                  keys,
+                  keys[0]
                 );
 
-                return answer === 'c'
-                  ? 'create'
-                  : answer === 'n'
-                    ? 'keep'
-                    : answer === 'y'
-                      ? 'replace'
-                      : undefined;
+                return choices.find(
+                  (item) => messages.choiceKeys[item] === answer
+                );
               },
       });
     else {
@@ -645,17 +644,18 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
 
     let removalFailed = false;
 
-    if (plan.nextThemes?.remove)
+    if (plan.existing?.remove.length)
       try {
-        await (io.runRemoval ?? runPackageRemoval)(plan.profile, [
-          'next-themes',
-        ]);
+        await (io.runRemoval ?? runPackageRemoval)(
+          plan.profile,
+          plan.existing.remove
+        );
       } catch {
         removalFailed = true;
         stdout(
           messages.removalFailed(
-            plan.nextThemes.files,
-            removalCommand(plan.profile, ['next-themes'])
+            plan.existing.files,
+            removalCommand(plan.profile, plan.existing.remove)
           )
         );
       }
@@ -684,12 +684,11 @@ export async function runCli(args: string[], io: CliIO = {}): Promise<number> {
 
     if (unanswered.length || removalFailed) return 2;
 
-    if (plan.nextThemes?.mode === 'replace' && plan.nextThemes.files)
-      stdout(
-        plan.nextThemes.remove
-          ? messages.replaced(plan.nextThemes.files)
-          : messages.replacedPackageKept(plan.nextThemes.files)
-      );
+    if (plan.existing?.choice === 'convert' && plan.existing.files)
+      stdout(messages.converted(plan.existing.label, plan.existing.files));
+
+    if (plan.existing?.choice === 'convert' && plan.existing.remove.length)
+      stdout(messages.removed(plan.existing.remove));
 
     stdout(
       command === 'init'
