@@ -17,7 +17,7 @@ import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildRegistry } from '../packages/ui-theme-registry/src/build.ts';
 import { createRegistryClient } from '../packages/ui-theme-cli/src/registry.ts';
@@ -253,7 +253,7 @@ try {
         `.${new URL(request.url, 'http://local').pathname.replace(/^\/r/, '')}`
       );
 
-      assert.ok(path.startsWith(`${registryDirectory}/`));
+      assert.ok(path.startsWith(`${registryDirectory}${sep}`));
       response.setHeader('content-type', 'application/json');
       response.end(readFileSync(path));
     } catch {
