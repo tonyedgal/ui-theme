@@ -414,3 +414,250 @@ describe('custom theme providers', () => {
     expect((await init(cwd)).code).toBe(0);
   });
 });
+
+const shadcnVite = `import { createContext, useContext, useEffect, useState } from "react"
+
+type Theme = "dark" | "light" | "system"
+
+type ThemeProviderProps = {
+  children: React.ReactNode
+  defaultTheme?: Theme
+  storageKey?: string
+}
+
+type ThemeProviderState = {
+  theme: Theme
+  setTheme: (theme: Theme) => void
+}
+
+const initialState: ThemeProviderState = {
+  theme: "system",
+  setTheme: () => null,
+}
+
+const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
+
+export function ThemeProvider({
+  children,
+  defaultTheme = "system",
+  storageKey = "vite-ui-theme",
+  ...props
+}: ThemeProviderProps) {
+  const [theme, setTheme] = useState<Theme>(
+    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  )
+
+  useEffect(() => {
+    const root = window.document.documentElement
+
+    root.classList.remove("light", "dark")
+
+    if (theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light"
+
+      root.classList.add(systemTheme)
+      return
+    }
+
+    root.classList.add(theme)
+  }, [theme])
+
+  const value = {
+    theme,
+    setTheme: (theme: Theme) => {
+      localStorage.setItem(storageKey, theme)
+      setTheme(theme)
+    },
+  }
+
+  return (
+    <ThemeProviderContext.Provider {...props} value={value}>
+      {children}
+    </ThemeProviderContext.Provider>
+  )
+}
+
+export const useTheme = () => {
+  const context = useContext(ThemeProviderContext)
+
+  if (context === undefined)
+    throw new Error("useTheme must be used within a ThemeProvider")
+
+  return context
+}
+`;
+
+const shadcnTanstack = `import { createContext, useContext, useEffect, useState } from "react"
+import { ScriptOnce } from "@tanstack/react-router"
+
+type Theme = "dark" | "light" | "system"
+
+type ThemeProviderProps = {
+  children: React.ReactNode
+  defaultTheme?: Theme
+  storageKey?: string
+}
+
+type ThemeProviderState = {
+  theme: Theme
+  setTheme: (theme: Theme) => void
+}
+
+function getThemeScript(storageKey: string, defaultTheme: Theme) {
+  const key = JSON.stringify(storageKey)
+  const fallback = JSON.stringify(defaultTheme)
+
+  return \`(function(){try{var t=localStorage.getItem(\${key});if(t!=='light'&&t!=='dark'&&t!=='system'){t=\${fallback}}var d=matchMedia('(prefers-color-scheme: dark)').matches;var r=t==='system'?(d?'dark':'light'):t;var e=document.documentElement;e.classList.add(r);e.style.colorScheme=r}catch(e){}})();\`
+}
+
+const ThemeProviderContext = createContext<ThemeProviderState>({
+  theme: "system",
+  setTheme: () => {},
+})
+
+function applyTheme(theme: Theme) {
+  const root = document.documentElement
+  root.classList.remove("light", "dark")
+
+  const resolved =
+    theme === "system"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+      : theme
+
+  root.classList.add(resolved)
+  root.style.colorScheme = resolved
+}
+
+export function ThemeProvider({
+  children,
+  defaultTheme = "system",
+  storageKey = "theme",
+}: ThemeProviderProps) {
+  const [theme, setThemeState] = useState<Theme>(defaultTheme)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const stored = localStorage.getItem(storageKey)
+    setThemeState(
+      stored === "light" || stored === "dark" || stored === "system"
+        ? stored
+        : defaultTheme
+    )
+    setMounted(true)
+  }, [defaultTheme, storageKey])
+
+  useEffect(() => {
+    if (!mounted) return
+    applyTheme(theme)
+  }, [theme, mounted])
+
+  const setTheme = (next: Theme) => {
+    localStorage.setItem(storageKey, next)
+    setThemeState(next)
+  }
+
+  return (
+    <ThemeProviderContext value={{ theme, setTheme }}>
+      <ScriptOnce>{getThemeScript(storageKey, defaultTheme)}</ScriptOnce>
+      {children}
+    </ThemeProviderContext>
+  )
+}
+
+export function useTheme() {
+  const context = useContext(ThemeProviderContext)
+  if (context === undefined)
+    throw new Error("useTheme must be used within a ThemeProvider")
+  return context
+}
+`;
+
+const modeToggle = `import { useTheme } from "@/components/theme-provider"
+
+export function ModeToggle() {
+  const { setTheme } = useTheme()
+
+  return <button onClick={() => setTheme("dark")}>dark</button>
+}
+`;
+
+describe('shadcn theme providers', () => {
+  it('converts the Vite provider and keeps its storage key', async () => {
+    const app_ = `import { ThemeProvider } from "@/components/theme-provider"\nimport { ModeToggle } from "@/components/mode-toggle"\n\nexport default function App() {\n  return <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme"><ModeToggle /></ThemeProvider>\n}\n`;
+
+    const cwd = await app('vite-react', {
+      'src/components/theme-provider.tsx': shadcnVite,
+      'src/components/mode-toggle.tsx': modeToggle,
+      'src/App.tsx': app_,
+    });
+
+    const main = await read(cwd, 'src/main.tsx');
+    const result = await init(cwd);
+    const provider = await read(cwd, 'src/components/theme-provider.tsx');
+
+    expect(result.code).toBe(0);
+    expect(result.output).toContain(
+      'Converted the shadcn theme provider for Vite to UI-Theme in 1 files.'
+    );
+    expect(provider).toContain(
+      "import { UIThemeProvider, useUITheme, type Theme } from 'uitheme-web/react'"
+    );
+    expect(provider).toContain('storageKey = "vite-ui-theme",');
+    expect(provider).toContain('export const useTheme = useUITheme');
+    expect(await read(cwd, 'src/components/mode-toggle.tsx')).toBe(modeToggle);
+    expect(await read(cwd, 'src/App.tsx')).toBe(app_);
+    expect(await read(cwd, 'src/main.tsx')).toBe(main);
+
+    const again = await init(cwd);
+
+    expect(again.code).toBe(0);
+    expect(await read(cwd, 'src/components/theme-provider.tsx')).toBe(provider);
+  });
+  it('converts the TanStack Start provider and replaces ScriptOnce', async () => {
+    const cwd = await app('tanstack', {
+      'src/components/theme-provider.tsx': shadcnTanstack,
+      'src/routes/__root.tsx': `import { HeadContent, Scripts } from '@tanstack/react-router'\nimport { ThemeProvider } from '@/components/theme-provider'\nfunction RootComponent() {\n  return <html lang="en" suppressHydrationWarning><head><HeadContent /></head><body><ThemeProvider defaultTheme="system" storageKey="theme"><div /></ThemeProvider><Scripts /></body></html>\n}\n`,
+    });
+
+    const result = await init(cwd);
+    const provider = await read(cwd, 'src/components/theme-provider.tsx');
+
+    expect(result.code).toBe(0);
+    expect(provider).toContain('TanStackUIThemeProvider');
+    expect(provider).toContain(
+      '<TanStackStartThemeScript defaultTheme={defaultTheme} storageKey={storageKey} />'
+    );
+    expect(provider).toContain('systemThemeMode="js"');
+    expect(provider).not.toContain('ScriptOnce');
+  });
+  it('distinguishes the two providers by content, not by file name', async () => {
+    const cwd = await app('vite-react', {
+      'src/lib/dark.tsx': shadcnTanstack,
+    });
+
+    const result = await init(cwd, ['--dry-run']);
+
+    expect(result.output).toContain(
+      'existing theme setup: the shadcn theme provider for TanStack Start -> convert'
+    );
+  });
+  it('refuses a provider with extra exports and changes no theme file', async () => {
+    const changed = `${shadcnVite}\nexport const extra = 1\n`;
+
+    const cwd = await app('vite-react', {
+      'src/components/theme-provider.tsx': changed,
+    });
+
+    const result = await init(cwd);
+
+    expect(result.code).toBe(2);
+    expect(result.output).toContain('the extra export extra');
+    expect(result.output).toContain('#shadcn-provider');
+    expect(await read(cwd, 'src/components/theme-provider.tsx')).toBe(changed);
+  });
+});

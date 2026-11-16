@@ -8,6 +8,7 @@ import type { ProjectProfile } from '../types.ts';
 import type { ThemeSetup } from './detect.ts';
 import { planNextThemes } from './converters/next-themes.ts';
 import { targetFor } from './targets.ts';
+import { convertShadcn } from './converters/shadcn.ts';
 
 export interface Conversion {
   files: { path: string; content: string }[];
@@ -28,6 +29,8 @@ const converters: Partial<Record<SetupKind, Converter>> = {
       remove: plan?.remove ? ['next-themes'] : [],
     };
   },
+  'shadcn-vite': convertShadcn,
+  'shadcn-tanstack': convertShadcn,
 };
 
 export function choicesFor(
