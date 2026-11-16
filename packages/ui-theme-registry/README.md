@@ -40,7 +40,7 @@ your changes in a real app.
 | `pnpm test:registry:shadcn`             | Every shadcn style installs and shows up in search        |
 | `pnpm test:registry:minimum`            | The oldest version in each `compatibleDependencies` range |
 
-The last two need network access.
+The last two need network access. Run `pnpm build:packages` before all three.
 
 ## The shadcn layer
 
