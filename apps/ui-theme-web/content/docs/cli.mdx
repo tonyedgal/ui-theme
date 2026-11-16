@@ -78,7 +78,7 @@ Replace next-themes with UI-Theme? [Y/n/c]
 With `--yes`, with `--dry-run`, or without a terminal, `init` does not ask. It uses
 `replace`. Use `--next-themes <replace|keep|create>` to choose without a question.
 If `init` cannot convert a form in your code, it changes no file. See
-[Replace next-themes](/docs/guides/next-themes) for the details.
+[Migrate from next-themes](/docs/migration/next-themes) for the details.
 
 The CLI does not create an app or upgrade Tailwind. It preserves existing source
 and reports setup steps that need manual changes.
@@ -211,16 +211,16 @@ compatible component configuration, then automatic detection.
 
 ## Registry and output options
 
-| Option                   | Behavior                                                                                                                                       |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--revision <revision>`  | Select an immutable registry revision for `list`, `add`, or `diff`. Omit it to use the registry's current stable revision.                     |
-| `--registry <url>`       | Use another registry, for example a local build. The URL must use `https`, or `http` for `localhost` and `127.0.0.1`.                          |
-| `--dry-run`, `--preview` | Preview `init` or `add` without writing files or installing packages. `diff` is always read-only.                                              |
-| `--yes`, `-y`            | Apply an `init` or `add` plan without questions. Files that differ from the uitheme version are kept.                                          |
-| `--overwrite`            | Replace files that differ from the uitheme version, without a question.                                                                        |
-| `--json`                 | Print structured output for `list` or a plan for `init`, `add`, and `diff`. `info` always prints JSON. This flag does not enable preview mode. |
-| `--next-themes <mode>`   | `replace`, `keep`, or `create`. Choose what `init` does when the app uses `next-themes`. See the [guide](/docs/guides/next-themes).            |
-| `--help`, `-h`           | Show help without running the selected command.                                                                                                |
+| Option                   | Behavior                                                                                                                                              |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--revision <revision>`  | Select an immutable registry revision for `list`, `add`, or `diff`. Omit it to use the registry's current stable revision.                            |
+| `--registry <url>`       | Use another registry, for example a local build. The URL must use `https`, or `http` for `localhost` and `127.0.0.1`.                                 |
+| `--dry-run`, `--preview` | Preview `init` or `add` without writing files or installing packages. `diff` is always read-only.                                                     |
+| `--yes`, `-y`            | Apply an `init` or `add` plan without questions. Files that differ from the uitheme version are kept.                                                 |
+| `--overwrite`            | Replace files that differ from the uitheme version, without a question.                                                                               |
+| `--json`                 | Print structured output for `list` or a plan for `init`, `add`, and `diff`. `info` always prints JSON. This flag does not enable preview mode.        |
+| `--next-themes <mode>`   | `replace`, `keep`, or `create`. Choose what `init` does when the app uses `next-themes`. See [Migrate from next-themes](/docs/migration/next-themes). |
+| `--help`, `-h`           | Show help without running the selected command.                                                                                                       |
 
 Combine JSON output with a preview when you need a plan without writes:
 
