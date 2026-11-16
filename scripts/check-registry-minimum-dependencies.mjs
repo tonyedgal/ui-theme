@@ -34,6 +34,9 @@ const cliRequire = createRequire(
 
 const semver = cliRequire('semver');
 
+// npm is npm.cmd on Windows, which execFileSync cannot start
+const spawn = cliRequire('cross-spawn');
+
 const tsc = join(
   dirname(cliRequire.resolve('typescript/package.json')),
   'bin/tsc'
@@ -107,7 +110,8 @@ try {
           join(app, 'package.json'),
           JSON.stringify({ name: 'minimum', private: true, type: 'module' })
         );
-        execFileSync(
+
+        const install = spawn.sync(
           'npm',
           [
             'install',
@@ -117,7 +121,15 @@ try {
             '--legacy-peer-deps',
             `${name}@${version}`,
           ],
-          { cwd: app, stdio: 'pipe' }
+          { cwd: app, encoding: 'utf8' }
+        );
+
+        if (install.error) throw install.error;
+
+        assert.equal(
+          install.status,
+          0,
+          `${label}: npm install failed: ${install.stderr}`
         );
 
         const manifest = JSON.parse(
