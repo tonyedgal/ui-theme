@@ -63,10 +63,7 @@ test('base selection keeps the preview, installation command and copied source a
   page,
 }) => {
   const errors: string[] = [];
-  // WebKit reports this when a ResizeObserver callback resizes what it
-  // observes (here the select popover). The Resize Observer specification
-  // defines it as a notification, not as an error in the page, so ignore
-  // only this message and keep every other page error.
+  // webkit reports the resize observer loop notification as a page error
   page.on('pageerror', (error) => {
     if (!error.message.startsWith('ResizeObserver loop completed')) {
       errors.push(error.message);
