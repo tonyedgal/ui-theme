@@ -102,7 +102,7 @@ export function ThemeProvider({
 }${typescript ? ': ThemeProviderProps' : ''}) {
   return (
     <${provider} ${options}${tanstack ? ' systemThemeMode="js"' : ''}>
-${tanstack ? '      <TanStackStartThemeScript defaultTheme={defaultTheme} storageKey={storageKey} />\n' : ''}      {children}
+${tanstack ? '      <TanStackStartThemeScript defaultTheme={defaultTheme} storageKey={storageKey} defaultColorTheme="default" colorThemes={[\'default\']} />\n' : ''}      {children}
     </${provider}>
   )
 }

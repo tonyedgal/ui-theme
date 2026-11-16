@@ -630,7 +630,7 @@ describe('shadcn theme providers', () => {
     expect(result.code).toBe(0);
     expect(provider).toContain('TanStackUIThemeProvider');
     expect(provider).toContain(
-      '<TanStackStartThemeScript defaultTheme={defaultTheme} storageKey={storageKey} />'
+      `<TanStackStartThemeScript defaultTheme={defaultTheme} storageKey={storageKey} defaultColorTheme="default" colorThemes={['default']} />`
     );
     expect(provider).toContain('systemThemeMode="js"');
     expect(provider).not.toContain('ScriptOnce');
