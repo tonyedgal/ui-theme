@@ -7,6 +7,7 @@ import {
 import type { ProjectProfile } from '../types.ts';
 import type { ThemeSetup } from './detect.ts';
 import { planNextThemes } from './converters/next-themes.ts';
+import { targetFor } from './targets.ts';
 
 export interface Conversion {
   files: { path: string; content: string }[];
@@ -29,13 +30,19 @@ const converters: Partial<Record<SetupKind, Converter>> = {
   },
 };
 
-export function choicesFor(setups: ThemeSetup[]): ExistingChoice[] {
+export function choicesFor(
+  setups: ThemeSetup[],
+  profile: ProjectProfile
+): ExistingChoice[] {
   if (setups.length !== 1) return ['manual'];
   const [setup] = setups;
 
   if (converters[setup.kind]) return ['convert', 'manual'];
 
-  return setup.kind === 'custom' ? ['manual', 'alongside'] : ['manual'];
+  return setup.kind === 'custom' &&
+    targetFor(profile.framework).kind === 'react'
+    ? ['manual', 'alongside']
+    : ['manual'];
 }
 
 export function labelFor(setups: ThemeSetup[]): string {
