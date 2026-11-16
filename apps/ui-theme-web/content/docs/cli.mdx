@@ -60,6 +60,26 @@ For unattended runs, provide explicit choices and `--yes`.
 npx uitheme-cli init --cwd apps/web --base radix --yes
 ```
 
+### next-themes
+
+When `init` finds `next-themes` in a Next.js, TanStack Start, or Vite React app,
+it asks:
+
+```text
+Replace next-themes with UI-Theme? [Y/n/c]
+```
+
+- `Y` replaces the provider and every `useTheme` import, then removes the
+  `next-themes` package. This is the default.
+- `n` keeps `next-themes` and prints a link to the manual setup.
+- `c` keeps `next-themes` and writes the UI-Theme provider to
+  `components/ui-theme-provider.tsx` as `AppUIThemeProvider`. You add it to your app.
+
+With `--yes`, with `--dry-run`, or without a terminal, `init` does not ask. It uses
+`replace`. Use `--next-themes <replace|keep|create>` to choose without a question.
+If `init` cannot convert a form in your code, it changes no file. See
+[Replace next-themes](/docs/guides/next-themes) for the details.
+
 The CLI does not create an app or upgrade Tailwind. It preserves existing source
 and reports setup steps that need manual changes.
 
@@ -199,6 +219,7 @@ compatible component configuration, then automatic detection.
 | `--yes`, `-y`            | Apply an `init` or `add` plan without questions. Files that differ from the uitheme version are kept.                                          |
 | `--overwrite`            | Replace files that differ from the uitheme version, without a question.                                                                        |
 | `--json`                 | Print structured output for `list` or a plan for `init`, `add`, and `diff`. `info` always prints JSON. This flag does not enable preview mode. |
+| `--next-themes <mode>`   | `replace`, `keep`, or `create`. Choose what `init` does when the app uses `next-themes`. See the [guide](/docs/guides/next-themes).            |
 | `--help`, `-h`           | Show help without running the selected command.                                                                                                |
 
 Combine JSON output with a preview when you need a plan without writes:
