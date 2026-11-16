@@ -1,4 +1,4 @@
-export const docsUrl = 'https://www.ui-theme.dev/docs/guides/next-themes';
+export const docsUrl = 'https://www.ui-theme.dev/docs/migration/next-themes';
 
 export type DocsAnchor =
   'provider-props' | 'provider-shape' | 'usetheme' | 'manual-setup';
