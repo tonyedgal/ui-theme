@@ -91,7 +91,7 @@ const shadcn = {
 };
 
 interface Options {
-  framework?: 'next' | 'vite';
+  framework?: 'next' | 'vite' | 'tanstack';
   declared?: boolean;
   manager?: string;
 }
@@ -99,11 +99,15 @@ interface Options {
 async function app(files: Record<string, string>, options: Options = {}) {
   const cwd = await mkdtemp(join(tmpdir(), 'uitheme-next-themes-'));
   roots.push(cwd);
-  const vite = options.framework === 'vite';
+
+  const vite = options.framework === 'vite',
+    tanstack = options.framework === 'tanstack';
 
   const dependencies: Record<string, string> = vite
     ? { vite: '7' }
-    : { next: '16.0.0' };
+    : tanstack
+      ? { '@tanstack/react-start': '1.0.0' }
+      : { next: '16.0.0' };
 
   dependencies.react = '19';
   dependencies.tailwindcss = '4.1.0';
@@ -125,6 +129,7 @@ async function app(files: Record<string, string>, options: Options = {}) {
 
   if (
     !vite &&
+    !tanstack &&
     !Object.keys(files).some((path) => path.startsWith('app/layout.'))
   )
     base['app/layout.tsx'] =
@@ -554,6 +559,70 @@ const refuses: Refuse[] = [
     anchor: 'provider-shape',
   },
 ];
+
+const tanstackRoot = `import { HeadContent, Scripts } from '@tanstack/react-router'
+import { ThemeProvider, useTheme } from 'next-themes'
+
+function RootDocument({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <ThemeProvider attribute="class" disableTransitionOnChange>{children}</ThemeProvider>
+        <Scripts />
+      </body>
+    </html>
+  )
+}
+
+export function Mode() { const { theme } = useTheme(); return theme }
+`;
+
+describe('next-themes on TanStack Start', () => {
+  it('converts to the TanStack provider and asks for the head script', async () => {
+    const cwd = await app(
+      { 'src/routes/__root.tsx': tanstackRoot },
+      { framework: 'tanstack' }
+    );
+
+    const result = await init(cwd);
+    const root = await read(cwd, 'src/routes/__root.tsx');
+
+    expect(result.code).toBe(2);
+    expect(result.removals).toEqual([{ cwd, packages: ['next-themes'] }]);
+    expect(root).toContain(
+      "import { TanStackUIThemeProvider as ThemeProvider, useTanStackUITheme as useTheme } from 'uitheme-web/react'"
+    );
+    expect(root).toContain(
+      '<ThemeProvider systemThemeMode="js" disableTransitionOnChange>'
+    );
+    expect(result.output).toContain('Add TanStackStartThemeScript');
+    expect(result.output).not.toContain('Add the provider yourself');
+  });
+  it('creates a separate TanStack provider file', async () => {
+    const cwd = await app(
+      { 'src/routes/__root.tsx': tanstackRoot },
+      { framework: 'tanstack' }
+    );
+
+    await init(cwd, ['--yes', '--next-themes', 'create']);
+    const created = await read(cwd, 'components/ui-theme-provider.tsx');
+
+    expect(created).toContain('TanStackUIThemeProvider');
+    expect(created).toContain('export function AppUIThemeProvider');
+  });
+  it('keeps next-themes on request', async () => {
+    const cwd = await app(
+      { 'src/routes/__root.tsx': tanstackRoot },
+      { framework: 'tanstack' }
+    );
+
+    await init(cwd, ['--yes', '--next-themes', 'keep']);
+    expect(await read(cwd, 'src/routes/__root.tsx')).toBe(tanstackRoot);
+  });
+});
 
 describe('next-themes refusals', () => {
   it.each(refuses)('refuses and changes nothing: $name', async (row) => {
