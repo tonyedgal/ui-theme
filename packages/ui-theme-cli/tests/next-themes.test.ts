@@ -388,6 +388,7 @@ describe('next-themes conversion', () => {
     expect(result.output).not.toContain('manual-required');
     const again = await init(cwd);
     expect(again.output).not.toContain('Converted next-themes');
+    expect(again.code).toBe(0);
   });
 });
 

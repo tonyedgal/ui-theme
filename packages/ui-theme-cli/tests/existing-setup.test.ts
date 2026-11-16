@@ -634,6 +634,11 @@ describe('shadcn theme providers', () => {
     );
     expect(provider).toContain('systemThemeMode="js"');
     expect(provider).not.toContain('ScriptOnce');
+
+    const again = await init(cwd);
+
+    expect(again.code).toBe(0);
+    expect(await read(cwd, 'src/components/theme-provider.tsx')).toBe(provider);
   });
   it('distinguishes the two providers by content, not by file name', async () => {
     const cwd = await app('vite-react', {
