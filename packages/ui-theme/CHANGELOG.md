@@ -1,5 +1,19 @@
 # uitheme-web
 
+## 2.1.0
+
+### Minor Changes
+
+- 21ccc73: Add a `nonce` option to `createThemeController` and `useTheme`. The library sets it on every `<style>` element it injects (the base transition styles, the SVG logo styles and the CSS keyframe fallback), so transitions work under a `style-src 'nonce-…'` Content Security Policy. `NextUIThemeProvider` passes its existing `nonce` prop to this option. `UIThemeProvider`, `ViteUIThemeProvider` and `TanStackUIThemeProvider` accept a new optional `nonce` prop that does the same; `ViteUIThemeProvider` also sets it on its `disableTransitionOnChange` style. `injectBaseStyles` accepts an optional nonce argument.
+- 3364c54: Add CommonJS entry points for `uitheme-web/vue` and `uitheme-web/vue/bootstrap`, with matching `.d.cts` types. `require('uitheme-web/vue')` now works. `uitheme-web/nuxt` stays ESM-only because Nuxt 4 is ESM-only.
+
+### Patch Changes
+
+- 9b5f9cc: Fix the reveal origin when the root element is zoomed. The circle, SVG logo and triangle reveals now emit percentage keyframes, and the blur-circle and polygon-gradient masks scale to the snapshot box, so the reveal starts on the clicked element in Chrome and Safari. The input origin is unchanged (viewport CSS pixels). Code that reads the emitted keyframes sees `circle(…% at …% …%)` and percentage `polygon()` vertices instead of pixel values.
+- bb04e76: The no-flash scripts of `NextUIThemeProvider`, `TanStackStartThemeScript` and `getThemeScript` are now composed from shared pieces, with only the statements each needs. A stored theme or color theme that is not in the configured `themes` or `colorThemes` now falls back to the default instead of being written to `<html>`. For valid stored values, each script writes the same classes, `data-theme` attribute and `color-scheme` as before. If `localStorage` is blocked, the Next.js and TanStack Start scripts now apply the defaults instead of nothing. `TanStackStartThemeScript` accepts optional `themes` and `colorThemes` props; without `colorThemes` it accepts any stored color theme, as before. The inline script text changes, so a CSP hash for it must be updated.
+- cba85ef: Keep the React provider context value and the `useTheme` return value stable while the theme state does not change. A parent re-render no longer re-renders memoized theme consumers. `NextUIThemeProvider`, `TanStackUIThemeProvider` and `ViteUIThemeProvider` now read `systemTheme` from the theme controller, which follows `prefers-color-scheme` changes, instead of calling `matchMedia` during render. Before hydration, `TanStackUIThemeProvider` with `serverTheme="system"` now resolves to the server value (`light`) instead of reading `matchMedia`, so the first client render matches the server HTML.
+- 32e48a2: A failed `localStorage` write (blocked storage, private mode, quota exceeded) no longer rejects `switchTheme`, `toggleTheme` and the other theme actions, and `setTheme` no longer throws. The theme stays in memory and is applied to the page, and a warning is logged. Adapters that pass `onBrowserStorageError` still receive the error. A custom `storage` adapter that throws still rejects as before.
+
 ## 2.0.0
 
 ### Major Changes

@@ -1,6 +1,6 @@
 {
   "name": "uitheme-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "Install UI-Theme controls in an existing application",
   "license": "MIT",

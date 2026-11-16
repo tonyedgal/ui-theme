@@ -1,5 +1,19 @@
 # uitheme-cli
 
+## 1.0.2
+
+### Patch Changes
+
+- 336771c: Write each file through a temporary file and a rename. An interrupted run no longer leaves a partly written file.
+- 3976a0b: Remove the `typescript` dependency. The install is about 1.5 MB instead of about 25 MB.
+
+  The check for an existing `cn` export is now syntactic. The CLI reads the utils file and follows its re-exports, including re-exports from a workspace package. It reads ES module and CommonJS exports. It no longer type-checks the file, so it no longer needs the project's dependencies installed. It accepts `cn` when it is a function, or a value that it cannot prove is not callable. It rejects a missing `cn`, a type-only `cn`, and a `cn` set to a string, number, object, array or class.
+
+- 336771c: Start faster. `--help` and `--version` no longer load TypeScript or PostCSS, and the package no longer ships a source map.
+- 336771c: Name the URL and the cause when the CLI cannot reach the registry, for example `Registry request failed (ECONNREFUSED): <url>`.
+- 968b0f8: Report a destination file that another program has open as one clear line, treat a `uitheme.json` that differs only by a byte order mark as unchanged, and show a fitting path example in the `uitheme.json` validation message for each field.
+- e195f55: Fix `add` and the other commands on Windows. The CLI no longer builds a component folder named `src\*\components\ui` from a `@/*` path alias, and it checks every path with the separators of the platform. A busy file no longer stops a write, `uitheme.json` can start with a byte order mark, and a bad `uitheme.json` field now says what to change.
+
 ## 1.0.1
 
 ### Patch Changes
