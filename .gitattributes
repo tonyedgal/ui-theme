@@ -1,0 +1,2 @@
+# Check out text files with LF on every platform, as Prettier expects
+* text=auto eol=lf
