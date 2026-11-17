@@ -15,11 +15,11 @@ import { ColorThemeDisclosure as UISDKColorThemeDisclosure } from '../../../pack
 import {
   createContext,
   type CSSProperties,
-  Suspense,
   useContext,
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
@@ -37,7 +37,6 @@ import {
   getDocsPagination,
   type NavigationSection,
 } from '@/lib/docs-navigation';
-import { useSearchParams } from 'next/navigation';
 import {
   componentBase,
   componentBases,
@@ -620,8 +619,24 @@ function RegistryContent({
   );
 }
 
-function RegistryVariant(props: RegistryPreviewProps) {
-  const params = useSearchParams();
+function subscribeSearch(callback: () => void) {
+  window.addEventListener('docs-navigation-change', callback);
+  window.addEventListener('popstate', callback);
+
+  return () => {
+    window.removeEventListener('docs-navigation-change', callback);
+    window.removeEventListener('popstate', callback);
+  };
+}
+
+export function RegistryPreview(props: RegistryPreviewProps) {
+  const search = useSyncExternalStore(
+    subscribeSearch,
+    () => window.location.search,
+    () => ''
+  );
+
+  const params = new URLSearchParams(search);
 
   return (
     <RegistryContent
@@ -629,16 +644,6 @@ function RegistryVariant(props: RegistryPreviewProps) {
       tailwind={params.get('tailwind') === '3' ? '3' : '4'}
       language={params.get('language') === 'js' ? 'js' : 'ts'}
     />
-  );
-}
-
-export function RegistryPreview(props: RegistryPreviewProps) {
-  return (
-    <Suspense
-      fallback={<RegistryContent {...props} tailwind="4" language="ts" />}
-    >
-      <RegistryVariant {...props} />
-    </Suspense>
   );
 }
 
