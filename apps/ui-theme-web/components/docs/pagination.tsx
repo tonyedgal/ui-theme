@@ -24,6 +24,7 @@ export function PaginationArrows({
           <Link
             key={label}
             href={page.href}
+            prefetch={false}
             aria-label={`${label}: ${page.title}`}
             className="inline-flex size-6 focus-visible:outline-2 focus-visible:outline-ring [@media(pointer:coarse)]:size-11 items-center justify-center rounded-md bg-secondary text-secondary-foreground hover:bg-muted"
           >
@@ -62,6 +63,7 @@ export function DocsPagination({
       {previous ? (
         <Link
           href={previous.href}
+          prefetch={false}
           className="group flex min-h-11 shrink-0 items-center gap-1.5 pr-3 pl-3 focus-visible:outline-2 focus-visible:outline-ring sm:pr-6 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-3" strokeWidth={3} aria-hidden="true" />
@@ -74,6 +76,7 @@ export function DocsPagination({
       {next ? (
         <Link
           href={next.href}
+          prefetch={false}
           className="group flex min-h-16 min-w-0 flex-1 items-center justify-end rounded-xl bg-background hover:ring-1 hover:ring-border focus-visible:outline-2 focus-visible:outline-ring"
         >
           <span className="flex min-w-0 flex-col items-end px-3 py-3 [overflow-wrap:anywhere] sm:px-5">
