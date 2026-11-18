@@ -305,6 +305,9 @@ test('a Vue iframe applies a header theme change made during its own transition'
 
   const frame = vueFrame(page, 'Reka');
   const inner = frame.locator('html');
+  await expect(
+    frame.getByRole('button', { name: /Toggle theme/ })
+  ).toBeVisible();
   await expect(inner).not.toHaveClass(/dark/);
 
   // hold the frame's theme update back so the header changes arrive first
