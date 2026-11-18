@@ -23,6 +23,7 @@ export default defineConfig({
       },
     },
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
     {
       name: 'mobile',
       use: { ...devices['Pixel 7'], channel: process.env.PLAYWRIGHT_CHANNEL },

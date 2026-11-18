@@ -9,6 +9,7 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], deviceScaleFactor: 2 },
     },
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
   ],
   webServer: {
     command:
