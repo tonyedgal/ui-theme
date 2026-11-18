@@ -25,6 +25,9 @@ jobs:
     name: Chromium
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --ipc=host --init
     steps:
       - name: Checkout Repo
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -57,15 +60,6 @@ jobs:
           if echo "$files" | grep -qE '^(packages/ui-theme-registry/|\.github/workflows/browser-tests\.yml$)'; then registry=true; fi
           echo "web=$web" >> "$GITHUB_OUTPUT"
           echo "registry=$registry" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - name: Install Chromium
-        run: pnpm --filter uitheme-web exec playwright install --with-deps chromium
 
       - name: Build uitheme-web
         run: pnpm --filter uitheme-web build
