@@ -63,12 +63,7 @@ test('base selection keeps the preview, installation command and copied source a
   page,
 }) => {
   const errors: string[] = [];
-  // webkit reports the resize observer loop notification as a page error
-  page.on('pageerror', (error) => {
-    if (!error.message.startsWith('ResizeObserver loop completed')) {
-      errors.push(error.message);
-    }
-  });
+  page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/docs/components/base-ui/theme-toggle');
   await expect(
     page.getByRole('link', { name: 'Base UI', exact: true })

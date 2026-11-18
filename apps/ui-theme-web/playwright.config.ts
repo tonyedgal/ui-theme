@@ -12,8 +12,6 @@ export default defineConfig({
       name: 'chromium',
       use: { browserName: 'chromium', channel: process.env.PLAYWRIGHT_CHANNEL },
     },
-    { name: 'webkit', use: { browserName: 'webkit' } },
-    { name: 'firefox', use: { browserName: 'firefox' } },
   ],
   webServer: {
     command: 'pnpm start --hostname 127.0.0.1 --port 4290',
