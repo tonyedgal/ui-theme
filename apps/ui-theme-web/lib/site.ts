@@ -3,10 +3,10 @@ export const siteUrl = 'https://www.ui-theme.dev';
 export const siteName = 'UI-Theme';
 
 export const siteTitle =
-  'UI-Theme — Dark mode, theme toggles, and transitions for React and Vue';
+  'UI-Theme — Dark mode and view transitions for React and Vue';
 
 export const siteDescription =
-  'Open-source theming library and shadcn registry. Add light and dark mode, animated theme transitions, and color palettes to React, Next.js, Vue, Nuxt, and React Native.';
+  'Open-source theming library, shadcn registry, and CLI. Add dark mode, color themes, and view transitions to React, Next.js, Vue, Nuxt, and React Native.';
 
 export const siteKeywords = [
   'UI-Theme',
