@@ -1,19 +1,30 @@
 {
   "name": "uitheme-web",
   "version": "2.2.0",
-  "description": "Cross-framework UI theme switching library",
-  "type": "module",
+  "description": "Dark mode, color themes, and view transitions for React, Next.js, Vue, and Nuxt",
   "keywords": [
+    "uitheme",
+    "ui-theme",
     "theme",
+    "theming",
     "dark-mode",
     "light-mode",
+    "color-mode",
+    "color-theme",
+    "theme-toggle",
+    "theme-switcher",
+    "view-transitions",
+    "view-transition-api",
     "react",
+    "nextjs",
+    "tanstack-start",
     "vue",
-    "angular",
-    "svelte",
-    "ui",
+    "nuxt",
+    "shadcn",
+    "tailwindcss",
     "typescript"
   ],
+  "type": "module",
   "author": "Tony Edgal (https://github.com/tonyedgal)",
   "license": "MIT",
   "repository": {
@@ -21,6 +32,8 @@
     "url": "git+https://github.com/tonyedgal/ui-theme.git",
     "directory": "packages/ui-theme"
   },
+  "homepage": "https://www.ui-theme.dev/docs",
+  "bugs": "https://github.com/tonyedgal/ui-theme/issues",
   "publishConfig": {
     "access": "public",
     "provenance": true
