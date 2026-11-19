@@ -11,6 +11,8 @@ import { Prose } from '@/components/docs/prose';
 import { CopyPageButton } from '@/components/docs/copy-page-button';
 import { DocsPagination, PaginationArrows } from '@/components/docs/pagination';
 import { TableOfContents } from '@/components/docs/table-of-contents';
+import { JsonLd } from '@/components/json-ld';
+import { docsArticleData } from '@/lib/structured-data';
 
 export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const params = await props.params;
@@ -41,6 +43,21 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
       tableOfContent={{ component: <TableOfContents items={page.data.toc} /> }}
       tableOfContentPopover={{ enabled: false }}
     >
+      <JsonLd
+        data={docsArticleData({
+          path: page.url,
+          title: page.data.title,
+          description: page.data.description,
+          image: getPageImage(page).url,
+          lastModified: page.data.lastModified,
+          breadcrumbs: [
+            { name: 'Docs', path: '/docs' },
+            ...(page.url === '/docs'
+              ? []
+              : [{ name: page.data.title, path: page.url }]),
+          ],
+        })}
+      />
       <header>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="min-w-0 max-w-full text-base font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-lg md:text-xl lg:text-2xl">
