@@ -25,7 +25,10 @@ import {
   componentBases,
   componentDocs,
   componentDocUrl,
+  componentImageUrl,
 } from '@/lib/component-docs';
+import { JsonLd } from '@/components/json-ld';
+import { docsArticleData } from '@/lib/structured-data';
 import registry from '@/.generated/registry.json';
 import { highlightCode } from '@/lib/highlight-code';
 import { componentUsage, componentExamples } from '@/lib/component-docs';
@@ -76,6 +79,7 @@ export async function generateMetadata({
 
   const title = `${doc.title} · ${base.title}`;
   const url = componentDocUrl(base.name, doc.name);
+  const image = componentImageUrl(base.name, doc.name);
 
   return {
     title,
@@ -96,6 +100,13 @@ export async function generateMetadata({
       siteName: 'UI-Theme',
       title,
       description: doc.description,
+      images: image,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: doc.description,
+      images: image,
     },
   };
 }
@@ -197,6 +208,23 @@ export default async function Page({
       tableOfContent={{ component: <TableOfContents items={toc} /> }}
       tableOfContentPopover={{ enabled: false }}
     >
+      <JsonLd
+        data={docsArticleData({
+          path: componentDocUrl(base.name, doc.name),
+          title: `${doc.title} · ${base.title}`,
+          description: doc.description,
+          image: componentImageUrl(base.name, doc.name),
+          lastModified: content.lastModified,
+          breadcrumbs: [
+            { name: 'Docs', path: '/docs' },
+            { name: 'Components', path: '/docs/components' },
+            {
+              name: `${doc.title} · ${base.title}`,
+              path: componentDocUrl(base.name, doc.name),
+            },
+          ],
+        })}
+      />
       <RegistryPreview
         navigation={getDocsNavigation(docsTree, base.name)}
         base={base.name}
