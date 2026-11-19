@@ -2,6 +2,18 @@
   "name": "uitheme-rn",
   "version": "1.0.3",
   "description": "Native appearance and color palettes for React Native and Expo",
+  "keywords": [
+    "uitheme",
+    "ui-theme",
+    "react-native",
+    "expo",
+    "dark-mode",
+    "color-theme",
+    "theme",
+    "theming",
+    "nativewind",
+    "uniwind"
+  ],
   "type": "module",
   "license": "MIT",
   "author": "Tony Edgal (https://github.com/tonyedgal)",
@@ -10,6 +22,8 @@
     "url": "git+https://github.com/tonyedgal/ui-theme.git",
     "directory": "packages/ui-theme-rn"
   },
+  "homepage": "https://www.ui-theme.dev/docs/guides/expo",
+  "bugs": "https://github.com/tonyedgal/ui-theme/issues",
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
