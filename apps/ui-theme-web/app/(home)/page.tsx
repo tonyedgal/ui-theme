@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CopyButton } from '@/components/docs/copy-button';
+import { JsonLd } from '@/components/json-ld';
 import { LandingControls } from '@/components/landing-controls';
 import { PaletteWordmark } from '@/components/palette-wordmark';
 import { ScrollHint } from '@/components/scroll-hint';
@@ -85,12 +86,7 @@ const structuredData = {
 export default function HomePage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
-        }}
-      />
+      <JsonLd data={structuredData} />
       <main id="main-content" tabIndex={-1}>
         <section
           aria-labelledby="home-title"
