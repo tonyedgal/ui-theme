@@ -172,6 +172,10 @@ export function componentDocUrl(base: ComponentBase, component: string) {
   return `/docs/components/${base}/${component}`;
 }
 
+export function componentImageUrl(base: ComponentBase, component: string) {
+  return `/og/components/${base}/${component}/image.png`;
+}
+
 export interface ComponentExample {
   id: string;
   title: string;
