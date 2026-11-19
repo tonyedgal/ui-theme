@@ -2,7 +2,24 @@
   "name": "uitheme-cli",
   "version": "1.2.0",
   "type": "module",
-  "description": "Install UI-Theme controls in an existing application",
+  "description": "Add UI-Theme toggles, switchers, and selectors to React and Vue apps",
+  "keywords": [
+    "uitheme",
+    "ui-theme",
+    "cli",
+    "shadcn",
+    "shadcn-registry",
+    "registry",
+    "theme-toggle",
+    "theme-switcher",
+    "dark-mode",
+    "react",
+    "vue",
+    "radix-ui",
+    "base-ui",
+    "reka-ui",
+    "tailwindcss"
+  ],
   "license": "MIT",
   "bin": {
     "uitheme": "./dist/index.js"
@@ -48,5 +65,7 @@
     "type": "git",
     "url": "git+https://github.com/tonyedgal/ui-theme.git",
     "directory": "packages/ui-theme-cli"
-  }
+  },
+  "homepage": "https://www.ui-theme.dev/docs/cli",
+  "bugs": "https://github.com/tonyedgal/ui-theme/issues"
 }
