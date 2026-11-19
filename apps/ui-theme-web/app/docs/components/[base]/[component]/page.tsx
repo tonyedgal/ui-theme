@@ -26,6 +26,8 @@ import {
   componentDocs,
   componentDocUrl,
   componentImageUrl,
+  componentPageDescription,
+  componentPageTitle,
 } from '@/lib/component-docs';
 import { JsonLd } from '@/components/json-ld';
 import { docsArticleData } from '@/lib/structured-data';
@@ -77,13 +79,14 @@ export async function generateMetadata({
 }: PageProps<'/docs/components/[base]/[component]'>): Promise<Metadata> {
   const { base, doc } = await resolveDoc(params);
 
-  const title = `${doc.title} · ${base.title}`;
+  const title = componentPageTitle(base, doc.title);
+  const description = componentPageDescription(base, doc.description);
   const url = componentDocUrl(base.name, doc.name);
   const image = componentImageUrl(base.name, doc.name);
 
   return {
     title,
-    description: doc.description,
+    description,
     keywords: [
       doc.title,
       `${doc.title} ${base.title}`,
@@ -99,13 +102,13 @@ export async function generateMetadata({
       url,
       siteName: 'UI-Theme',
       title,
-      description: doc.description,
+      description,
       images: image,
     },
     twitter: {
       card: 'summary_large_image',
       title,
-      description: doc.description,
+      description,
       images: image,
     },
   };
@@ -211,15 +214,15 @@ export default async function Page({
       <JsonLd
         data={docsArticleData({
           path: componentDocUrl(base.name, doc.name),
-          title: `${doc.title} · ${base.title}`,
-          description: doc.description,
+          title: componentPageTitle(base, doc.title),
+          description: componentPageDescription(base, doc.description),
           image: componentImageUrl(base.name, doc.name),
           lastModified: content.lastModified,
           breadcrumbs: [
             { name: 'Docs', path: '/docs' },
             { name: 'Components', path: '/docs/components' },
             {
-              name: `${doc.title} · ${base.title}`,
+              name: componentPageTitle(base, doc.title),
               path: componentDocUrl(base.name, doc.name),
             },
           ],
