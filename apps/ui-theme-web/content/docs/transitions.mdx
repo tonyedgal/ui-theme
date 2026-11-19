@@ -1,0 +1,102 @@
+---
+title: Theme transitions
+metaTitle: Theme transitions with the View Transitions API
+description: Animate dark mode and color theme changes with the View Transitions API. Choose the animation, the origin, and the duration.
+---
+
+UI-Theme animates theme changes with the browser's View Transitions API.
+The same engine animates light and dark mode changes and color theme changes.
+React, Next.js, TanStack Start, Vue, and Nuxt use the same transition options.
+
+## How a transition works
+
+1. Your app calls `switchTheme`, `switchColorTheme`, or a toggle function.
+2. UI-Theme calls `document.startViewTransition`. The browser captures the current page.
+3. UI-Theme applies the new theme class to the document.
+4. UI-Theme animates the new page over the old page, then removes its temporary styles.
+
+`setTheme` and `setColorTheme` change the theme immediately, with no animation.
+
+## Animation types
+
+Set `animationType` on a call or on a styled control. The default is `circle`.
+
+| `animationType`    | Behavior                                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| `circle`           | A circle grows from the origin.                                                                |
+| `blur-circle`      | A circle with a soft edge grows from the origin. `blurAmount` sets the edge. The default is 2. |
+| `slide`            | The new theme slides in. `slideDirection` sets the start side. The default is `left`.          |
+| `clip-path`        | A polygon wipe starts at `clipPathDirection`. The default is `top-left`.                       |
+| `polygon-gradient` | A wipe with a soft edge. `gradientWidth` sets the edge in CSS pixels. The default is 80.       |
+| `triangle`         | A triangle grows from the origin.                                                              |
+| `svg-logo`         | Your SVG logo stays at the center of the viewport while the theme changes.                     |
+
+The `svg-logo` type needs `logo`, or both `logoLight` and `logoDark`.
+
+## Set the origin
+
+The circle and triangle types start from an origin. UI-Theme chooses the origin in this order:
+
+1. `origin`: a fixed point in viewport CSS pixels, such as `{ x: 0, y: 0 }`.
+2. `animationPosition`: `center`, or an edge or corner such as `top-right`.
+3. `element`: the center of the clicked control.
+
+Pass the clicked element to start the animation from the control:
+
+```tsx
+import { useUITheme } from 'uitheme-web/react';
+
+export function DarkModeButton() {
+  const { switchTheme } = useUITheme();
+
+  return (
+    <button
+      onClick={(event) =>
+        void switchTheme('dark', {
+          element: event.currentTarget,
+          animationType: 'blur-circle',
+          duration: 500,
+        })
+      }
+    >
+      Use dark mode
+    </button>
+  );
+}
+```
+
+In Vue, pass the click event or the same options object:
+
+```vue
+<button @click="theme.switchTheme('dark', $event)">Use dark mode</button>
+```
+
+A `circle` or `blur-circle` call with no origin, position, or element changes the theme without animation.
+The `svg-logo` type always uses the center of the viewport.
+
+## Duration and easing
+
+- `duration` sets the length in milliseconds. The default is 400.
+- `easing` sets the CSS timing function. The default is `cubic-bezier(0.32, 0.72, 0, 1)`.
+- A `duration` of 0 or less turns off the animation for that call.
+- Pass `animationOff: true` to change the theme without animation once.
+
+Styled controls accept `animationType` and `duration` props. Only the slide controls accept `slideDirection`.
+
+## When the theme changes without animation
+
+The theme always changes. UI-Theme skips only the animation when:
+
+- the browser does not support the View Transitions API;
+- the user turns on reduced motion (`prefers-reduced-motion: reduce`);
+- the page is hidden;
+- a newer theme change starts before the animation is ready. The newer change runs, and the older animation stops.
+
+## Color themes
+
+`switchColorTheme` animates a palette change with the same options.
+Palette classes use the `theme-` prefix by default, such as `.theme-caffeine`.
+The dark appearance and the color theme stay separate.
+Follow [Tailwind and palette setup](/docs/installation#tailwind-and-palettes) to define palette styles.
+
+For a Content Security Policy in React, pass a `nonce` to the provider. UI-Theme adds the nonce to each `<style>` element that it injects for a transition.
