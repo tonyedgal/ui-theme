@@ -23,7 +23,6 @@ export const metadata: Metadata = {
   creator: siteAuthor.name,
   publisher: siteAuthor.name,
   category: 'technology',
-  alternates: { canonical: '/' },
   icons: {
     icon: [
       {
