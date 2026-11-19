@@ -2,7 +2,11 @@ import { componentContent } from 'fumadocs-mdx:collections/server';
 import { notFound } from 'next/navigation';
 import { ImageResponse } from 'next/og';
 import { generate as DefaultImage } from 'fumadocs-ui/og';
-import { componentBases, componentDocs } from '@/lib/component-docs';
+import {
+  componentBases,
+  componentDocs,
+  componentPageTitle,
+} from '@/lib/component-docs';
 
 export const revalidate = false;
 
@@ -23,7 +27,7 @@ export async function GET(
 
   return new ImageResponse(
     <DefaultImage
-      title={`${content.title} · ${base.title}`}
+      title={componentPageTitle(base, content.title)}
       description={content.description}
       site="UI-Theme"
     />,

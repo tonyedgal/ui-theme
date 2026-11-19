@@ -176,6 +176,25 @@ export function componentImageUrl(base: ComponentBase, component: string) {
   return `/og/components/${base}/${component}/image.png`;
 }
 
+function frameworkName(base: ComponentBaseEntry) {
+  return base.framework === 'vue' ? 'Vue' : 'React';
+}
+
+export function componentPageTitle(base: ComponentBaseEntry, title: string) {
+  return `${title} for ${frameworkName(base)} (${findBase(base.base)!.displayName})`;
+}
+
+export function componentPageDescription(
+  base: ComponentBaseEntry,
+  description: string
+) {
+  const installers = base.shadcn
+    ? 'uitheme-cli or the shadcn CLI'
+    : 'uitheme-cli';
+
+  return `${description} Install the ${findBase(base.base)!.displayName} source for ${frameworkName(base)} with ${installers}.`;
+}
+
 export interface ComponentExample {
   id: string;
   title: string;
