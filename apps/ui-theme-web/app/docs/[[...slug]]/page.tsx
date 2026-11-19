@@ -46,7 +46,7 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
       <JsonLd
         data={docsArticleData({
           path: page.url,
-          title: page.data.title,
+          title: page.data.metaTitle ?? page.data.title,
           description: page.data.description,
           image: getPageImage(page).url,
           lastModified: page.data.lastModified,
@@ -96,21 +96,23 @@ export async function generateMetadata(
 
   if (!page) notFound();
 
+  const title = page.data.metaTitle ?? page.data.title;
+
   return {
-    title: page.data.title,
+    title,
     description: page.data.description,
     alternates: { canonical: page.url },
     openGraph: {
       type: 'article',
       url: page.url,
       siteName: 'UI-Theme',
-      title: page.data.title,
+      title,
       description: page.data.description,
       images: getPageImage(page).url,
     },
     twitter: {
       card: 'summary_large_image',
-      title: page.data.title,
+      title,
       description: page.data.description,
       images: getPageImage(page).url,
     },
