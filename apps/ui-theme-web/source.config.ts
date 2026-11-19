@@ -16,7 +16,7 @@ import lastModified from 'fumadocs-mdx/plugins/last-modified';
 export const docs = defineDocs({
   dir: 'content/docs',
   docs: {
-    schema: frontmatterSchema,
+    schema: frontmatterSchema.extend({ metaTitle: z.string().optional() }),
     postprocess: {
       includeProcessedMarkdown: true,
     },
