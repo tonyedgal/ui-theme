@@ -1,6 +1,6 @@
 {
   "name": "uitheme-cli",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "description": "Add UI-Theme toggles, switchers, and selectors to React and Vue apps",
   "keywords": [
