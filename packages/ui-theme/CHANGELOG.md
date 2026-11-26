@@ -1,5 +1,12 @@
 # uitheme-web
 
+## 2.2.1
+
+### Patch Changes
+
+- c56cc32: Link each package to its documentation and issue tracker on npm. Update the package descriptions and search keywords. Remove the Angular and Svelte keywords until UI-Theme supports those frameworks.
+- 2fd1363: Keep the `disableTransitionOnChange` freeze until React applies the new theme class and the browser recalculates styles. CSS transitions no longer run after `setTheme` or `setColorTheme`.
+
 ## 2.2.0
 
 ### Minor Changes
