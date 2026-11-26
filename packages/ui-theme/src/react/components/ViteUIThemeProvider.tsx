@@ -11,6 +11,7 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
+import { flushSync } from 'react-dom';
 import { useTheme } from '../hooks/use-theme';
 import type { UseThemeReturn, ThemeTransitionInput } from '../types';
 import {
@@ -133,7 +134,7 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
   const wrappedSetTheme = useCallback(
     (theme: Theme) => {
       const cleanup = applyTransitionDisable();
-      themeState.setTheme(theme);
+      flushSync(() => themeState.setTheme(theme));
       cleanup();
     },
     [themeState, applyTransitionDisable]
@@ -142,7 +143,7 @@ export const ViteUIThemeProvider: React.FC<ViteUIThemeProviderProps> = ({
   const wrappedSetColorTheme = useCallback(
     (colorTheme: ColorTheme) => {
       const cleanup = applyTransitionDisable();
-      themeState.setColorTheme(colorTheme);
+      flushSync(() => themeState.setColorTheme(colorTheme));
       cleanup();
     },
     [themeState, applyTransitionDisable]

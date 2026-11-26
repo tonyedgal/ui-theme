@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { createStyle } from '../../core/style';
 
 export const freezeTransitions = (nonce?: string) => {
@@ -6,12 +7,10 @@ export const freezeTransitions = (nonce?: string) => {
   css.textContent = `*,*::before,*::after{-webkit-transition:none!important;-moz-transition:none!important;-o-transition:none!important;-ms-transition:none!important;transition:none!important}`;
   document.head.appendChild(css);
 
-  window.getComputedStyle(document.body);
-
   return () => {
-    setTimeout(() => {
-      css.remove();
-    }, 1);
+    // the read forces a style recalc while transitions are still disabled.
+    void window.getComputedStyle(document.body).opacity;
+    css.remove();
   };
 };
 
@@ -23,7 +22,7 @@ export const useTransitionFreeze = (enabled: boolean, nonce?: string) =>
             const restore = freezeTransitions(nonce);
 
             try {
-              set(...args);
+              flushSync(() => set(...args));
             } finally {
               restore();
             }
