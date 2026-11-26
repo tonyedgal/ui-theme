@@ -1340,9 +1340,24 @@ test('vite disableTransitionOnChange style carries the CSP nonce', async ({
             added.push(node.nonce);
     });
 
+    const released = new Promise<void>((resolve) => {
+      new MutationObserver((records) => {
+        if (
+          records.some((record) =>
+            [...record.removedNodes].some(
+              (node) =>
+                node instanceof HTMLStyleElement &&
+                node.textContent?.includes('transition:none')
+            )
+          )
+        )
+          resolve();
+      }).observe(document.head, { childList: true });
+    });
+
     observer.observe(document.head, { childList: true });
     window.themeFixture.state.setTheme('dark');
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await released;
     observer.disconnect();
 
     return added;
@@ -1353,40 +1368,133 @@ test('vite disableTransitionOnChange style carries the CSP nonce', async ({
 });
 
 for (const provider of ['ui', 'next', 'tanstack', 'vite']) {
-  for (const frozen of [true, false]) {
-    test(`${provider} setTheme ${frozen ? 'skips' : 'runs'} a CSS transition ${frozen ? 'with' : 'without'} disableTransitionOnChange`, async ({
+  for (const method of ['setTheme', 'setColorTheme'] as const) {
+    for (const frozen of [true, false]) {
+      test(`${provider} ${method} ${frozen ? 'skips' : 'runs'} a CSS transition ${frozen ? 'with' : 'without'} disableTransitionOnChange`, async ({
+        page,
+      }) => {
+        await open(
+          page,
+          `provider=${provider}${frozen ? '&disableTransitions' : ''}`
+        );
+
+        const result = await page.evaluate(
+          async ([name, isFrozen]) => {
+            const style = document.createElement('style');
+            style.textContent =
+              '.probe{background-color:rgb(255,255,255);transition:background-color 1s linear}.dark .probe,.theme-ocean .probe{background-color:rgb(0,0,0)}';
+            document.head.append(style);
+            const probe = document.createElement('div');
+            probe.className = 'probe';
+            document.body.append(probe);
+            void getComputedStyle(probe).backgroundColor;
+            const root = document.documentElement;
+
+            const isFreeze = (node: Node) =>
+              node instanceof HTMLStyleElement &&
+              node.textContent?.includes('transition:none') === true;
+
+            const frozenNow = () =>
+              [...document.head.childNodes].some(isFreeze);
+
+            let frozenAtCommit: boolean | undefined;
+            let present = false;
+            let released = false;
+
+            const done = new Promise<void>((resolve) => {
+              new MutationObserver((records) => {
+                for (const record of records) {
+                  if (
+                    record.target === root &&
+                    record.attributeName === 'class'
+                  )
+                    frozenAtCommit ??= present;
+
+                  if ([...record.addedNodes].some(isFreeze)) present = true;
+
+                  if ([...record.removedNodes].some(isFreeze)) {
+                    present = false;
+                    released = true;
+                  }
+                }
+
+                if (isFrozen ? released : frozenAtCommit !== undefined)
+                  resolve();
+              }).observe(root, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+              });
+            });
+
+            if (name === 'setTheme') window.themeFixture.state.setTheme('dark');
+            else window.themeFixture.state.setColorTheme('ocean');
+
+            await done;
+
+            return {
+              frozenAtCommit,
+              color: getComputedStyle(probe).backgroundColor,
+              transitions: probe.getAnimations().length,
+              restored: !frozenNow(),
+            };
+          },
+          [method, frozen] as const
+        );
+
+        expect(result.frozenAtCommit).toBe(frozen);
+        expect(result.restored).toBe(true);
+
+        if (frozen) {
+          expect(result.color).toBe('rgb(0, 0, 0)');
+          expect(result.transitions).toBe(0);
+        } else {
+          expect(result.color).not.toBe('rgb(0, 0, 0)');
+          expect(result.transitions).toBe(1);
+        }
+
+        await settle(page);
+      });
+    }
+
+    test(`${provider} ${method} to the current value releases the transition freeze`, async ({
       page,
     }) => {
-      await open(
-        page,
-        `provider=${provider}${frozen ? '&disableTransitions' : ''}`
-      );
+      await open(page, `provider=${provider}&disableTransitions`);
 
-      const color = await page.evaluate(async () => {
-        const style = document.createElement('style');
-        style.textContent =
-          '.probe{background-color:rgb(255,255,255);transition:background-color 1s linear}.dark .probe{background-color:rgb(0,0,0)}';
-        document.head.append(style);
-        const probe = document.createElement('div');
-        probe.className = 'probe';
-        document.body.append(probe);
-        void getComputedStyle(probe).backgroundColor;
-        window.themeFixture.state.setTheme('dark');
-        const now = getComputedStyle(probe).backgroundColor;
-        await new Promise((resolve) => setTimeout(resolve, 20));
+      const result = await page.evaluate(async (name) => {
+        const root = document.documentElement;
+        const before = root.className;
+
+        const isFreeze = (node: Node) =>
+          node instanceof HTMLStyleElement &&
+          node.textContent?.includes('transition:none') === true;
+
+        let added = 0;
+
+        const released = new Promise<void>((resolve) => {
+          new MutationObserver((records) => {
+            for (const record of records) {
+              added += [...record.addedNodes].filter(isFreeze).length;
+
+              if ([...record.removedNodes].some(isFreeze)) resolve();
+            }
+          }).observe(document.head, { childList: true });
+        });
+
+        if (name === 'setTheme') window.themeFixture.state.setTheme('light');
+        else window.themeFixture.state.setColorTheme('default');
+
+        await released;
 
         return {
-          now,
-          restored: ![...document.head.querySelectorAll('style')].some(
-            (element) => element.textContent?.includes('transition:none')
-          ),
+          added,
+          unchanged: root.className === before,
+          restored: ![...document.head.childNodes].some(isFreeze),
         };
-      });
+      }, method);
 
-      if (frozen) expect(color.now).toBe('rgb(0, 0, 0)');
-      else expect(color.now).not.toBe('rgb(0, 0, 0)');
-      expect(color.restored).toBe(true);
-      await settle(page);
+      expect(result).toEqual({ added: 1, unchanged: true, restored: true });
     });
   }
 }
